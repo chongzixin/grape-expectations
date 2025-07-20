@@ -9,7 +9,8 @@ body {
     font-family: 'Arial', sans-serif;
     line-height: 1.6;
     color: #333;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: url('../images/background-img.png') no-repeat center center fixed;
+    background-size: cover;
     min-height: 100vh;
 }
 
@@ -85,13 +86,13 @@ nav {
 
 #searchInput:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #800020;
 }
 
 #searchBtn {
     width: 100%;
     padding: 1rem;
-    background: #667eea;
+    background: #800020;
     color: white;
     border: none;
     border-radius: 8px;
@@ -101,7 +102,7 @@ nav {
 }
 
 #searchBtn:hover {
-    background: #5a6fd8;
+    background: #800020;
 }
 
 .suggestions {
@@ -130,7 +131,7 @@ nav {
 }
 
 .tag:hover {
-    background: #667eea;
+    background: #800020;
     color: white;
 }
 
@@ -204,7 +205,7 @@ nav {
 
 .wine-card .price {
     font-weight: bold;
-    color: #667eea;
+    color: #800020;
     font-size: 1.1rem;
 }
 
@@ -240,7 +241,7 @@ nav {
 
 .price {
     font-size: 1.5rem;
-    color: #667eea;
+    color: #800020;
     font-weight: bold;
     margin-bottom: 1.5rem;
 }
@@ -282,7 +283,7 @@ nav {
 
 .detail-card h4 {
     margin-bottom: 1rem;
-    color: #667eea;
+    color: #800020;
 }
 
 /* Mobile Responsiveness */
@@ -356,7 +357,7 @@ nav {
     width: 20px;
     height: 20px;
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #667eea;
+    border-top: 3px solid #800020;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
