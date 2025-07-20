@@ -117,3 +117,10 @@ function getWineImageUrl(wine) {
     }
     return 'images/wine-placeholder.jpg';
 }
+
+function showLoading() {
+    document.getElementById('loadingIndicator').style.display = 'flex';
+}
+function hideLoading() {
+    document.getElementById('loadingIndicator').style.display = 'none';
+}

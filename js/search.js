@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // Show loading state
-        searchBtn.innerHTML = '<span class="loading"></span> Searching...';
+        showLoading();
         searchBtn.disabled = true;
 
         setTimeout(() => {

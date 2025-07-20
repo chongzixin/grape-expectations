@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const card = document.createElement('div');
         card.className = 'wine-card';
         card.onclick = () => {
+            showLoading();
             localStorage.setItem('selectedWineIndex', index);
             window.location.href = 'wine-details.html';
         };
