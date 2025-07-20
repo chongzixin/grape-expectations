@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wine Explorer - Search</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wine Explorer</h1>
+            <p>Discover your perfect wine</p>
+        </header>
+        
+        <main class="search-page">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder='Try "Opus One 1989" or "wine for hot day with chicken"'>
+                <button id="searchBtn">Search Wines</button>
+            </div>
+            
+            <div class="suggestions">
+                <h3>Popular Searches:</h3>
+                <div class="suggestion-tags">
+                    <span class="tag" data-search="Pinot Noir">Pinot Noir</span>
+                    <span class="tag" data-search="Cabernet Sauvignon">Cabernet Sauvignon</span>
+                    <span class="tag" data-search="summer wine">Summer Wine</span>
+                    <span class="tag" data-search="wine with steak">Wine with Steak</span>
+                    <span class="tag" data-search="French wine">French Wine</span>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/app.js"></script>
+    <script src="js/search.js"></script>
+</body>
+</html>

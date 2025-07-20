@@ -1,0 +1,50 @@
+document.addEventListener('DOMContentLoaded', async function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const suggestionTags = document.querySelectorAll('.tag');
+
+    // Load wine data
+    await wineApp.loadWineData();
+
+    // Search functionality
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            alert('Please enter a search term');
+            return;
+        }
+
+        // Show loading state
+        searchBtn.innerHTML = '<span class="loading"></span> Searching...';
+        searchBtn.disabled = true;
+
+        setTimeout(() => {
+            const results = wineApp.searchWines(query);
+            wineApp.saveSearchResults(results, query);
+            
+            // Navigate to results page
+            window.location.href = 'search-results.html';
+        }, 500);
+    }
+
+    // Event listeners
+    searchBtn.addEventListener('click', performSearch);
+
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    // Suggestion tags
+    suggestionTags.forEach(tag => {
+        tag.addEventListener('click', function() {
+            const searchTerm = this.getAttribute('data-search');
+            searchInput.value = searchTerm;
+            performSearch();
+        });
+    });
+
+    // Auto-focus search input
+    searchInput.focus();
+});

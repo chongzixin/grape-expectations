@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wine Explorer - Wine Details</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wine Explorer</h1>
+            <nav>
+                <a href="search-results.html" class="back-btn">← Back to Results</a>
+            </nav>
+        </header>
+        
+        <main class="details-page">
+            <div class="wine-detail-container">
+                <div class="wine-image-section">
+                    <img id="wineImage" src="images/wine-placeholder.jpg" alt="Wine bottle">
+                </div>
+                
+                <div class="wine-info-section">
+                    <h2 id="wineName">Wine Name</h2>
+                    <p id="winePrice" class="price">$0</p>
+                    
+                    <div class="wine-basic-info">
+                        <div class="info-item">
+                            <strong>Country:</strong> <span id="wineCountry"></span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Region:</strong> <span id="wineRegion"></span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Variety:</strong> <span id="wineVariety"></span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Points:</strong> <span id="winePoints"></span>/100
+                        </div>
+                    </div>
+                    
+                    <div class="wine-description">
+                        <h3>Description</h3>
+                        <p id="wineDescription"></p>
+                    </div>
+                    
+                    <div class="wine-details-grid">
+                        <div class="detail-card">
+                            <h4>Winery History</h4>
+                            <p id="wineryHistory">This winery has a rich tradition of winemaking, combining traditional techniques with modern innovation.</p>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4>Taste Profile</h4>
+                            <p id="tasteProfile">A well-balanced wine with complex flavors and elegant structure.</p>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4>Food Pairings</h4>
+                            <p id="foodPairings">Pairs excellently with a variety of dishes including grilled meats, aged cheeses, and hearty stews.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/app.js"></script>
+    <script src="js/details.js"></script>
+</body>
+</html>

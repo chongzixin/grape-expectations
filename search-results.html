@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wine Explorer - Search Results</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wine Explorer</h1>
+            <nav>
+                <a href="index.html" class="back-btn">← Back to Search</a>
+            </nav>
+        </header>
+        
+        <main class="results-page">
+            <div class="search-summary">
+                <h2 id="searchQuery">Search Results</h2>
+                <p id="resultCount">Found wines matching your search</p>
+            </div>
+            
+            <div class="filters">
+                <select id="countryFilter">
+                    <option value="">All Countries</option>
+                </select>
+                <select id="priceFilter">
+                    <option value="">All Prices</option>
+                    <option value="0-25">Under $25</option>
+                    <option value="25-50">$25 - $50</option>
+                    <option value="50-100">$50 - $100</option>
+                    <option value="100+">Over $100</option>
+                </select>
+            </div>
+            
+            <div id="wineGrid" class="wine-grid">
+                <!-- Wine cards will be populated here -->
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/app.js"></script>
+    <script src="js/results.js"></script>
+</body>
+</html>
