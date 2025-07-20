@@ -1,4 +1,13 @@
+// Always hide loading indicator immediately on script load to support back button navigation
+if (typeof hideLoading === 'function') hideLoading();
+window.addEventListener('pageshow', function() {
+    if (typeof hideLoading === 'function') hideLoading();
+});
+
 document.addEventListener('DOMContentLoaded', function() {
+    // hide loading indicator immediately on script load to support back button navigation
+    if (typeof hideLoading === 'function') hideLoading();
+    
     const wineIndex = localStorage.getItem('selectedWineIndex');
     const { results } = wineApp.loadSearchResults();
     

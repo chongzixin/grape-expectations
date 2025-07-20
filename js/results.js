@@ -1,3 +1,6 @@
+// Always hide loading indicator immediately on script load to support back button navigation
+if (typeof hideLoading === 'function') hideLoading();
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchQuery = document.getElementById('searchQuery');
     const resultCount = document.getElementById('resultCount');

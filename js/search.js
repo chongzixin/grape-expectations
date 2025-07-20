@@ -1,4 +1,13 @@
+// Always hide loading indicator immediately on script load to support back button navigation
+if (typeof hideLoading === 'function') hideLoading();
+window.addEventListener('pageshow', function() {
+    if (typeof hideLoading === 'function') hideLoading();
+});
+
 document.addEventListener('DOMContentLoaded', async function() {
+    // hide loading indicator immediately on script load to support back button navigation
+    if (typeof hideLoading === 'function') hideLoading();
+
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const suggestionTags = document.querySelectorAll('.tag');

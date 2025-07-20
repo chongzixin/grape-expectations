@@ -62,15 +62,8 @@ class WineApp {
         const searchTerms = query.toLowerCase().split(' ');
         
         return this.wines.filter(wine => {
-            const searchableText = `
-                ${wine.title || ''} 
-                ${wine.description || ''} 
-                ${wine.variety || ''} 
-                ${wine.country || ''} 
-                ${wine.province || ''} 
-                ${wine.region_1 || ''}
-            `.toLowerCase();
-            
+             // Concatenate all values from the wine object
+            const searchableText = Object.values(wine).join(' ').toLowerCase();
             return searchTerms.every(term => searchableText.includes(term));
         });
     }
