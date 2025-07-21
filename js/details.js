@@ -23,9 +23,9 @@ function displayWineDetails(wine) {
     document.getElementById('winePoints').textContent = wine.points || 'Not rated';
     
     // Description
-    document.getElementById('wineryName').textContent = wine.winery || 'No winery history available.';
-    document.getElementById('tasteProfile').textContent = wine.tasting_notes || 'No taste profile available.';
-    document.getElementById('foodPairings').textContent = wine.food_pairing || 'No food pairings available.';
+    document.getElementById('wineryName').textContent = wine.winery || 'No winery information available.';
+    document.getElementById('tastingNotes').textContent = wine.tasting_notes || 'No tasting notes available.';
+    document.getElementById('foodPairings').textContent = wine.food_pairing || 'Coming soon.';
     
     // Set wine image
     document.getElementById('wineImage').src = getWineImageUrl(wine);
