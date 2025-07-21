@@ -1,13 +1,4 @@
-// Always hide loading indicator immediately on script load to support back button navigation
-if (typeof hideLoading === 'function') hideLoading();
-window.addEventListener('pageshow', function() {
-    if (typeof hideLoading === 'function') hideLoading();
-});
-
 document.addEventListener('DOMContentLoaded', function() {
-    // hide loading indicator immediately on script load to support back button navigation
-    if (typeof hideLoading === 'function') hideLoading();
-    
     const wineIndex = localStorage.getItem('selectedWineIndex');
     const { results } = wineApp.loadSearchResults();
     
@@ -32,9 +23,7 @@ function displayWineDetails(wine) {
     document.getElementById('winePoints').textContent = wine.points || 'Not rated';
     
     // Description
-    document.getElementById('wineDescription').textContent = wine.description || 'No description available for this wine.';
-
-    document.getElementById('wineryHistory').textContent = wine.winery_history || 'No winery history available.';
+    document.getElementById('wineryName').textContent = wine.winery || 'No winery history available.';
     document.getElementById('tasteProfile').textContent = wine.tasting_notes || 'No taste profile available.';
     document.getElementById('foodPairings').textContent = wine.food_pairing || 'No food pairings available.';
     
