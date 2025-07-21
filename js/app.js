@@ -108,7 +108,7 @@ function getWineImageUrl(wine) {
     if (wine && wine.image_url && wine.image_url.startsWith('http')) {
         return wine.image_url;
     }
-    return 'images/wine-placeholder.jpg';
+    return 'images/wine-placeholder.png';
 }
 
 function showLoading() {

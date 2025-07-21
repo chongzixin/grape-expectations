@@ -179,8 +179,9 @@ nav {
 }
 
 .wine-card-image {
-    width: 100px;
-    height: 120px;
+    width: 100%;
+    height: auto;
+    max-height: 180px;
     background: #f0f0f0;
     border-radius: 5px;
     margin: 0 auto 1rem;

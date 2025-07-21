@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         card.innerHTML = `
             <div class="wine-card-image">
-                <img src="${getWineImageUrl(wine)}" alt="${wine.title || 'Wine bottle'}" style="width:100px;height:120px;object-fit:cover;border-radius:5px;">
+                <img src="${getWineImageUrl(wine)}" alt="${wine.title || 'Wine bottle'}" style="height:120px;object-fit:cover;border-radius:5px;">
             </div>
             <h3>${wine.title || 'Unknown Wine'}</h3>
             <div class="country">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
