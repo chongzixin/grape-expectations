@@ -5,7 +5,7 @@ class WineApp {
         this.currentSearch = '';
         this.searchResults = [];
     }
-
+    
     async loadWineData() {
         try {
             const response = await fetch('data/wines.csv');
@@ -17,12 +17,12 @@ class WineApp {
             return [];
         }
     }
-
+    
     parseCSV(csvText) {
         const lines = csvText.trim().split('\n');
         const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
         const wines = [];
-
+        
         for (let i = 1; i < lines.length; i++) {
             const values = this.parseCSVLine(lines[i]);
             if (values.length === headers.length) {
@@ -35,7 +35,7 @@ class WineApp {
         }
         return wines;
     }
-
+    
     parseCSVLine(line) {
         const values = [];
         let current = '';
@@ -55,30 +55,41 @@ class WineApp {
         values.push(current.trim());
         return values;
     }
-
+    
     searchWines(query) {
         if (!query) return [];
         
         const searchTerms = query.toLowerCase().split(' ');
         
         return this.wines.filter(wine => {
-             // Concatenate all values from the wine object
+            // Concatenate all values from the wine object
             const searchableText = Object.values(wine).join(' ').toLowerCase();
             return searchTerms.every(term => searchableText.includes(term));
         });
     }
-
+    
     getWineById(id) {
         return this.wines[id] || null;
     }
-
+    
     saveSearchResults(results, query) {
         this.searchResults = results;
         this.currentSearch = query;
-        localStorage.setItem('searchResults', JSON.stringify(results));
-        localStorage.setItem('currentSearch', query);
+        try {
+            localStorage.setItem('searchResults', JSON.stringify(results));
+            localStorage.setItem('currentSearch', query);
+            return true;
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                alert('Your search returned too many results. Please enter a more specific search.');
+                window.location.href = 'index.html'; // Redirect to home page
+            } else {
+                console.error('Error saving search results:', e);
+            }
+            return false;
+        }
     }
-
+    
     loadSearchResults() {
         const results = localStorage.getItem('searchResults');
         const query = localStorage.getItem('currentSearch');
