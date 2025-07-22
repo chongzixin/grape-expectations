@@ -9,6 +9,7 @@ exports.handler = async function(event) {
 
         const { query } = JSON.parse(event.body);
 
+        console.log(`Received search query: ${query}`);
         const run = await client.actor('canadesk/vivino').call({
             keyword: query,
             market: 'SG'
