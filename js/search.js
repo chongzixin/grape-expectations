@@ -17,12 +17,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         showLoading();
         searchBtn.disabled = true;
         
+        console.log(query);
+
         try {
             const response = await fetch('/.netlify/functions/vivino', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query })
             });
+            console.log(response.json());
             const cachedResults = await response.json();
             
             localStorage.setItem('searchResults', JSON.stringify(cachedResults));
