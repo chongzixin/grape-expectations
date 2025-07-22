@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             window.location.href = 'search-results.html';
         } catch (e) {
+            console.error('Error fetching results:', e);
             alert('Error fetching results from Vivino. Please try again.');
             hideLoading();
             searchBtn.disabled = false;
