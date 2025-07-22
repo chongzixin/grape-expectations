@@ -37,11 +37,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // Event listeners
-    searchBtn.addEventListener('click', performSearch);
+    searchBtn.addEventListener('click', () => {
+        performSearch(searchInput.value.trim());
+    });
     
     searchInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            performSearch();
+            performSearch(searchInput.value.trim());
         }
     });
     
@@ -50,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         tag.addEventListener('click', function() {
             const searchTerm = this.getAttribute('data-search');
             searchInput.value = searchTerm;
-            performSearch();
+            performSearch(searchInput.value.trim());
         });
     });
     
