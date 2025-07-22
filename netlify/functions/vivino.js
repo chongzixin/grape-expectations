@@ -32,7 +32,7 @@ exports.handler = async function(event) {
             tasting_notes: wine.tasting_notes,
             food_pairing: wine.food_pairing
         }));
-        console.log(`Returning ${cachedResults} wines as response`);
+        console.log(`Returning ${JSON.stringify(cachedResults)} wines as response`);
 
         return {
             statusCode: 200,
