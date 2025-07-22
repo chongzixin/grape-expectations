@@ -11,8 +11,11 @@ exports.handler = async function(event) {
 
         console.log(`Received search query: ${query}`);
         const run = await client.actor('canadesk/vivino').call({
+            process: 'gs',
             keyword: query,
-            market: 'SG'
+            market: 'SG',
+            maximum: 200,
+            pricemax: 1000,
         });
 
         const { items } = await client.dataset(run.defaultDatasetId).listItems();

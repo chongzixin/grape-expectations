@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const countryFilter = document.getElementById('countryFilter');
     const priceFilter = document.getElementById('priceFilter');
 
+    const query = localStorage.getItem('currentSearch') || '';
     const allResults = JSON.parse(localStorage.getItem('searchResults') || '[]');
     let filteredResults = allResults;
 
