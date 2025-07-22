@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query })
             });
-            console.log(response.json());
             const cachedResults = await response.json();
+            console.log(cachedResults);
             
             localStorage.setItem('searchResults', JSON.stringify(cachedResults));
             localStorage.setItem('currentSearch', query);
