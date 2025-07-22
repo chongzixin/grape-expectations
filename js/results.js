@@ -2,19 +2,16 @@
 if (typeof hideLoading === 'function') hideLoading();
 
 document.addEventListener('DOMContentLoaded', function() {
+    hideLoading();
+
     const searchQuery = document.getElementById('searchQuery');
     const resultCount = document.getElementById('resultCount');
     const wineGrid = document.getElementById('wineGrid');
     const countryFilter = document.getElementById('countryFilter');
     const priceFilter = document.getElementById('priceFilter');
 
-    let allResults = [];
-    let filteredResults = [];
-
-    // Load search results
-    const { results, query } = wineApp.loadSearchResults();
-    allResults = results || [];
-    filteredResults = allResults;
+    const allResults = JSON.parse(localStorage.getItem('searchResults') || '[]');
+    let filteredResults = allResults;
 
     // Update page content
     searchQuery.textContent = `Results for "${query}"`;
@@ -29,6 +26,27 @@ document.addEventListener('DOMContentLoaded', function() {
         countryFilter.appendChild(option);
     });
 
+    function createWineCard(wine, index) {
+        const card = document.createElement('div');
+        card.className = 'wine-card';
+        card.onclick = () => {
+            showLoading();
+            localStorage.setItem('selectedWineIndex', index);
+            window.location.href = 'wine-details.html';
+        };
+
+        card.innerHTML = `
+            <div class="wine-card-image">
+                <img src="${getWineImageUrl(wine)}" alt="${wine.name || 'Wine bottle'}" style="width:100%;height:auto;object-fit:cover;border-radius:5px;">
+            </div>
+            <h3>${wine.name || 'Unknown Wine'}</h3>
+            <div class="country">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
+            <div class="price">${formatPrice(wine.price)}</div>
+        `;
+
+        return card;
+    }
+
     // Display results
     function displayResults(wines) {
         wineGrid.innerHTML = '';
@@ -42,27 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const wineCard = createWineCard(wine, index);
             wineGrid.appendChild(wineCard);
         });
-    }
-
-    function createWineCard(wine, index) {
-        const card = document.createElement('div');
-        card.className = 'wine-card';
-        card.onclick = () => {
-            showLoading();
-            localStorage.setItem('selectedWineIndex', index);
-            window.location.href = 'wine-details.html';
-        };
-
-        card.innerHTML = `
-            <div class="wine-card-image">
-                <img src="${getWineImageUrl(wine)}" alt="${wine.title || 'Wine bottle'}" style="height:120px;object-fit:cover;border-radius:5px;">
-            </div>
-            <h3>${wine.title || 'Unknown Wine'}</h3>
-            <div class="country">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
-            <div class="price">${formatPrice(wine.price)}</div>
-        `;
-
-        return card;
     }
 
     // Filter functionality

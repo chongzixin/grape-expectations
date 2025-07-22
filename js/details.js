@@ -1,33 +1,21 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const wineIndex = localStorage.getItem('selectedWineIndex');
-    const { results } = wineApp.loadSearchResults();
-    
-    if (!wineIndex || !results || !results[wineIndex]) {
-        alert('Wine not found');
-        window.location.href = 'index.html';
-        return;
-    }
+    hideLoading();
 
-    const wine = results[wineIndex];
-    displayWineDetails(wine);
+    const vivinoResults = JSON.parse(localStorage.getItem('searchResults') || '[]');
+    const selectedIndex = localStorage.getItem('selectedWineIndex');
+    const wine = vivinoResults[selectedIndex];
+
+    if (!wine) return;
+
+    document.getElementById('wineImage').src = wine.image_url || 'images/wine-placeholder.jpg';
+    document.getElementById('wineName').textContent = wine.name || '';
+    document.getElementById('winePrice').textContent = wine.price ? `$${wine.price}` : '';
+    document.getElementById('wineCountry').textContent = wine.country || '';
+    document.getElementById('wineRegion').textContent = wine.region || '';
+    document.getElementById('wineVariety').textContent = wine.variety || '';
+    document.getElementById('winePoints').textContent = wine.points || '';
+    document.getElementById('wineryName').textContent = wine.winery || '';
+    document.getElementById('wineDescription').textContent = wine.description || '';
+    document.getElementById('foodPairings').textContent = wine.food_pairing || '';
+    document.getElementById('tastingNotes').textContent = wine.tasting_notes || '';
 });
-
-function displayWineDetails(wine) {
-    console.log(wine);
-    // Basic information
-    document.getElementById('wineName').textContent = wine.title || 'Unknown Wine';
-    document.getElementById('winePrice').textContent = formatPrice(wine.price);
-    document.getElementById('wineCountry').textContent = wine.country || 'Unknown';
-    document.getElementById('wineRegion').textContent = wine.region || 'Unknown';
-    document.getElementById('wineVariety').textContent = wine.variety || 'Unknown';
-    document.getElementById('winePoints').textContent = wine.points || 'Not rated';
-    
-    // Description
-    document.getElementById('wineryName').textContent = wine.winery || 'No winery information available.';
-    document.getElementById('tastingNotes').textContent = wine.tasting_notes || 'No tasting notes available.';
-    document.getElementById('foodPairings').textContent = wine.food_pairing || 'Coming soon.';
-    
-    // Set wine image
-    document.getElementById('wineImage').src = getWineImageUrl(wine);
-    document.getElementById('wineImage').alt = wine.title || 'Wine bottle';
-}

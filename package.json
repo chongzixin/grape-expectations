@@ -1,0 +1,24 @@
+{
+  "name": "wine-explorer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chongzixin/wine-explorer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chongzixin/wine-explorer/issues"
+  },
+  "homepage": "https://github.com/chongzixin/wine-explorer#readme",
+  "dependencies": {
+    "apify-client": "^2.12.6",
+    "dotenv": "^17.2.0"
+  }
+}

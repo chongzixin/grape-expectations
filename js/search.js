@@ -12,30 +12,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     const searchBtn = document.getElementById('searchBtn');
     const suggestionTags = document.querySelectorAll('.tag');
     
-    // Load wine data
-    await wineApp.loadWineData();
-    
     // Search functionality
-    function performSearch() {
-        const query = searchInput.value.trim();
-        if (!query) {
-            alert('Please enter a search term');
-            return;
-        }
-        
-        // Show loading state
+    async function performSearch(query) {
         showLoading();
         searchBtn.disabled = true;
         
-        setTimeout(() => {
-            const results = wineApp.searchWines(query);
-            const success = wineApp.saveSearchResults(results, query);
+        try {
+            const response = await fetch('/.netlify/functions/vivino', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            const cachedResults = await response.json();
             
-            if (success) {
-                window.location.href = 'search-results.html';
-            }
-            // If not successful, user is alerted and redirected by saveSearchResults
-        }, 500);
+            localStorage.setItem('searchResults', JSON.stringify(cachedResults));
+            localStorage.setItem('currentSearch', query);
+            
+            window.location.href = 'search-results.html';
+        } catch (e) {
+            alert('Error fetching results from Vivino. Please try again.');
+            hideLoading();
+            searchBtn.disabled = false;
+        }
     }
     
     // Event listeners
