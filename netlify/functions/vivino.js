@@ -10,11 +10,12 @@ exports.handler = async function(event) {
         const { query } = JSON.parse(event.body);
 
         const run = await client.actor('canadesk/vivino').call({
-            search: query,
+            keyword: query,
             market: 'SG'
         });
 
         const { items } = await client.dataset(run.defaultDatasetId).listItems();
+        console.log(`Fetched ${items.length} wines for query: ${query}`);
 
         const cachedResults = items.map(wine => ({
             id: wine.id,
@@ -36,6 +37,7 @@ exports.handler = async function(event) {
             body: JSON.stringify(cachedResults)
         };
     } catch (error) {
+        console.error('Error in Vivino function:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: error.message })
