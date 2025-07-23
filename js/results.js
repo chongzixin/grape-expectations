@@ -38,11 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         card.innerHTML = `
             <div class="wine-card-image">
-                <img src="${getWineImageUrl(wine)}" alt="${wine.name || 'Wine bottle'}" style="width:100%;height:auto;object-fit:cover;border-radius:5px;">
+                <img src="${wine.image_url || 'images/wine-placeholder.jpg'}" alt="${wine.name || 'Wine bottle'}">
             </div>
-            <div class="price">${wine.winery || 'Unknown Winery'}</div>
-            <h3>${wine.name || 'Unknown Wine'}</h3>
-            <div class="country">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
+            <h3 class="wine-name">${wine.name || 'Unknown Wine'}</h3>
+            <div class="winery-name">${wine.winery || 'Unknown Winery'}</div>
+            <div class="country-region">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
         `;
 
         return card;
