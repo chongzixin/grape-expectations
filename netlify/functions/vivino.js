@@ -17,7 +17,7 @@ exports.handler = async function(event) {
             maximum: 200,
             pricemax: 1000,
             sortby: 'ratings_average',
-            summary: true,
+            summary: false,
             proxy: {
                 useApifyProxy: true,
                 apifyProxyGroups: [
