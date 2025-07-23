@@ -40,9 +40,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="wine-card-image">
                 <img src="${wine.image_url || 'images/wine-placeholder.jpg'}" alt="${wine.name || 'Wine bottle'}">
             </div>
-            <h3 class="wine-name">${wine.name || 'Unknown Wine'}</h3>
             <div class="winery-name">${wine.winery || 'Unknown Winery'}</div>
-            <div class="country-region">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
+            <h3 class="wine-name">${wine.name || 'Unknown Wine'}</h3>
+            <div class="country-region">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'} | ${wine.rating ? `⭐ ${wine.rating.toFixed(1)}` : 'Not rated'}</div>
+            <div class="wine-card-rating">${wine.rating ? `⭐ ${wine.rating.toFixed(1)}` : 'Not rated'}</div>
         `;
         
         return card;

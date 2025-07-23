@@ -219,6 +219,13 @@ nav {
   font-weight: 500;
 }
 
+.wine-card-rating {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  color: #dabd18b2;
+  text-align: center;
+}
+
 /* Country and region */
 .country-region {
   font-size: 0.95rem;
