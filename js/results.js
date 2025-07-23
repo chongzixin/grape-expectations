@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update page content
     searchQuery.textContent = `Results for "${query}"`;
-    resultCount.textContent = `Found ${allResults.length} wines`;
+    resultCount.textContent = `Found ${allResults.length || 0} wines`;
     
     // Populate country filter
     const countries = [...new Set(allResults.map(wine => wine.country))].filter(Boolean);
