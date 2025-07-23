@@ -42,8 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="winery-name">${wine.winery || 'Unknown Winery'}</div>
             <h3 class="wine-name">${wine.name || 'Unknown Wine'}</h3>
-            <div class="country-region">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'} | ${wine.rating ? `⭐ ${wine.rating.toFixed(1)}` : 'Not rated'}</div>
-            <div class="wine-card-rating">${wine.rating ? `⭐ ${wine.rating.toFixed(1)}` : 'Not rated'}</div>
+            <div class="country-region-rating">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'} | ${wine.rating ? `⭐ ${wine.rating.toFixed(1)}` : 'Not rated'}</div>
         `;
         
         return card;
