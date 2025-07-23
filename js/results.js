@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="wine-card-image">
                 <img src="${getWineImageUrl(wine)}" alt="${wine.name || 'Wine bottle'}" style="width:100%;height:auto;object-fit:cover;border-radius:5px;">
             </div>
+            <div class="price">${wine.winery || 'Unknown Winery'}</div>
             <h3>${wine.name || 'Unknown Wine'}</h3>
             <div class="country">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
-            <div class="price">${formatPrice(wine.price)}</div>
         `;
 
         return card;
