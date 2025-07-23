@@ -187,7 +187,6 @@ nav {
 .wine-card-image {
   width: 100%;
   height: auto;          /* or a desired fixed height (e.g., 200px) */
-  aspect-ratio: 9/16;    /* optional: maintain portrait ratio, modern browsers only */
   display: block;
   margin-bottom: 1rem;
   background: #f8f8f8;

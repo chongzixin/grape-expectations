@@ -3,21 +3,21 @@ if (typeof hideLoading === 'function') hideLoading();
 
 document.addEventListener('DOMContentLoaded', function() {
     hideLoading();
-
+    
     const searchQuery = document.getElementById('searchQuery');
     const resultCount = document.getElementById('resultCount');
     const wineGrid = document.getElementById('wineGrid');
     const countryFilter = document.getElementById('countryFilter');
-    const priceFilter = document.getElementById('priceFilter');
-
+    const ratingFilter = document.getElementById('ratingFilter');
+    
     const query = localStorage.getItem('currentSearch') || '';
     const allResults = JSON.parse(localStorage.getItem('searchResults') || '[]');
     let filteredResults = allResults;
-
+    
     // Update page content
     searchQuery.textContent = `Results for "${query}"`;
     resultCount.textContent = `Found ${allResults.length} wines`;
-
+    
     // Populate country filter
     const countries = [...new Set(allResults.map(wine => wine.country))].filter(Boolean);
     countries.forEach(country => {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
         option.textContent = country;
         countryFilter.appendChild(option);
     });
-
+    
     function createWineCard(wine, index) {
         const card = document.createElement('div');
         card.className = 'wine-card';
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('selectedWineIndex', index);
             window.location.href = 'wine-details.html';
         };
-
+        
         card.innerHTML = `
             <div class="wine-card-image">
                 <img src="${wine.image_url || 'images/wine-placeholder.jpg'}" alt="${wine.name || 'Wine bottle'}">
@@ -44,10 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="winery-name">${wine.winery || 'Unknown Winery'}</div>
             <div class="country-region">${wine.country || 'Unknown'}, ${wine.region || 'Unknown Region'}</div>
         `;
-
+        
         return card;
     }
-
+    
     // Display results
     function displayResults(wines) {
         wineGrid.innerHTML = '';
@@ -56,13 +56,13 @@ document.addEventListener('DOMContentLoaded', function() {
             wineGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem;">No wines found matching your criteria.</div>';
             return;
         }
-
+        
         wines.forEach((wine, index) => {
             const wineCard = createWineCard(wine, index);
             wineGrid.appendChild(wineCard);
         });
     }
-
+    
     // Filter functionality
     function applyFilters() {
         filteredResults = allResults.filter(wine => {
@@ -70,29 +70,29 @@ document.addEventListener('DOMContentLoaded', function() {
             if (countryFilter.value && wine.country !== countryFilter.value) {
                 return false;
             }
-
-            // Price filter
-            if (priceFilter.value && wine.price) {
-                const price = parseFloat(wine.price);
-                const range = priceFilter.value;
+            
+            // Rating filter
+            if (ratingFilter.value && wine.rating !== undefined && wine.rating !== null && wine.rating !== '') {
+                const rating = parseFloat(wine.rating);
+                const range = ratingFilter.value;
                 
-                if (range === '0-25' && price >= 25) return false;
-                if (range === '25-50' && (price < 25 || price >= 50)) return false;
-                if (range === '50-100' && (price < 50 || price >= 100)) return false;
-                if (range === '100+' && price < 100) return false;
+                if (range === 'lt35' && rating >= 3.5) return false;
+                if (range === '35-40' && (rating < 3.5 || rating >= 4.0)) return false;
+                if (range === '40-45' && (rating < 4.0 || rating >= 4.5)) return false;
+                if (range === 'gt45' && rating < 4.5) return false;
             }
-
+            
             return true;
         });
-
+        
         displayResults(filteredResults);
         resultCount.textContent = `Showing ${filteredResults.length} of ${allResults.length} wines`;
     }
-
+    
     // Event listeners for filters
     countryFilter.addEventListener('change', applyFilters);
-    priceFilter.addEventListener('change', applyFilters);
-
+    ratingFilter.addEventListener('change', applyFilters);
+    
     // Initial display
     displayResults(allResults);
 });

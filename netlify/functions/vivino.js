@@ -38,6 +38,7 @@ exports.handler = async function(event) {
             country: wine.region.country,
             region: wine.region.name,
             variety: wine.grapes.map(grape => grape.name).join(', '),
+            rating: wine.summary.rating,
             // price: wine.price,
             // points: wine.points,
             winery: wine.summary.winery,

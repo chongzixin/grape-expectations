@@ -25,12 +25,12 @@
                 <select id="countryFilter">
                     <option value="">All Countries</option>
                 </select>
-                <select id="priceFilter">
-                    <option value="">All Prices</option>
-                    <option value="0-25">Under $25</option>
-                    <option value="25-50">$25 - $50</option>
-                    <option value="50-100">$50 - $100</option>
-                    <option value="100+">Over $100</option>
+                <select id="ratingFilter">
+                    <option value="">All Ratings</option>
+                    <option value="lt35">Below 3.5</option>
+                    <option value="35-40">3.5 - 4.0</option>
+                    <option value="40-45">4.0 - 4.5</option>
+                    <option value="gt45">Above 4.5</option>
                 </select>
             </div>
             
@@ -43,7 +43,7 @@
     <div id="loadingIndicator" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:9999; justify-content:center; align-items:center;">
         <img src="images/champagne-loading.gif" alt="Loading..." style="width:256px;height:256px;">
     </div>
-
+    
     <script src="js/app.js"></script>
     <script src="js/results.js"></script>
 </body>
