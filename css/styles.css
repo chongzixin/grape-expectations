@@ -160,71 +160,71 @@ nav {
 
 /* Wine card grid */
 .wine-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 2rem;
-  padding: 2rem 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    padding: 2rem 0;
 }
 
 /* Wine card */
 .wine-card {
-  background: #fff;
-  width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  padding: 1.5rem 1rem 1rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: box-shadow 0.2s;
+    background: #fff;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 1.5rem 1rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: box-shadow 0.2s;
 }
 
 .wine-card:hover {
-  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
 }
 
 /* Portrait image styling */
 .wine-card-image {
-  width: 100%;
-  height: auto;          /* or a desired fixed height (e.g., 200px) */
-  display: block;
-  margin-bottom: 1rem;
-  background: #f8f8f8;
-  border-radius: 8px;
-  overflow: hidden;
+    width: 100%;
+    height: auto;          /* or a desired fixed height (e.g., 200px) */
+    display: block;
+    margin-bottom: 1rem;
+    background: #f8f8f8;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .wine-card-image img {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
 }
 
 /* Wine name */
 .wine-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0.5rem 0 0.25rem 0;
-  text-align: center;
-  color: #222;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0.25rem 0;
+    text-align: center;
+    color: #222;
 }
 
 /* Winery name */
 .winery-name {
-  font-size: 1rem;
-  color: #7a5c2e;
-  margin-bottom: 0.5rem;
-  text-align: center;
-  font-weight: 500;
+    font-size: 1rem;
+    color: #7a5c2e;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    font-weight: 500;
 }
 
 /* Country and region */
 .country-region-rating {
-  font-size: 0.95rem;
-  color: #666;
-  text-align: center;
-  margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 0.5rem;
 }
 
 .wine-card h3 {
@@ -246,27 +246,34 @@ nav {
 }
 
 /* Details Page */
+.wine-image-section {
+    text-align: center;
+    background: #f8f8f8;
+    padding: 2rem 0;
+}
+#wineImage {
+    max-width: 180px;
+    height: auto;
+    aspect-ratio: 9/20;     /* Keeps the bottle portrait */
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
 .wine-detail-container {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
     background: white;
     border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.wine-image-section {
-    background: #f8f8f8;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     padding: 2rem;
-    text-align: center;
+    flex-wrap: wrap;
 }
-
-#wineImage {
-    max-width: 200px;
-    height: auto;
-    border-radius: 10px;
-}
-
 .wine-info-section {
-    padding: 2rem;
+    flex: 1;
+    min-width: 250px;
 }
 
 #wineName {
@@ -369,6 +376,10 @@ nav {
     
     .filters select {
         min-width: 100%;
+    }
+    
+    #wineImage {
+        max-width: 90px;
     }
 }
 
