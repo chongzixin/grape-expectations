@@ -35,14 +35,13 @@ exports.handler = async function(event) {
             name: wine.name,
             image_url: wine.summary.image,
             alcohol: wine.summary.alcoholLevel,
-            country: wine.region.country,
+            country: wine.summary.country,
             region: wine.region.name,
             // variety: wine.grapes.map(grape => grape.name).join(', '),
             rating: wine.summary.rating,
-            // price: wine.price,
-            // points: wine.points,
             winery: wine.summary.winery,
             description: wine.description,
+            type: wine.summary.type,
             // tasting_notes: wine.tasting_notes,
             // food_pairing: wine.foods.map(food => food.name).join(', ')
         }));

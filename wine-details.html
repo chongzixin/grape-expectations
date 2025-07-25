@@ -18,51 +18,53 @@
         <main class="details-page">
             <div class="wine-detail-container">
                 <div class="wine-image-section">
-                    <img id="wineImage" src="images/wine-placeholder.jpg" alt="Wine bottle">
+                    <img id="wineImage" src="images/wine-placeholder.png" alt="Wine Bottle" />
                 </div>
-                
                 <div class="wine-info-section">
-                    <h2 id="wineName">Wine Name</h2>
-                    <p id="winePrice" class="price">$0</p>
+                    <div class="winery-name" id="wineryName"></div>
+                    <h1 id="wineName"></h1>
                     
-                    <div class="wine-basic-info">
-                        <div class="info-item">
-                            <strong>Country:</strong> <span id="wineCountry"></span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Region:</strong> <span id="wineRegion"></span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Variety:</strong> <span id="wineVariety"></span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Points:</strong> <span id="winePoints"></span>/100
+                    <div id="wineRating" class="wine-rating"></div>
+                    
+                    <div class="wine-meta">
+                        <div class="wine-meta-secondary">
+                            <div class="meta-item">
+                                <span class="meta-title">Type:</span>
+                                <span id="wineType" class="meta-value"></span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-title">Country:</span>
+                                <span id="wineCountry" class="meta-value"></span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-title">Region:</span>
+                                <span id="wineRegion" class="meta-value"></span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-title">Alcohol:</span>
+                                <span id="wineAlcohol" class="meta-value"></span>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="wine-description">
-                        <h3>Description</h3>
-                    </div>
-                    
+                    <div class="wine-description" id="wineDescription"></div>
                     <div class="wine-details-grid">
                         <div class="detail-card">
-                            <h4>Winery</h4>
-                            <p id="wineryName">This winery has a rich tradition of winemaking, combining traditional techniques with modern innovation.</p>
-                        </div>
-                        
-                        <div class="detail-card">
                             <h4>Tasting Notes</h4>
-                            <p id="tastingNotes">A well-balanced wine with complex flavors and elegant structure.</p>
+                            <div id="tastingNotes"></div>
                         </div>
-                        
                         <div class="detail-card">
                             <h4>Food Pairings</h4>
-                            <p id="foodPairings">Pairs excellently with a variety of dishes including grilled meats, aged cheeses, and hearty stews.</p>
+                            <div id="foodPairings"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+    
+    <div id="loadingIndicator" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:9999; justify-content:center; align-items:center;">
+        <img src="images/champagne-loading.gif" alt="Loading..." style="width:256px;height:256px;">
     </div>
     
     <script src="js/app.js"></script>
