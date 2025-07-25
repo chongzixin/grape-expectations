@@ -26,5 +26,5 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('wineAlcohol').textContent = wine.alcohol ? `${wine.alcohol}% ABV` : '';
   document.getElementById('wineDescription').textContent = wine.description || '';
   document.getElementById('foodPairings').textContent = wine.food_pairing || '';
-  document.getElementById('tastingNotes').textContent = wine.tasting_notes || '';
+  document.getElementById('tastingNotes').textContent = wine.variety || '';
 });

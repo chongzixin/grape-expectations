@@ -28,7 +28,6 @@ exports.handler = async function(event) {
         });
         
         const { items } = await client.dataset(run.defaultDatasetId).listItems();
-        console.log(`Fetched ${items.length} wines for query: ${query}`);
         
         const cachedResults = items.map(wine => ({
             id: wine.id,
@@ -38,12 +37,12 @@ exports.handler = async function(event) {
             alcohol: wine.summary.alcoholLevel,
             country: wine.summary.country,
             region: wine.region.name,
-            variety: (wine.grapes ?? []).map(grape => grape.name).join(', '),
+            variety: (wine.grapes ?? []).join(', '),
             rating: wine.summary.rating,
             winery: wine.summary.winery,
             description: wine.description,
             type: wine.summary.type,
-            food_pairing: (wine.foods ?? []).map(food => food.name).join(', ')
+            food_pairing: (wine.foods ?? []).join(', ')
         }));
         console.log(`Returning ${JSON.stringify(cachedResults)} wines as response`);
         
