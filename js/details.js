@@ -1,19 +1,15 @@
 document.addEventListener('DOMContentLoaded', async function() {
   // Get wine object and especially the id
-  const vivinoResults = JSON.parse(localStorage.getItem('searchResults') || '[]');
-  const selectedIndex = localStorage.getItem('selectedWineIndex');
-  const wine = vivinoResults[selectedIndex];
-
-  if (!wine || !wine.id) return;
+  const selectedWineUrl = localStorage.getItem('selectedWineUrl');
 
   try {
     // Call your new Netlify function with wine.id
-    const resp = await fetch(`/.netlify/functions/vivino-details?id=${wine.id}`);
+    const resp = await fetch(`/.netlify/functions/vivino-details?id=${selectedWineUrl}`);
     const details = await resp.json();
     console.log('Wine details:', details);
     hideLoading();
 
-    document.getElementById('wineImage').src = details.image_url || 'images/wine-placeholder.jpg';
+    document.getElementById('wineImage').src = details.image_url || 'images/wine-placeholder.png';
     document.getElementById('wineName').textContent = details.name || '';
     document.getElementById('wineCountry').textContent = details.country || '';
     document.getElementById('wineRegion').textContent = details.region || '';

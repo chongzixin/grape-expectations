@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = 'wine-card';
         card.onclick = () => {
             showLoading();
-            localStorage.setItem('selectedWineIndex', index);
+            localStorage.setItem('selectedWineUrl', wine.url);
             window.location.href = 'wine-details.html';
         };
         

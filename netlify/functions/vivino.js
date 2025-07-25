@@ -31,7 +31,7 @@ exports.handler = async function(event) {
         console.log(`Fetched ${items.length} wines for query: ${query}`);
         
         const cachedResults = items.map(wine => ({
-            id: wine.id,
+            url: wine.summary.url,
             name: wine.name,
             image_url: wine.summary.image,
             alcohol: wine.summary.alcoholLevel,
