@@ -34,16 +34,16 @@ exports.handler = async function(event) {
             id: wine.id,
             name: wine.name,
             image_url: wine.summary.image,
+            bottle_image_url: wine.image.variations.bottle_medium,
             alcohol: wine.summary.alcoholLevel,
             country: wine.summary.country,
             region: wine.region.name,
-            // variety: wine.grapes.map(grape => grape.name).join(', '),
+            variety: (wine.grapes ?? []).map(grape => grape.name).join(', '),
             rating: wine.summary.rating,
             winery: wine.summary.winery,
             description: wine.description,
             type: wine.summary.type,
-            // tasting_notes: wine.tasting_notes,
-            // food_pairing: wine.foods.map(food => food.name).join(', ')
+            food_pairing: (wine.foods ?? []).map(food => food.name).join(', ')
         }));
         console.log(`Returning ${JSON.stringify(cachedResults)} wines as response`);
         

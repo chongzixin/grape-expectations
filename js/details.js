@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   if (!wine) return;
   
-  document.getElementById('wineImage').src = wine.image_url || 'images/wine-placeholder.jpg';
+  document.getElementById('wineImage').src = `https:${wine.bottle_image_url}` || 'images/wine-placeholder.jpg';
   document.getElementById('wineryName').textContent = wine.winery || '';
   document.getElementById('wineName').textContent = wine.name || '';
 
