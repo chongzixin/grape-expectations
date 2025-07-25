@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(`Displaying details for wine at index ${selectedIndex}:`, wine);
   
   if (!wine) return;
+
+  // first translate the grape and food pairing IDs to names
+  console.log(wine.variety, wine.food_pairing);
+  const wineVariety = wine.variety.map(id => getNameById("grapes", id)).join(', ') || '';
+  const foodPairing = wine.food_pairing.map(id => getNameById("foods", id)).join(', ') || '';
   
   document.getElementById('wineImage').src = `https:${wine.bottle_image_url}` || 'images/wine-placeholder.jpg';
   document.getElementById('wineryName').textContent = wine.winery || '';
@@ -25,6 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('wineRegion').textContent = wine.region || '';
   document.getElementById('wineAlcohol').textContent = wine.alcohol ? `${wine.alcohol}% ABV` : '';
   document.getElementById('wineDescription').textContent = wine.description || '';
-  document.getElementById('foodPairings').textContent = wine.food_pairing || '';
-  document.getElementById('tastingNotes').textContent = wine.variety || '';
+  document.getElementById('foodPairings').textContent = foodPairing || '';
+  document.getElementById('wineVariety').textContent = wineVariety || '';
 });
