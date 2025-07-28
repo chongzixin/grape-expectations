@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const wineVariety = wine.variety.map(id => getNameById("grapes", id)).join(', ') || '';
   const foodPairing = wine.food_pairing.map(id => getNameById("foods", id)).join(', ') || '';
   
-  document.getElementById('wineImage').src = `https:${wine.bottle_image_url}` || 'images/wine-placeholder.jpg';
+  document.getElementById('wineImage').src = wine.bottle_image_url?.trim() ? `https:${wine.bottle_image_url}` : 'images/wine-placeholder.png';;
   document.getElementById('wineryName').textContent = wine.winery || '';
   document.getElementById('wineName').textContent = wine.name || '';
 
