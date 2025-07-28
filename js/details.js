@@ -1,4 +1,7 @@
 if (typeof hideLoading === 'function') hideLoading();
+window.addEventListener('pageshow', function() {
+    if (typeof hideLoading === 'function') hideLoading();
+});
 
 document.addEventListener('DOMContentLoaded', function() {
   hideLoading();
