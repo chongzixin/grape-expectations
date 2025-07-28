@@ -10,9 +10,9 @@ exports.handler = async function(event) {
         const { query } = JSON.parse(event.body);
         
         console.log(`Received search query: ${query}`);
-        const run = await client.actor('canadesk/vivino').call({
+        const run = await client.actor('canadesk/vivino-bulk').call({
             process: 'gs',
-            keyword: query,
+            keywords: [query],
             market: 'SG',
             maximum: 200,
             pricemax: 1000,
@@ -23,25 +23,23 @@ exports.handler = async function(event) {
                 apifyProxyGroups: [
                     "RESIDENTIAL"
                 ]
-            },
-            
+            }, 
         });
         
-        const { items } = await client.dataset(run.defaultDatasetId).listItems();
-        
-        const cachedResults = items.map(wine => ({
+        const response = await client.dataset(run.defaultDatasetId).listItems();
+        const cachedResults = (response.items[0]?.data || []).map(wine => ({
             id: wine.id,
             name: wine.name,
             image_url: wine.summary.image,
             bottle_image_url: wine.image.variations.bottle_medium,
-            alcohol: wine.summary.alcoholLevel,
-            country: wine.summary.country,
-            region: wine.region.name,
+            alcohol: wine.summary?.alcoholLevel || 0,
+            country: wine.summary?.country ?? 'Unknown Country',
+            region: wine.region?.name ?? 'Unknown Region',
             variety: (wine.grapes ?? []),
-            rating: wine.summary.rating,
-            winery: wine.summary.winery,
+            rating: wine.summary?.rating ?? 0,
+            winery: wine.summary?.winery ?? 'Unknown Winery',
             description: wine.description,
-            type: wine.summary.type,
+            type: wine.summary?.type ?? 'Unknown Type',
             food_pairing: (wine.foods ?? [])
         }));
         console.log(`Returning ${JSON.stringify(cachedResults)} wines as response`);
