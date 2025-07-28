@@ -2,6 +2,7 @@
 if (typeof hideLoading === 'function') hideLoading();
 window.addEventListener('pageshow', function() {
     if (typeof hideLoading === 'function') hideLoading();
+    searchBtn.disabled = false; // Ensure search button is enabled on page load
 });
 
 document.addEventListener('DOMContentLoaded', async function() {

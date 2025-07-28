@@ -22,7 +22,8 @@ exports.handler = async function(event) {
                 useApifyProxy: true,
                 apifyProxyGroups: [
                     "RESIDENTIAL"
-                ]
+                ],
+                apifyProxyCountry: 'SG'
             }, 
         });
         
