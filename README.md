@@ -1,10 +1,10 @@
 # Grape Expectations
 
-Your Singaporean sommelier app that recommends what to drink based on what is in the cellar and what food you are having.
+Your Singaporean sommelier web app (supports both desktop and mobile) that recommends what to drink based on what is in the cellar and what food you are having.
 
 ## Database
 
-As this is a prototype, a Google Sheets will be used as a database so that it's easy to view records.
+As this is a prototype, a Google Sheets will be used as a database so that it's easy to view records. Sample below. Full list can be found at https://docs.google.com/spreadsheets/d/1yeu5nTSClzdWkjqboPPGoU627w7r5HytGTisSj9CDf0/edit?usp=drivesdk. 
 
 | Name | Winery | Vintage | Price | Inventory | Style | Country | Region | Sub-Region | Type |
 |---|---|---|---|---|---|---|---|---|---|
@@ -16,6 +16,8 @@ As this is a prototype, a Google Sheets will be used as a database so that it's 
 | Cuvee St-Denis Brut Champagne Grand Cru | Varnier Fanniere | NV | - | 1 | Chardonnay | France | Champagne | Champagne Grand Cru | Sparkling |
 
 ## Features
+
+The application lands on a page that shows cellar analytics and list of wines in cellar. Similar to the Perplexity app, a text box floats at the bottom of the screen so that the user can ask for wine recommendations. 
 
 ### Cellar Management
 
@@ -37,13 +39,12 @@ As this is a prototype, a Google Sheets will be used as a database so that it's 
 
 ### Wine Pairing Recommendations
 
+- Powered by Perplexity API. 
 - Conversational based on budget (mood, occasion) and food pairing. (e.g. preferably light red daily drinking bottle to pair with pizza)
 - Recommend up to 3 bottles from cellar ideally with different varietals, 2 best recommendations based on grape varietals that may not be in cellar.
 - For each recommendation, explain any interesting history behind the winery or winemaker, and why the bottle will pair well with the food based on WSET standards
 
 ## Features to consider
-
-- Add wines by uploading receipt
 
 ## History of Pivoting Points for the app
 
