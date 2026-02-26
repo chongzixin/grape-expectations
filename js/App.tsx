@@ -396,10 +396,10 @@ RECOMMENDATION RULES:
   };
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, background: '#0a0706' }}>
-      <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 24, color: '#c9a84c', letterSpacing: 2 }}>🍷 Grape Expectations</div>
-      <div className="spin" style={{ width: 32, height: 32, borderWidth: 3 }} />
-      <div style={{ color: '#8a7a6a', fontFamily: 'Lato,sans-serif', fontSize: 13 }}>Decanting your cellar...</div>
+    <div className="loading-screen">
+      <div className="loading-title">🍷 Grape Expectations</div>
+      <img src="/images/champagne-loading.gif" alt="Loading..." className="loading-gif" />
+      <div className="loading-text">Decanting your cellar...</div>
     </div>
   );
 
@@ -530,7 +530,7 @@ RECOMMENDATION RULES:
             {filteredWines.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>🍾</div>
-                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 20 }}>No wines found</div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>No wines found</div>
                 <div style={{ fontSize: 13, marginTop: 6 }}>Adjust filters or add wines to your cellar.</div>
               </div>
             ) : (
@@ -539,7 +539,7 @@ RECOMMENDATION RULES:
                   <tr>
                     <th onClick={() => setSort('name')}>Wine {sort === 'name' && '↑'}</th>
                     <th onClick={() => setSort('type')}>Type {sort === 'type' && '↑'}</th>
-                    <th onClick={() => setSort('vintage')}>Vintage {sort === 'vintage' && '↑'}</th>
+                    <th onClick={() => setSort('vintage')} className="hide-m">Vintage {sort === 'vintage' && '↑'}</th>
                     <th className="hide-m">Region</th>
                     <th onClick={() => setSort('price')} className="hide-m">Price {sort === 'price' && '↑'}</th>
                     <th>Bottles</th>
@@ -556,7 +556,7 @@ RECOMMENDATION RULES:
                         <Badge type={wine.type} />
                         {wine.style && <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3 }}>{wine.style}</div>}
                       </td>
-                      <td style={{ color: 'var(--parch)', fontSize: 14, fontFamily: "'Cormorant Garamond',serif" }}>{wine.vintage || '—'}</td>
+                      <td className="hide-m" style={{ color: 'var(--parch)', fontSize: 14 }}>{wine.vintage || '—'}</td>
                       <td className="hide-m" style={{ fontSize: 12, color: 'var(--muted)' }}>
                         {FLAGS[wine.country] || ''} {wine.subRegion || wine.region || wine.country || '—'}
                       </td>
@@ -585,7 +585,7 @@ RECOMMENDATION RULES:
           <div className="ge-chat-msgs">
             {chatMessages.length === 0 && (
               <div style={{ paddingBottom: 8 }}>
-                <div style={{ textAlign: 'center', color: 'var(--muted)', fontFamily: "'Cormorant Garamond',serif", fontSize: 17, padding: '12px 0 6px' }}>
+                <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 15, fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
                   ✦ What shall we open tonight? ✦
                 </div>
                 <QuickPrompts />
@@ -652,7 +652,7 @@ RECOMMENDATION RULES:
                 {!photoPreview ? (
                   <div className="photo-drop" onClick={() => fileInputRef.current?.click()}>
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, marginBottom: 6 }}>Scan Your Wine Label</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Scan Your Wine Label</div>
                     <div style={{ fontSize: 12 }}>Click to upload a photo — AI will extract wine details automatically</div>
                     <div style={{ fontSize: 11, marginTop: 8, opacity: .6 }}>Supports wine labels, bottle photos & invoices</div>
                   </div>

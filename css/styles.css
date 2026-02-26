@@ -26,7 +26,7 @@
 }
 
 html, body {
-  background: var(--bg);
+  background: var(--bg) url('/images/background-img.png') center / cover fixed;
   color: var(--parch);
   overflow-x: hidden;
 }
@@ -43,6 +43,7 @@ html, body {
 .ge {
   min-height: 100vh;
   font-family: 'Lato', sans-serif;
+  background: rgba(10, 7, 6, 0.82);
 }
 
 .ge-hdr {
@@ -60,9 +61,9 @@ html, body {
 }
 
 .ge-logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 22px;
-  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
   letter-spacing: 1.5px;
   color: var(--gold);
   display: flex;
@@ -110,9 +111,9 @@ html, body {
 }
 
 .ge-stat-v {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 26px;
-  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
   color: var(--gold);
   line-height: 1;
   white-space: nowrap;
@@ -247,8 +248,9 @@ html, body {
 .ge-tbl td { padding: 13px 14px; vertical-align: middle; }
 
 .wn {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--parch);
   line-height: 1.2;
 }
@@ -347,9 +349,10 @@ html, body {
 }
 
 .ai-hdr {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   color: var(--gold);
   margin-bottom: 12px;
 }
@@ -368,8 +371,11 @@ html, body {
 }
 
 .brk-ttl {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   color: var(--gold);
   margin-bottom: 12px;
 }
@@ -514,9 +520,10 @@ html, body {
 }
 
 .ge-modal-ttl {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
-  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   color: var(--gold);
   margin-bottom: 20px;
 }
@@ -642,6 +649,37 @@ html, body {
 
 .ornament { color: var(--gold); opacity: 0.5; font-size: 12px; letter-spacing: 2px; }
 
+/* ─── Loading Screen ─────────────────────────────────────────────── */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  background: rgba(10, 7, 6, 0.82);
+}
+
+.loading-gif {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+.loading-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+.loading-text {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.8px;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .ge-main { padding: 16px 16px 140px; }
@@ -652,4 +690,10 @@ html, body {
   .ge-stat-v { font-size: 20px; }
   .fg { grid-template-columns: 1fr; }
   .ff.full { grid-column: unset; }
+
+  /* Table: fixed layout so Bottles column always gets guaranteed width */
+  .ge-tbl { table-layout: fixed; }
+  .ge-tbl td { padding: 10px 8px; }
+  .ge-tbl th:nth-child(2), .ge-tbl td:nth-child(2) { width: 72px; }
+  .ge-tbl th:last-child,   .ge-tbl td:last-child   { width: 88px; }
 }
