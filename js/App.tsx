@@ -345,9 +345,9 @@ RECOMMENDATION RULES:
 
   const QuickPrompts = () => {
     const prompts = [
-      'Light red for sushi tonight',
+      'Light red for zichar tonight',
       'Best bottle for a special occasion',
-      'White wine for spicy Thai food',
+      'White wine with sambal nasi lemak',
       'Aperitif before a long dinner',
     ];
     return (
@@ -378,7 +378,7 @@ RECOMMENDATION RULES:
           <span>🍷</span>
           <div>
             Grape Expectations
-            <small>Your Personal Sommelier</small>
+            <small>Your Singaporean Sommelier</small>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -584,7 +584,7 @@ RECOMMENDATION RULES:
             <input
               ref={chatInputRef}
               className="ge-ci"
-              placeholder={chatOpen ? 'Ask your sommelier...' : '🍷 Ask for a wine recommendation...'}
+              placeholder={chatOpen ? 'Ask your sommelier...' : '🍷 Ask for your local dish pairing...'}
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onFocus={() => setChatOpen(true)}
