@@ -26,7 +26,7 @@ The application lands on a page that shows cellar analytics and list of wines in
 
 ### Cellar Analytics
 
-- Use Perplexity AI to give a summary of the wines in the cellar.
+- Use Anthropic API to give a summary of the wines in the cellar.
 - Also list the following
   - Total Number of Bottles
   - Total Unique Bottles
@@ -39,7 +39,7 @@ The application lands on a page that shows cellar analytics and list of wines in
 
 ### Wine Pairing Recommendations
 
-- Powered by Perplexity API. 
+- Powered by Anthropic API.
 - Conversational based on budget (mood, occasion) and food pairing. (e.g. preferably light red daily drinking bottle to pair with pizza)
 - Recommend up to 3 bottles from cellar ideally with different varietals, 2 best recommendations based on grape varietals that may not be in cellar.
 - For each recommendation, explain any interesting history behind the winery or winemaker, and why the bottle will pair well with the food based on WSET standards
