@@ -1,10 +1,12 @@
 {
-  "name": "wine-explorer",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "grape-expectations",
+  "version": "2.0.0",
+  "description": "Singaporean Cellar Sommelier",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "start": "npx netlify dev",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
@@ -13,12 +15,18 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/chongzixin/wine-explorer/issues"
-  },
-  "homepage": "https://github.com/chongzixin/wine-explorer#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.0",
     "apify-client": "^2.12.6",
-    "dotenv": "^17.2.0"
+    "dotenv": "^17.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.2"
   }
 }
