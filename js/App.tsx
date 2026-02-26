@@ -5,9 +5,6 @@ import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm } f
    GRAPE EXPECTATIONS — Singaporean Cellar Sommelier
 ═══════════════════════════════════════════════════════════════════ */
 
-const SHEET_CSV =
-  'https://docs.google.com/spreadsheets/d/1yeu5nTSClzdWkjqboPPGoU627w7r5HytGTisSj9CDf0/export?format=csv&gid=0';
-
 const SAMPLE_WINES: Wine[] = [
   { id: 's1', name: 'Vosne-Romanee La Croix Blanche', winery: 'Domaine Chevillon-Chezeaux', vintage: '2022', price: null, inventory: 1, style: 'Pinot Noir', country: 'France', region: 'Burgundy', subRegion: 'Vosne-Romanee', type: 'Red' },
   { id: 's2', name: 'Vosne-Romanee 1er Cru Les Rouges', winery: 'Bruno Desaunay-Bissey', vintage: '2013', price: 170, inventory: 1, style: 'Pinot Noir', country: 'France', region: 'Burgundy', subRegion: 'Vosne-Romanee', type: 'Red' },
@@ -33,43 +30,6 @@ const TYPE_STYLE: Record<string, TypeStyle> = {
   Dessert:   { dot: '#d4a45a', bg: 'rgba(139,90,26,0.2)',   border: 'rgba(180,120,50,0.4)',  text: '#f5d4aa' },
   Fortified: { dot: '#8a5ad4', bg: 'rgba(90,26,139,0.2)',   border: 'rgba(120,50,180,0.4)', text: '#c4aaf5' },
 };
-
-/* ─── CSV Parser ────────────────────────────────────────────────── */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let cur = '', inQ = false;
-  for (const c of line) {
-    if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
-    else cur += c;
-  }
-  result.push(cur.trim());
-  return result;
-}
-
-function parseCSV(text: string): Wine[] {
-  const rows = text.split('\n').filter(r => r.trim());
-  if (rows.length < 2) return [];
-  const headers = parseCSVLine(rows[0]);
-  return rows.slice(1).map((row, i) => {
-    const cols = parseCSVLine(row);
-    const w: Wine = { id: `sheet_${i}`, name: '', winery: '', vintage: '', price: null, inventory: 0, style: '', country: '', region: '', subRegion: '', type: '' };
-    headers.forEach((h, j) => {
-      const v = (cols[j] || '').trim();
-      if (h === 'Name') w.name = v;
-      else if (h === 'Winery') w.winery = v;
-      else if (h === 'Vintage') w.vintage = v;
-      else if (h === 'Price') w.price = v && v !== '-' && v !== '' ? parseFloat(v.replace(/[^0-9.]/g, '')) : null;
-      else if (h === 'Inventory') w.inventory = parseInt(v) || 0;
-      else if (h === 'Style') w.style = v;
-      else if (h === 'Country') w.country = v;
-      else if (h === 'Region') w.region = v;
-      else if (h === 'Sub-Region') w.subRegion = v;
-      else if (h === 'Type') w.type = v;
-    });
-    return w;
-  }).filter(w => w.name);
-}
 
 /* ─── Analytics ─────────────────────────────────────────────────── */
 function computeStats(wines: Wine[]): Stats {
@@ -192,10 +152,9 @@ export default function GrapeExpectations() {
 
     (async () => {
       try {
-        const res = await fetch(SHEET_CSV);
+        const res = await fetch('/.netlify/functions/sheets');
         if (!res.ok) throw new Error();
-        const text = await res.text();
-        const parsed = parseCSV(text);
+        const parsed = await res.json() as Wine[];
         if (parsed.length > 0) { setWines(parsed); setLoading(false); return; }
         throw new Error();
       } catch {
@@ -237,15 +196,23 @@ export default function GrapeExpectations() {
 
   /* ─── Inventory ─────────────────────────────────────────────── */
   const updateInventory = useCallback((id: string, delta: number) => {
-    setOverrides(prev => {
-      const wine = allWines.find(w => w.id === id);
-      const cur = prev[id] !== undefined ? prev[id] : (wine?.inventory || 0);
-      const next = Math.max(0, cur + delta);
-      const updated = { ...prev, [id]: next };
-      storageSet('ge_overrides', updated);
-      return updated;
-    });
-  }, [allWines]);
+    const wine = allWines.find(w => w.id === id);
+    const cur = overrides[id] !== undefined ? overrides[id] : (wine?.inventory || 0);
+    const next = Math.max(0, cur + delta);
+    const updated = { ...overrides, [id]: next };
+    setOverrides(updated);
+    storageSet('ge_overrides', updated);
+
+    // Sync back to Google Sheets for sheet-sourced wines
+    if (id.startsWith('sheet_')) {
+      const wineIndex = parseInt(id.replace('sheet_', ''), 10);
+      fetch('/.netlify/functions/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wineIndex, inventory: next }),
+      }).catch(console.error);
+    }
+  }, [allWines, overrides]);
 
   /* ─── AI Summary ────────────────────────────────────────────── */
   const loadSummary = async () => {
