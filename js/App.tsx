@@ -505,8 +505,8 @@ RECOMMENDATION RULES:
                 <thead>
                   <tr>
                     <th onClick={() => setSort('name')}>Wine {sort === 'name' && '↑'}</th>
-                    <th onClick={() => setSort('type')}>Type {sort === 'type' && '↑'}</th>
-                    <th onClick={() => setSort('vintage')} className="hide-m">Vintage {sort === 'vintage' && '↑'}</th>
+                    <th onClick={() => setSort('type')} className="hide-m">Type {sort === 'type' && '↑'}</th>
+                    <th onClick={() => setSort('vintage')}>Vintage {sort === 'vintage' && '↑'}</th>
                     <th className="hide-m">Region</th>
                     <th onClick={() => setSort('price')} className="hide-m">Price {sort === 'price' && '↑'}</th>
                     <th>Bottles</th>
@@ -519,11 +519,11 @@ RECOMMENDATION RULES:
                         <div className="wn">{wine.name}</div>
                         <div className="ww">{wine.winery}</div>
                       </td>
-                      <td>
+                      <td className="hide-m">
                         <Badge type={wine.type} />
                         {wine.style && <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3 }}>{wine.style}</div>}
                       </td>
-                      <td className="hide-m" style={{ color: 'var(--parch)', fontSize: 14 }}>{wine.vintage || '—'}</td>
+                      <td style={{ color: 'var(--parch)', fontSize: 14 }}>{wine.vintage || '—'}</td>
                       <td className="hide-m" style={{ fontSize: 12, color: 'var(--muted)' }}>
                         {FLAGS[wine.country] || ''} {wine.subRegion || wine.region || wine.country || '—'}
                       </td>

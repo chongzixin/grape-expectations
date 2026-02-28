@@ -694,6 +694,6 @@ html, body {
   /* Table: fixed layout so Bottles column always gets guaranteed width */
   .ge-tbl { table-layout: fixed; }
   .ge-tbl td { padding: 10px 8px; }
-  .ge-tbl th:nth-child(2), .ge-tbl td:nth-child(2) { width: 72px; }
+  .ge-tbl th:nth-child(3), .ge-tbl td:nth-child(3) { width: 72px; }
   .ge-tbl th:last-child,   .ge-tbl td:last-child   { width: 88px; }
 }
