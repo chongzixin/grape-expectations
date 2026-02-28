@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm } from './types';
+import champagneGif from '../images/champagne-loading.gif';
 
 /* ═══════════════════════════════════════════════════════════════════
    GRAPE EXPECTATIONS — Singaporean Cellar Sommelier
@@ -365,7 +366,7 @@ RECOMMENDATION RULES:
   if (loading) return (
     <div className="loading-screen">
       <div className="loading-title">🍷 Grape Expectations</div>
-      <img src="/images/champagne-loading.gif" alt="Loading..." className="loading-gif" />
+      <img src={champagneGif} alt="Loading..." className="loading-gif" />
       <div className="loading-text">Decanting your cellar...</div>
     </div>
   );
