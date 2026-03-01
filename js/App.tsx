@@ -666,7 +666,7 @@ RECOMMENDATION RULES:
 
             {addTab === 'photo' && (
               <div>
-                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                   onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
                 {!photoPreview ? (
                   <div className="photo-drop" onClick={() => fileInputRef.current?.click()}>
