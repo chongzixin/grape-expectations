@@ -597,6 +597,85 @@ html, body {
   color: var(--parch);
 }
 
+/* ─── Wine Preview Card ──────────────────────────────────────────── */
+.wine-preview-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.wpc-scan-banner {
+  font-size: 11px;
+  color: var(--gold);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.3px;
+}
+
+.wpc-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.wpc-field { display: flex; flex-direction: column; }
+.wpc-field.wpc-full { grid-column: 1 / -1; }
+
+.wpc-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.wpc-actions .ge-btn {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  justify-content: center;
+}
+
+/* ─── Scan Pagination ────────────────────────────────────────────── */
+.scan-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.scan-pagination-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.3px;
+}
+
+.scan-page-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--parch);
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 16px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+
+.scan-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.scan-page-btn:not(:disabled):hover { border-color: var(--gold-dim); }
+
 /* ─── Spinner ────────────────────────────────────────────────────── */
 .spin {
   width: 18px;
@@ -696,4 +775,10 @@ html, body {
   .ge-tbl td { padding: 10px 8px; }
   .ge-tbl th:nth-child(3), .ge-tbl td:nth-child(3) { width: 72px; }
   .ge-tbl th:last-child,   .ge-tbl td:last-child   { width: 88px; }
+
+  /* Preview card: single column on mobile */
+  .wpc-fields { grid-template-columns: 1fr; }
+  .wpc-field.wpc-full { grid-column: unset; }
+  .wpc-actions { flex-direction: column; }
+  .wpc-actions .ge-btn { width: 100%; }
 }
