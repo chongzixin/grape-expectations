@@ -144,8 +144,7 @@ export default function GrapeExpectations() {
 
   const chatEndRef    = useRef<HTMLDivElement>(null);
   const chatInputRef  = useRef<HTMLInputElement>(null);
-  const fileInputRef  = useRef<HTMLInputElement>(null);   // camera
-  const galleryInputRef = useRef<HTMLInputElement>(null); // gallery/file picker
+  const fileInputRef  = useRef<HTMLInputElement>(null);
 
   /* ─── Load Data ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -667,21 +666,14 @@ RECOMMENDATION RULES:
 
             {addTab === 'photo' && (
               <div>
-                {/* Camera: opens device camera directly */}
-                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
-                  onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
-                {/* Gallery: opens file/photo picker */}
-                <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                   onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
                 {!photoPreview ? (
-                  <div className="photo-drop">
+                  <div className="photo-drop" onClick={() => fileInputRef.current?.click()}>
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Your Wine Label</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Supports wine labels, bottle photos & invoices</div>
-                    <div className="scan-upload-btns">
-                      <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
-                      <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>
-                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Scan Your Wine Label</div>
+                    <div style={{ fontSize: 12 }}>Tap to take a photo or choose from your gallery</div>
+                    <div style={{ fontSize: 11, marginTop: 8, opacity: .6 }}>Supports wine labels, bottle photos & invoices</div>
                   </div>
                 ) : (
                   <div>
