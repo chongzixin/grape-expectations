@@ -134,11 +134,13 @@ export default function GrapeExpectations() {
   const [addTab, setAddTab]         = useState<'photo' | 'manual'>('photo');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [scanLoading, setScanLoading]   = useState(false);
-  const [scannedWine, setScannedWine]   = useState<Partial<Wine> | null>(null);
+  const [scannedWines, setScannedWines] = useState<Partial<Wine>[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [newWine, setNewWine] = useState<NewWineForm>({
     name: '', winery: '', vintage: '', price: '', inventory: '1',
     style: '', country: '', region: '', subRegion: '', type: 'Red',
   });
+  const scannedWine = scannedWines[previewIndex] ?? null;
 
   const chatEndRef   = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -277,27 +279,41 @@ RECOMMENDATION RULES:
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages, chatLoading]);
 
   /* ─── Photo Scan ────────────────────────────────────────────── */
+  const populateFormFromWine = (wine: Partial<Wine>) => {
+    setNewWine(p => ({
+      ...p,
+      ...(Object.fromEntries(
+        Object.entries(wine as Record<string, unknown>).map(([k, v]) => [k, v ?? ''])
+      ) as Partial<NewWineForm>),
+      inventory: '1',
+    }));
+  };
+
+  const closeModal = () => {
+    setShowAdd(false);
+    setNewWine({ name: '', winery: '', vintage: '', price: '', inventory: '1', style: '', country: '', region: '', subRegion: '', type: 'Red' });
+    setPhotoPreview(null);
+    setScannedWines([]);
+    setPreviewIndex(0);
+    setAddTab('photo');
+  };
+
   const handlePhoto = async (file: File) => {
     setPhotoPreview(URL.createObjectURL(file));
     setScanLoading(true);
-    setScannedWine(null);
+    setScannedWines([]);
+    setPreviewIndex(0);
     try {
       const imgData = await fileToBase64(file);
       const raw = await callClaude({
         imageData: imgData,
-        messages: [{ role: 'user', content: `Analyse this wine label/invoice. Return ONLY a raw JSON object (no markdown, no backticks) with these fields:\n{"name":"wine name","winery":"producer name","vintage":"year or NV","price":null or number,"style":"grape variety","country":"country","region":"region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified"}\nUse null for unknown fields. Return ONLY the JSON.` }],
-        maxTokens: 500,
+        messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Invoice with multiple wines → one object per wine line item\n\nEach object: {"name":"wine name","winery":"producer/chateau name","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified"}\n\nUse null for unknown fields. Return ONLY the JSON array.` }],
+        maxTokens: 1500,
       });
-      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()) as Partial<Wine>;
-      setScannedWine(parsed);
-      setNewWine(p => ({
-        ...p,
-        ...(Object.fromEntries(
-          Object.entries(parsed as Record<string, unknown>).map(([k, v]) => [k, v ?? ''])
-        ) as Partial<NewWineForm>),
-        inventory: p.inventory || '1',
-      }));
-      setAddTab('manual');
+      let parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      if (!Array.isArray(parsed)) parsed = [parsed];
+      setScannedWines(parsed as Partial<Wine>[]);
+      populateFormFromWine(parsed[0]);
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -305,7 +321,38 @@ RECOMMENDATION RULES:
     setScanLoading(false);
   };
 
-  /* ─── Add Wine ──────────────────────────────────────────────── */
+  /* ─── Preview Confirm / Skip ────────────────────────────────── */
+  const advancePreview = (nextIdx: number) => {
+    if (nextIdx >= scannedWines.length) {
+      closeModal();
+    } else {
+      setPreviewIndex(nextIdx);
+      populateFormFromWine(scannedWines[nextIdx]);
+    }
+  };
+
+  const confirmCurrentWine = () => {
+    if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
+    const wine: Wine = {
+      id: `local_${Date.now()}`,
+      name: newWine.name.trim(),
+      winery: newWine.winery.trim(),
+      vintage: newWine.vintage.trim(),
+      price: newWine.price ? parseFloat(newWine.price) : null,
+      inventory: parseInt(newWine.inventory) || 1,
+      style: newWine.style.trim(),
+      country: newWine.country.trim(),
+      region: newWine.region.trim(),
+      subRegion: newWine.subRegion.trim(),
+      type: newWine.type || 'Red',
+    };
+    const updated = [...localWines, wine];
+    setLocalWines(updated);
+    storageSet('ge_local_wines', updated);
+    advancePreview(previewIndex + 1);
+  };
+
+  /* ─── Add Wine (manual entry form) ─────────────────────────── */
   const addWine = () => {
     if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
     const wine: Wine = {
@@ -324,11 +371,15 @@ RECOMMENDATION RULES:
     const updated = [...localWines, wine];
     setLocalWines(updated);
     storageSet('ge_local_wines', updated);
-    setShowAdd(false);
-    setNewWine({ name: '', winery: '', vintage: '', price: '', inventory: '1', style: '', country: '', region: '', subRegion: '', type: 'Red' });
-    setPhotoPreview(null);
-    setScannedWine(null);
-    setAddTab('photo');
+    if (scannedWines.length > 0 && previewIndex < scannedWines.length - 1) {
+      // Multi-wine flow: return to preview for next wine
+      const nextIdx = previewIndex + 1;
+      setPreviewIndex(nextIdx);
+      populateFormFromWine(scannedWines[nextIdx]);
+      setAddTab('photo');
+    } else {
+      closeModal();
+    }
   };
 
   /* ─── Render Helpers ────────────────────────────────────────── */
@@ -600,11 +651,11 @@ RECOMMENDATION RULES:
 
       {/* ── ADD WINE MODAL ── */}
       {showAdd && (
-        <div className="ge-modal-bg" onClick={e => e.target === e.currentTarget && setShowAdd(false)}>
+        <div className="ge-modal-bg" onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className="ge-modal">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div className="ge-modal-ttl">✦ Add to Cellar</div>
-              <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}>×</button>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}>×</button>
             </div>
 
             <div className="mtabs">
@@ -615,35 +666,109 @@ RECOMMENDATION RULES:
 
             {addTab === 'photo' && (
               <div>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-                  onChange={e => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
+                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                  onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
                 {!photoPreview ? (
                   <div className="photo-drop" onClick={() => fileInputRef.current?.click()}>
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
                     <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Scan Your Wine Label</div>
-                    <div style={{ fontSize: 12 }}>Click to upload a photo — AI will extract wine details automatically</div>
+                    <div style={{ fontSize: 12 }}>Tap to take a photo or upload — AI will extract wine details automatically</div>
                     <div style={{ fontSize: 11, marginTop: 8, opacity: .6 }}>Supports wine labels, bottle photos & invoices</div>
                   </div>
                 ) : (
                   <div>
-                    <img src={photoPreview} style={{ width: '100%', borderRadius: 8, maxHeight: 220, objectFit: 'contain', background: 'var(--card)', marginBottom: 12 }} alt="Wine" />
-                    {scanLoading ? (
+                    <img src={photoPreview} style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'contain', background: 'var(--card)', marginBottom: 12 }} alt="Wine" />
+                    {scanLoading && (
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13, padding: '8px 0' }}>
                         <div className="spin" /> Scanning with AI vision...
                       </div>
-                    ) : scannedWine ? (
-                      <div style={{ background: 'rgba(139,26,46,0.12)', border: '1px solid rgba(139,26,46,0.3)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--parch)', marginBottom: 12 }}>
-                        ✓ <strong style={{ color: 'var(--gold)' }}>{scannedWine.name}</strong> detected — review in Manual Entry tab
-                      </div>
-                    ) : null}
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="ge-btn btn-o" onClick={() => { setPhotoPreview(null); setScannedWine(null); fileInputRef.current?.click(); }}>
-                        Try another
-                      </button>
-                      {scannedWine && !scanLoading && (
-                        <button className="ge-btn btn-g" onClick={() => setAddTab('manual')}>Review & Save →</button>
-                      )}
-                    </div>
+                    )}
+                    {!scanLoading && scannedWines.length > 0 && (() => {
+                      const isMulti = scannedWines.length > 1;
+                      return (
+                        <>
+                          {isMulti && (
+                            <div className="scan-pagination">
+                              <button
+                                className="scan-page-btn"
+                                disabled={previewIndex === 0}
+                                onClick={() => { const i = previewIndex - 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); }}
+                              >←</button>
+                              <span className="scan-pagination-label">Wine {previewIndex + 1} of {scannedWines.length}</span>
+                              <button
+                                className="scan-page-btn"
+                                disabled={previewIndex === scannedWines.length - 1}
+                                onClick={() => { const i = previewIndex + 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); }}
+                              >→</button>
+                            </div>
+                          )}
+                          <div className="wine-preview-card">
+                            <div className="wpc-scan-banner">✦ AI detected — review and edit if needed</div>
+                            <div className="wpc-fields">
+                              <div className="wpc-field wpc-full">
+                                <label className="fl">Wine Name *</label>
+                                <input className="fi" value={newWine.name} onChange={e => setNewWine(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Chambolle-Musigny" />
+                              </div>
+                              <div className="wpc-field wpc-full">
+                                <label className="fl">Winery / Producer</label>
+                                <input className="fi" value={newWine.winery} onChange={e => setNewWine(p => ({ ...p, winery: e.target.value }))} placeholder="e.g. Domaine Mugnier" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Vintage</label>
+                                <input className="fi" value={newWine.vintage} onChange={e => setNewWine(p => ({ ...p, vintage: e.target.value }))} placeholder="e.g. 2019 or NV" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Type</label>
+                                <select className="fi" style={{ cursor: 'pointer' }} value={newWine.type} onChange={e => setNewWine(p => ({ ...p, type: e.target.value }))}>
+                                  {['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'].map(t => <option key={t}>{t}</option>)}
+                                </select>
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Price (S$)</label>
+                                <input className="fi" type="number" value={newWine.price} onChange={e => setNewWine(p => ({ ...p, price: e.target.value }))} placeholder="—" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Varietal / Style</label>
+                                <input className="fi" value={newWine.style} onChange={e => setNewWine(p => ({ ...p, style: e.target.value }))} placeholder="e.g. Pinot Noir" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Country</label>
+                                <input className="fi" value={newWine.country} onChange={e => setNewWine(p => ({ ...p, country: e.target.value }))} placeholder="e.g. France" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Region</label>
+                                <input className="fi" value={newWine.region} onChange={e => setNewWine(p => ({ ...p, region: e.target.value }))} placeholder="e.g. Burgundy" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Sub-Region</label>
+                                <input className="fi" value={newWine.subRegion} onChange={e => setNewWine(p => ({ ...p, subRegion: e.target.value }))} placeholder="e.g. Gevrey-Chambertin" />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Bottles</label>
+                                <div className="inv">
+                                  <button className="ivb" onClick={() => setNewWine(p => ({ ...p, inventory: String(Math.max(1, parseInt(p.inventory) - 1)) }))}>−</button>
+                                  <span className="ivc">{newWine.inventory}</span>
+                                  <button className="ivb" onClick={() => setNewWine(p => ({ ...p, inventory: String(parseInt(p.inventory) + 1) }))}>+</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="wpc-actions">
+                            <button className="ge-btn btn-o" onClick={() => { setPhotoPreview(null); setScannedWines([]); setPreviewIndex(0); fileInputRef.current?.click(); }}>
+                              Try another
+                            </button>
+                            {isMulti && (
+                              <button className="ge-btn btn-o" onClick={() => advancePreview(previewIndex + 1)}>
+                                ✗ Skip
+                              </button>
+                            )}
+                            <button className="ge-btn btn-g" onClick={confirmCurrentWine}>
+                              ✓ {isMulti ? 'Add Wine' : 'Add to Cellar'}
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -653,7 +778,9 @@ RECOMMENDATION RULES:
               <div>
                 {scannedWine && (
                   <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--gold)', marginBottom: 16 }}>
-                    ✦ Pre-filled from label scan — please verify details
+                    {scannedWines.length > 1
+                      ? `✦ Wine ${previewIndex + 1} of ${scannedWines.length} — verify and add to cellar`
+                      : '✦ Pre-filled from label scan — please verify details'}
                   </div>
                 )}
                 <div className="fg">
@@ -701,7 +828,10 @@ RECOMMENDATION RULES:
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-                  <button className="ge-btn btn-o" onClick={() => setShowAdd(false)}>Cancel</button>
+                  {scannedWines.length > 0
+                    ? <button className="ge-btn btn-o" onClick={() => setAddTab('photo')}>← Back to Preview</button>
+                    : <button className="ge-btn btn-o" onClick={closeModal}>Cancel</button>
+                  }
                   <button className="ge-btn btn-g" onClick={addWine}>✦ Add to Cellar</button>
                 </div>
               </div>
