@@ -597,6 +597,19 @@ html, body {
   color: var(--parch);
 }
 
+.scan-upload-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.scan-upload-btns .ge-btn {
+  flex: 1;
+  max-width: 200px;
+  min-width: 130px;
+}
+
 /* ─── Wine Preview Card ──────────────────────────────────────────── */
 .wine-preview-card {
   background: var(--card);

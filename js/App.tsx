@@ -142,9 +142,10 @@ export default function GrapeExpectations() {
   });
   const scannedWine = scannedWines[previewIndex] ?? null;
 
-  const chatEndRef   = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatEndRef    = useRef<HTMLDivElement>(null);
+  const chatInputRef  = useRef<HTMLInputElement>(null);
+  const fileInputRef  = useRef<HTMLInputElement>(null);   // camera
+  const galleryInputRef = useRef<HTMLInputElement>(null); // gallery/file picker
 
   /* ─── Load Data ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -666,14 +667,21 @@ RECOMMENDATION RULES:
 
             {addTab === 'photo' && (
               <div>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                {/* Camera: opens device camera directly */}
+                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                  onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
+                {/* Gallery: opens file/photo picker */}
+                <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                   onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
                 {!photoPreview ? (
-                  <div className="photo-drop" onClick={() => fileInputRef.current?.click()}>
+                  <div className="photo-drop">
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Scan Your Wine Label</div>
-                    <div style={{ fontSize: 12 }}>Tap to take a photo or upload — AI will extract wine details automatically</div>
-                    <div style={{ fontSize: 11, marginTop: 8, opacity: .6 }}>Supports wine labels, bottle photos & invoices</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Your Wine Label</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Supports wine labels, bottle photos & invoices</div>
+                    <div className="scan-upload-btns">
+                      <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
+                      <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -754,7 +762,7 @@ RECOMMENDATION RULES:
                             </div>
                           </div>
                           <div className="wpc-actions">
-                            <button className="ge-btn btn-o" onClick={() => { setPhotoPreview(null); setScannedWines([]); setPreviewIndex(0); fileInputRef.current?.click(); }}>
+                            <button className="ge-btn btn-o" onClick={() => { setPhotoPreview(null); setScannedWines([]); setPreviewIndex(0); }}>
                               Try another
                             </button>
                             {isMulti && (
