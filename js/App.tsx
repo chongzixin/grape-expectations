@@ -34,7 +34,7 @@ const TYPE_STYLE: Record<string, TypeStyle> = {
 
 /* ─── Analytics ─────────────────────────────────────────────────── */
 function computeStats(wines: Wine[]): Stats {
-  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, count2018: 0, count2023: 0, modeVintage: '—', modeCountry: '—', modeStyle: '—' };
+  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, count2016: 0, count2018: 0, count2023: 0, modeCountry: '—', modeStyle: '—' };
   const bottles = wines.flatMap(w => Array(Math.max(0, w.inventory)).fill(w) as Wine[]);
   const modeOf = (field: keyof Wine): string => {
     const freq: Record<string, number> = {};
@@ -50,9 +50,9 @@ function computeStats(wines: Wine[]): Stats {
     totalBottles: bottles.length,
     uniqueWines: wines.length,
     avgPrice: priced.length ? Math.round(priced.reduce((s, w) => s + (w.price || 0), 0) / priced.length) : null,
+    count2016: bottles.filter(w => w.vintage === '2016').length,
     count2018: bottles.filter(w => w.vintage === '2018').length,
     count2023: bottles.filter(w => w.vintage === '2023').length,
-    modeVintage: modeOf('vintage'),
     modeCountry: modeOf('country'),
     modeStyle: modeOf('style'),
   };
@@ -447,9 +447,9 @@ RECOMMENDATION RULES:
           <StatCard v={stats.totalBottles} l="Total Bottles" />
           <StatCard v={stats.uniqueWines} l="Unique Wines" />
           <StatCard v={stats.avgPrice ? `S$${stats.avgPrice}` : '—'} l="Avg Price" />
+          <StatCard v={stats.count2016 || 0} l="2016 Bottles" />
           <StatCard v={stats.count2018 || 0} l="2018 Bottles" />
           <StatCard v={stats.count2023 || 0} l="2023 Bottles" />
-          <StatCard v={stats.modeVintage} l="Top Vintage" />
           <StatCard v={stats.modeCountry} l="Top Country" />
           <StatCard v={stats.modeStyle} l="Top Varietal" />
         </div>
@@ -660,7 +660,7 @@ RECOMMENDATION RULES:
             </div>
 
             <div className="mtabs">
-              {([['photo', '📷 Scan Label'], ['manual', '✍️ Manual Entry']] as [string, string][]).map(([t, l]) => (
+              {([['photo', '📷 Scan Photo'], ['manual', '✍️ Manual Entry']] as [string, string][]).map(([t, l]) => (
                 <button key={t} className={`mtab ${addTab === t ? 'on' : ''}`} onClick={() => setAddTab(t as 'photo' | 'manual')}>{l}</button>
               ))}
             </div>
@@ -676,8 +676,8 @@ RECOMMENDATION RULES:
                 {!photoPreview ? (
                   <div className="photo-drop">
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Your Wine Label</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Supports wine labels, bottle photos & invoices</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Wine Label or Bottles</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Snap a single label, multiple bottles, or an invoice — we'll detect all wines</div>
                     <div className="scan-upload-btns">
                       <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
                       <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>

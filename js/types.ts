@@ -21,9 +21,9 @@ export interface Stats {
   totalBottles: number;
   uniqueWines: number;
   avgPrice: number | null;
+  count2016: number;
   count2018: number;
   count2023: number;
-  modeVintage: string;
   modeCountry: string;
   modeStyle: string;
 }
