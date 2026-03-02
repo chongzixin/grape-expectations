@@ -126,6 +126,7 @@ export default function GrapeExpectations() {
   const [chatInput, setChatInput]       = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading]   = useState(false);
+  const [copiedIdx, setCopiedIdx]       = useState<number | null>(null);
 
   const [aiSummary, setAiSummary]           = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -276,6 +277,14 @@ RECOMMENDATION RULES:
     }
     setChatLoading(false);
   };
+
+  const copyMessage = useCallback((text: string, idx: number) => {
+    const clean = text.replace(/\*\*(.+?)\*\*/g, '$1');
+    navigator.clipboard.writeText(clean).then(() => {
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages, chatLoading]);
 
@@ -617,6 +626,15 @@ RECOMMENDATION RULES:
                 <div className="cb">
                   {msg.role === 'assistant' ? <RichText text={msg.content} /> : msg.content}
                 </div>
+                {msg.role === 'assistant' && (
+                  <button
+                    className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
+                    onClick={() => copyMessage(msg.content, i)}
+                    title="Copy to clipboard"
+                  >
+                    {copiedIdx === i ? 'Copied!' : '⎘'}
+                  </button>
+                )}
               </div>
             ))}
             {chatLoading && (
