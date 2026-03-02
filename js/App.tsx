@@ -660,7 +660,7 @@ RECOMMENDATION RULES:
             </div>
 
             <div className="mtabs">
-              {([['photo', '📷 Scan Label'], ['manual', '✍️ Manual Entry']] as [string, string][]).map(([t, l]) => (
+              {([['photo', '📷 Scan Photo'], ['manual', '✍️ Manual Entry']] as [string, string][]).map(([t, l]) => (
                 <button key={t} className={`mtab ${addTab === t ? 'on' : ''}`} onClick={() => setAddTab(t as 'photo' | 'manual')}>{l}</button>
               ))}
             </div>
@@ -676,8 +676,8 @@ RECOMMENDATION RULES:
                 {!photoPreview ? (
                   <div className="photo-drop">
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Your Wine Label</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Supports wine labels, bottle photos & invoices</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Wine Label or Bottles</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Snap a single label, multiple bottles, or an invoice — we'll detect all wines</div>
                     <div className="scan-upload-btns">
                       <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
                       <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>

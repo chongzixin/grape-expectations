@@ -753,8 +753,8 @@ html, body {
 }
 
 .loading-gif {
-  width: 120px;
-  height: 120px;
+  width: 280px;
+  height: auto;
   object-fit: contain;
 }
 
@@ -776,6 +776,7 @@ html, body {
 @media (max-width: 700px) {
   .ge-main { padding: 16px 16px 140px; }
   .ge-hdr  { padding: 0 16px; }
+  .loading-gif { width: 100%; }
   .hide-m  { display: none; }
   .ge-chat-bar { padding: 10px 14px; }
   .ge-chat-msgs { padding: 12px 16px; }
