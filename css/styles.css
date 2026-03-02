@@ -496,6 +496,31 @@ html, body {
   text-align: left;
 }
 
+.cm-copy {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  padding: 2px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  letter-spacing: 0.3px;
+  transition: color 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+.cm-copy:hover {
+  color: var(--parch);
+  border-color: var(--border);
+}
+.cm-copy.copied {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
 /* ─── Add Wine Modal ─────────────────────────────────────────────── */
 .ge-modal-bg {
   position: fixed;
