@@ -378,7 +378,7 @@ RECOMMENDATION RULES:
       const enriched = JSON.parse(raw.replace(/```json|```/g, '').trim());
       setScannedWines(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], ...enriched };
+        updated[index] = { ...updated[index], ...enriched, _enriched: true };
         return updated;
       });
       if (index === previewIndexRef.current) {
@@ -386,9 +386,10 @@ RECOMMENDATION RULES:
         if (enriched.wineSummary || enriched.winerySummary || enriched.tastingNotes) {
           setScanNotes({ wine: enriched.wineSummary || '', winery: enriched.winerySummary || '', tasting: enriched.tastingNotes || '' });
         }
+        setPairingsLoading(false);
       }
     } catch {
-      // Silent — user can still add the wine with its structural data
+      if (index === previewIndexRef.current) setPairingsLoading(false);
     }
   };
 
@@ -411,7 +412,8 @@ RECOMMENDATION RULES:
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
-      enrichWine(parsed[0], 0); // runs in background — updates pairings/notes when ready
+      setPairingsLoading(true);
+      (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i)); // prefetch all wines in parallel
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -428,14 +430,16 @@ RECOMMENDATION RULES:
       previewIndexRef.current = nextIdx;
       populateFormFromWine(scannedWines[nextIdx]);
       const wn = scannedWines[nextIdx] as any;
-      if (wn?.localPairings) {
+      if (wn?._enriched) {
         setLocalPairings(wn.localPairings || []);
         setScanNotes(wn?.wineSummary || wn?.winerySummary || wn?.tastingNotes
           ? { wine: wn.wineSummary || '', winery: wn.winerySummary || '', tasting: wn.tastingNotes || '' }
           : null);
+        setPairingsLoading(false);
       } else {
         setLocalPairings([]);
         setScanNotes(null);
+        setPairingsLoading(true);
         enrichWine(scannedWines[nextIdx], nextIdx);
       }
     }
@@ -482,12 +486,9 @@ RECOMMENDATION RULES:
     setLocalWines(updated);
     storageSet('ge_local_wines', updated);
     if (scannedWines.length > 0 && previewIndex < scannedWines.length - 1) {
-      // Multi-wine flow: return to preview for next wine
-      const nextIdx = previewIndex + 1;
-      setPreviewIndex(nextIdx);
-      previewIndexRef.current = nextIdx;
-      populateFormFromWine(scannedWines[nextIdx]);
+      // Multi-wine flow: return to preview for next wine (with notes + loading)
       setAddTab('photo');
+      advancePreview(previewIndex + 1);
     } else {
       closeModal();
     }
@@ -879,6 +880,11 @@ RECOMMENDATION RULES:
                                 </div>
                               </div>
                             </div>
+                            {pairingsLoading && !scanNotes && localPairings.length === 0 && (
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13, marginTop: 12 }}>
+                                <div className="spin" /> Preparing sommelier notes…
+                              </div>
+                            )}
                             {(scanNotes || localPairings.length > 0) && (
                               <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
                                 {scanNotes && (scanNotes.wine || scanNotes.winery || scanNotes.tasting) && (<>
