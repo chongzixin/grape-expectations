@@ -407,9 +407,11 @@ RECOMMENDATION RULES:
       const raw = await callClaude({
         imageData: imgData,
         messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Multiple bottles in one photo → one object per visible bottle label\n- Invoice with multiple wines → one object per wine line item\n\nCRITICAL field rules:\n- "name": the wine/appellation/cuvée name ONLY — do NOT include the producer name or vintage year in this field. e.g. "Bolgheri Rosso Superiore", not "Grattamacco Bolgheri Rosso Superiore 2019"\n- "winery": producer/château/domaine/estate name only\n- "vintage": 4-digit year or "NV" only — never include in "name"\n- "price": the per-bottle price to record. For invoices: use the "Unit Price" column (not "Amount", which is a line-item subtotal). If a per-line discount is shown, subtract it from the unit price to get the effective price per bottle. Use null if no price is visible.\n\nEach object: {"name":"wine name only","winery":"producer name only","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified"}\n\nUse null for unknown fields. Return ONLY the JSON array.` }],
-        maxTokens: 800,
+        maxTokens: 1500,
       });
-      let parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      const jsonMatch = raw.match(/\[[\s\S]*\]/) ?? raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON in response');
+      let parsed = JSON.parse(jsonMatch[0]);
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
