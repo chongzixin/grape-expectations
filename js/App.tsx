@@ -143,6 +143,9 @@ export default function GrapeExpectations() {
   });
   const scannedWine = scannedWines[previewIndex] ?? null;
 
+  const [localPairings, setLocalPairings] = useState<string[]>([]);
+  const [pairingsLoading, setPairingsLoading] = useState(false);
+
   const chatEndRef      = useRef<HTMLDivElement>(null);
   const chatInputRef    = useRef<HTMLInputElement>(null);
   const fileInputRef    = useRef<HTMLInputElement>(null);   // camera (capture)
@@ -254,20 +257,52 @@ export default function GrapeExpectations() {
       ).join('\n');
       const history: ChatMessage[] = [...chatMessages, userMsg];
       const txt = await callClaude({
-        system: `You are "Grape Expectations" — an expert AI sommelier serving a Singaporean wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine.
+        system: `You are "Grape Expectations" — an expert AI sommelier serving a Singaporean wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine.
 
 CELLAR INVENTORY:
 ${cellarCtx}
 
+LOCAL CUISINE KNOWLEDGE — You have deep, dish-level knowledge of Singapore and SEA cuisine. Always name specific local dishes when explaining pairings. Never give generic "Asian food" advice.
+
+REGIONAL CUISINES & SIGNATURE DISHES:
+- Teochew: suckling pig (乳猪), chai poh kway teow (菜脯粿条), steamed fish (清蒸鱼), braised duck (卤鸭), oyster omelette (蚵仔煎), orh nee (芋泥)
+- Hokkien: bak kut teh (肉骨茶), Hokkien prawn mee, char kway teow (炒粿条), popiah, lor bak
+- Cantonese: dim sum (har gow, siu mai, char siu bao), char siu (叉烧), siu yuk (烧肉), steamed fish with ginger-scallion, wonton noodles
+- Peranakan/Nonya: laksa lemak, ayam buah keluak, beef rendang, ngoh hiang, kueh pie tee
+- Malay: nasi lemak with sambal, rendang, satay with peanut sauce, mee rebus, lontong
+- Indian: fish head curry, roti prata, banana leaf rice, biryani (chicken or mutton), butter chicken
+- Zi char: kung pao prawns, cereal butter prawns, salted egg yolk crab, sweet & sour pork, sambal kangkong, steamed tofu
+- Hawker staples: Hainanese chicken rice, wonton mee, carrot cake (chai tow kway), rojak, cai png, chilli crab, black pepper crab
+
+PAIRING PRINCIPLES FOR LOCAL DISHES:
+- Rich/fatty (rendang, siu yuk, bak kut teh, char siu): high acidity cuts fat — Burgundy Pinot Noir, Champagne, Riesling, Barbera
+- Spicy (laksa, curry, sambal nasi lemak, chilli crab): off-dry aromatic whites tame heat — Gewürztraminer, off-dry Riesling, Pinot Gris, Viognier; avoid high-tannin reds
+- Delicate seafood (Teochew steamed fish, prawn dishes): crisp mineral whites — Chablis, Muscadet, Albariño, Mosel Riesling Kabinett
+- Oyster dishes: Champagne, Chablis, Muscadet
+- Umami/braised/soy (braised duck, lor bak, XO sauce, chicken rice): earthy medium-bodied reds or oxidative whites — Pinot Noir, aged Nebbiolo, Fino Sherry
+- Wok hei/char (char kway teow, Hokkien mee, carrot cake): wines with body and smoky/toasty notes — Grenache, Syrah, oaked Chardonnay, Alsatian Pinot Gris
+- Sweet/caramelised (char siu, satay peanut sauce): ripe fruit or slight sweetness — Grenache, Pinot Noir, off-dry Riesling
+- Tangy/tamarind (assam fish, rojak, tamarind prawns): bright acidity and citrus to mirror tartness
+- Suckling pig (Teochew style): fine bubbles and high acidity cut crackling fat without masking delicate pork — Champagne, Blanc de Blancs, dry Riesling
+- Chai poh kway teow (salty preserved radish noodles): salt demands slight sweetness or firm body — off-dry Gewürztraminer, Alsatian Pinot Gris, or crisp Chablis by contrast
+
+HANDLING MULTI-DISH MEAL QUERIES:
+When the user mentions multiple dishes or a cuisine style (e.g. "Teochew spread", "zichar dinner with suckling pig and chai poh kway teow"):
+1. Identify the dominant pairing challenge across all dishes (richest, spiciest, or most assertive sauce)
+2. Find the wine that satisfies the most dishes without failing any
+3. State trade-offs explicitly: "This wine is ideal for the suckling pig; for the chai poh kway teow alone you might prefer..."
+4. If dishes are genuinely incompatible (e.g. delicate steamed fish + fiery curry), recommend two bottles by course cluster
+5. Always name each specific dish — never say "the fish dish", say "the Teochew steamed pomfret"
+
 RECOMMENDATION RULES:
-1. Recommend up to 3 bottles FROM the cellar that best suit the request (state specifically which bottles and why)
-2. Then recommend 2 bottles NOT in the cellar (different varietals for diversity) that would excel
+1. Recommend up to 3 bottles FROM the cellar that best suit the request — name them specifically and say why
+2. Then recommend 2 bottles NOT in the cellar (different varietals) that would excel — include SGD price estimates
 3. For each recommendation: share interesting winery/winemaker history
-4. Explain food pairings using WSET framework (acidity, tannin, body, alcohol, flavour compounds)
+4. Explain pairings using WSET framework (acidity, tannin, body, alcohol, flavour compounds) tied to specific local dish characteristics (fat, spice, umami, cooking method, key sauces)
 5. Consider budget, occasion, mood if mentioned
 6. Bold wine names using **Wine Name** format
 7. Be conversational — ask a follow-up if helpful
-8. Prices should be referenced in SGD`,
+8. All prices in SGD`,
         messages: history,
         maxTokens: 2000,
       });
@@ -306,6 +341,8 @@ RECOMMENDATION RULES:
     setScannedWines([]);
     setPreviewIndex(0);
     setAddTab('photo');
+    setLocalPairings([]);
+    setPairingsLoading(false);
   };
 
   const handlePhoto = async (file: File) => {
@@ -317,13 +354,14 @@ RECOMMENDATION RULES:
       const imgData = await fileToBase64(file);
       const raw = await callClaude({
         imageData: imgData,
-        messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Invoice with multiple wines → one object per wine line item\n\nCRITICAL field rules:\n- "name": the wine/appellation/cuvée name ONLY — do NOT include the producer name or vintage year in this field. e.g. "Bolgheri Rosso Superiore", not "Grattamacco Bolgheri Rosso Superiore 2019"\n- "winery": producer/château/domaine/estate name only\n- "vintage": 4-digit year or "NV" only — never include in "name"\n- "price": the per-bottle price to record. For invoices: use the "Unit Price" column (not "Amount", which is a line-item subtotal). If a per-line discount is shown, subtract it from the unit price to get the effective price per bottle. Use null if no price is visible.\n\nEach object: {"name":"wine name only","winery":"producer name only","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified"}\n\nUse null for unknown fields. Return ONLY the JSON array.` }],
+        messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Invoice with multiple wines → one object per wine line item\n\nCRITICAL field rules:\n- "name": the wine/appellation/cuvée name ONLY — do NOT include the producer name or vintage year in this field. e.g. "Bolgheri Rosso Superiore", not "Grattamacco Bolgheri Rosso Superiore 2019"\n- "winery": producer/château/domaine/estate name only\n- "vintage": 4-digit year or "NV" only — never include in "name"\n- "price": the per-bottle price to record. For invoices: use the "Unit Price" column (not "Amount", which is a line-item subtotal). If a per-line discount is shown, subtract it from the unit price to get the effective price per bottle. Use null if no price is visible.\n\nEach object: {"name":"wine name only","winery":"producer name only","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified","localPairings":["**Dish name**: one-sentence reason.","..."]}\n\nFor localPairings: suggest 3–4 Singapore or Southeast Asian local dishes that pair well with each wine. Each string must be exactly: "**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish." Use familiar Singapore dish names (e.g. char siu, laksa, rendang, Teochew steamed fish, bak kut teh).\n\nUse null for unknown fields (except localPairings which should always be populated). Return ONLY the JSON array.` }],
         maxTokens: 1500,
       });
       let parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
+      if (Array.isArray(parsed[0]?.localPairings)) setLocalPairings(parsed[0].localPairings);
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -338,6 +376,7 @@ RECOMMENDATION RULES:
     } else {
       setPreviewIndex(nextIdx);
       populateFormFromWine(scannedWines[nextIdx]);
+      setLocalPairings((scannedWines[nextIdx] as any).localPairings || []);
     }
   };
 
@@ -407,10 +446,10 @@ RECOMMENDATION RULES:
 
   const QuickPrompts = () => {
     const prompts = [
+      'White for Teochew suckling pig and chai poh kway teow',
       'Light red for zichar tonight',
-      'Best bottle for a special occasion',
-      'White wine with sambal nasi lemak',
-      'Aperitif before a long dinner',
+      'Red to pair with rendang and nasi lemak',
+      'Sparkling for dim sum brunch',
     ];
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
@@ -718,13 +757,13 @@ RECOMMENDATION RULES:
                               <button
                                 className="scan-page-btn"
                                 disabled={previewIndex === 0}
-                                onClick={() => { const i = previewIndex - 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); }}
+                                onClick={() => { const i = previewIndex - 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); }}
                               >←</button>
                               <span className="scan-pagination-label">Wine {previewIndex + 1} of {scannedWines.length}</span>
                               <button
                                 className="scan-page-btn"
                                 disabled={previewIndex === scannedWines.length - 1}
-                                onClick={() => { const i = previewIndex + 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); }}
+                                onClick={() => { const i = previewIndex + 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); }}
                               >→</button>
                             </div>
                           )}
@@ -778,6 +817,16 @@ RECOMMENDATION RULES:
                                 </div>
                               </div>
                             </div>
+                            {localPairings.length > 0 && (
+                              <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5, marginBottom: 6 }}>🍜 LOCAL DISH PAIRINGS</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  {localPairings.map((p, i) => (
+                                    <div key={i} style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={p} /></div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           <div className="wpc-actions">
                             <button className="ge-btn btn-o" onClick={() => { setPhotoPreview(null); setScannedWines([]); setPreviewIndex(0); }}>
