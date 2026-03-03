@@ -79,15 +79,35 @@ async function callClaude({ messages, system = '', maxTokens = 1800, imageData =
   return data.content || '';
 }
 
-async function fileToBase64(file: File): Promise<ImageData> {
+async function compressImage(file: File, maxPx = 1600, quality = 0.85): Promise<ImageData> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve({ data: result.split(',')[1], mimeType: file.type });
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (Math.max(width, height) > maxPx) {
+        const scale = maxPx / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('Compression failed')); return; }
+        const reader2 = new FileReader();
+        reader2.onload = () => {
+          const result = reader2.result as string;
+          resolve({ data: result.split(',')[1], mimeType: 'image/jpeg' });
+        };
+        reader2.onerror = reject;
+        reader2.readAsDataURL(blob);
+      }, 'image/jpeg', quality);
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    img.onerror = reject;
+    img.src = url;
   });
 }
 
@@ -351,7 +371,7 @@ RECOMMENDATION RULES:
     setScannedWines([]);
     setPreviewIndex(0);
     try {
-      const imgData = await fileToBase64(file);
+      const imgData = await compressImage(file);
       const raw = await callClaude({
         imageData: imgData,
         messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Invoice with multiple wines → one object per wine line item\n\nCRITICAL field rules:\n- "name": the wine/appellation/cuvée name ONLY — do NOT include the producer name or vintage year in this field. e.g. "Bolgheri Rosso Superiore", not "Grattamacco Bolgheri Rosso Superiore 2019"\n- "winery": producer/château/domaine/estate name only\n- "vintage": 4-digit year or "NV" only — never include in "name"\n- "price": the per-bottle price to record. For invoices: use the "Unit Price" column (not "Amount", which is a line-item subtotal). If a per-line discount is shown, subtract it from the unit price to get the effective price per bottle. Use null if no price is visible.\n\nEach object: {"name":"wine name only","winery":"producer name only","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified","localPairings":["**Dish name**: one-sentence reason.","..."]}\n\nFor localPairings: suggest 3–4 Singapore or Southeast Asian local dishes that pair well with each wine. Each string must be exactly: "**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish." Use familiar Singapore dish names (e.g. char siu, laksa, rendang, Teochew steamed fish, bak kut teh).\n\nUse null for unknown fields (except localPairings which should always be populated). Return ONLY the JSON array.` }],
