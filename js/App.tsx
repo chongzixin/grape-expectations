@@ -165,6 +165,7 @@ export default function GrapeExpectations() {
 
   const [localPairings, setLocalPairings] = useState<string[]>([]);
   const [pairingsLoading, setPairingsLoading] = useState(false);
+  const [scanNotes, setScanNotes] = useState<{ wine: string; winery: string; tasting: string } | null>(null);
 
   const chatEndRef      = useRef<HTMLDivElement>(null);
   const chatInputRef    = useRef<HTMLInputElement>(null);
@@ -363,6 +364,7 @@ RECOMMENDATION RULES:
     setAddTab('photo');
     setLocalPairings([]);
     setPairingsLoading(false);
+    setScanNotes(null);
   };
 
   const handlePhoto = async (file: File) => {
@@ -374,14 +376,18 @@ RECOMMENDATION RULES:
       const imgData = await compressImage(file);
       const raw = await callClaude({
         imageData: imgData,
-        messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Invoice with multiple wines → one object per wine line item\n\nCRITICAL field rules:\n- "name": the wine/appellation/cuvée name ONLY — do NOT include the producer name or vintage year in this field. e.g. "Bolgheri Rosso Superiore", not "Grattamacco Bolgheri Rosso Superiore 2019"\n- "winery": producer/château/domaine/estate name only\n- "vintage": 4-digit year or "NV" only — never include in "name"\n- "price": the per-bottle price to record. For invoices: use the "Unit Price" column (not "Amount", which is a line-item subtotal). If a per-line discount is shown, subtract it from the unit price to get the effective price per bottle. Use null if no price is visible.\n\nEach object: {"name":"wine name only","winery":"producer name only","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified","localPairings":["**Dish name**: one-sentence reason.","..."]}\n\nFor localPairings: suggest 3–4 Singapore or Southeast Asian local dishes that pair well with each wine. Each string must be exactly: "**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish." Use familiar Singapore dish names (e.g. char siu, laksa, rendang, Teochew steamed fish, bak kut teh).\n\nUse null for unknown fields (except localPairings which should always be populated). Return ONLY the JSON array.` }],
-        maxTokens: 1500,
+        messages: [{ role: 'user', content: `Analyse this wine label or invoice image. Return ONLY a raw JSON array (no markdown, no backticks).\n- Single wine label → array with one object\n- Invoice with multiple wines → one object per wine line item\n\nCRITICAL field rules:\n- "name": the wine/appellation/cuvée name ONLY — do NOT include the producer name or vintage year in this field. e.g. "Bolgheri Rosso Superiore", not "Grattamacco Bolgheri Rosso Superiore 2019"\n- "winery": producer/château/domaine/estate name only\n- "vintage": 4-digit year or "NV" only — never include in "name"\n- "price": the per-bottle price to record. For invoices: use the "Unit Price" column (not "Amount", which is a line-item subtotal). If a per-line discount is shown, subtract it from the unit price to get the effective price per bottle. Use null if no price is visible.\n\nEach object: {"name":"wine name only","winery":"producer name only","vintage":"year or NV","price":null or number,"style":"grape variety or blend","country":"country","region":"wine region","subRegion":"sub-region or null","type":"Red or White or Sparkling or Rosé or Dessert or Fortified","localPairings":["**Dish name**: one-sentence reason.","..."],"wineSummary":"...","winerySummary":"...","tastingNotes":"..."}\n\nFor localPairings: suggest 3–4 Singapore or Southeast Asian local dishes that pair well with each wine. Each string must be exactly: "**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish." Use familiar Singapore dish names (e.g. char siu, laksa, rendang, Teochew steamed fish, bak kut teh).\nFor wineSummary: one sentence describing the wine's character, appellation and style.\nFor winerySummary: one sentence about the producer — founding story, philosophy or a standout fact.\nFor tastingNotes: 2–3 sentences of tasting notes. Where apt, use familiar local flavour references instead of generic descriptors — e.g. "lychee and starfruit" not "tropical fruit", "red dates" not "dried fruit", "pandan florals" not "floral aromatics", "char siu richness" not "meaty", "roasted barley like kopi-O" not "coffee notes", "sharp like assam" not "tart acidity".\n\nUse null for unknown fields (except localPairings, wineSummary, winerySummary and tastingNotes which should always be populated). Return ONLY the JSON array.` }],
+        maxTokens: 2000,
       });
       let parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
       if (Array.isArray(parsed[0]?.localPairings)) setLocalPairings(parsed[0].localPairings);
+      const w = parsed[0];
+      if (w?.wineSummary || w?.winerySummary || w?.tastingNotes) {
+        setScanNotes({ wine: w.wineSummary || '', winery: w.winerySummary || '', tasting: w.tastingNotes || '' });
+      }
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -397,6 +403,10 @@ RECOMMENDATION RULES:
       setPreviewIndex(nextIdx);
       populateFormFromWine(scannedWines[nextIdx]);
       setLocalPairings((scannedWines[nextIdx] as any).localPairings || []);
+      const wn = scannedWines[nextIdx] as any;
+      setScanNotes(wn?.wineSummary || wn?.winerySummary || wn?.tastingNotes
+        ? { wine: wn.wineSummary || '', winery: wn.winerySummary || '', tasting: wn.tastingNotes || '' }
+        : null);
     }
   };
 
@@ -777,13 +787,13 @@ RECOMMENDATION RULES:
                               <button
                                 className="scan-page-btn"
                                 disabled={previewIndex === 0}
-                                onClick={() => { const i = previewIndex - 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); }}
+                                onClick={() => { const i = previewIndex - 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); const wp = scannedWines[i] as any; setScanNotes(wp?.wineSummary || wp?.winerySummary || wp?.tastingNotes ? { wine: wp.wineSummary || '', winery: wp.winerySummary || '', tasting: wp.tastingNotes || '' } : null); }}
                               >←</button>
                               <span className="scan-pagination-label">Wine {previewIndex + 1} of {scannedWines.length}</span>
                               <button
                                 className="scan-page-btn"
                                 disabled={previewIndex === scannedWines.length - 1}
-                                onClick={() => { const i = previewIndex + 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); }}
+                                onClick={() => { const i = previewIndex + 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); const wp = scannedWines[i] as any; setScanNotes(wp?.wineSummary || wp?.winerySummary || wp?.tastingNotes ? { wine: wp.wineSummary || '', winery: wp.winerySummary || '', tasting: wp.tastingNotes || '' } : null); }}
                               >→</button>
                             </div>
                           )}
@@ -837,14 +847,23 @@ RECOMMENDATION RULES:
                                 </div>
                               </div>
                             </div>
-                            {localPairings.length > 0 && (
-                              <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5, marginBottom: 6 }}>🍜 LOCAL DISH PAIRINGS</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {(scanNotes || localPairings.length > 0) && (
+                              <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                {scanNotes && (scanNotes.wine || scanNotes.winery || scanNotes.tasting) && (<>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍷 SOMMELIER NOTES</div>
+                                  {scanNotes.wine    && <div style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Wine:** ${scanNotes.wine}`} /></div>}
+                                  {scanNotes.winery  && <div style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Producer:** ${scanNotes.winery}`} /></div>}
+                                  {scanNotes.tasting && <div style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Tasting:** ${scanNotes.tasting}`} /></div>}
+                                </>)}
+                                {scanNotes && localPairings.length > 0 && (
+                                  <div style={{ borderTop: '1px solid rgba(201,168,76,0.25)', margin: '4px 0' }} />
+                                )}
+                                {localPairings.length > 0 && (<>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍜 LOCAL DISH PAIRINGS</div>
                                   {localPairings.map((p, i) => (
                                     <div key={i} style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={p} /></div>
                                   ))}
-                                </div>
+                                </>)}
                               </div>
                             )}
                           </div>
