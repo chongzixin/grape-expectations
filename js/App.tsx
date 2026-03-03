@@ -167,6 +167,7 @@ export default function GrapeExpectations() {
   const [localPairings, setLocalPairings] = useState<string[]>([]);
   const [pairingsLoading, setPairingsLoading] = useState(false);
   const [scanNotes, setScanNotes] = useState<{ wine: string; winery: string; tasting: string } | null>(null);
+  const [wantSommelierNotes, setWantSommelierNotes] = useState(false);
 
   const chatEndRef      = useRef<HTMLDivElement>(null);
   const chatInputRef    = useRef<HTMLInputElement>(null);
@@ -412,8 +413,10 @@ RECOMMENDATION RULES:
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
-      setPairingsLoading(true);
-      (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i)); // prefetch all wines in parallel
+      if (wantSommelierNotes) {
+        setPairingsLoading(true);
+        (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i)); // prefetch all wines in parallel
+      }
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -439,8 +442,10 @@ RECOMMENDATION RULES:
       } else {
         setLocalPairings([]);
         setScanNotes(null);
-        setPairingsLoading(true);
-        enrichWine(scannedWines[nextIdx], nextIdx);
+        if (wantSommelierNotes) {
+          setPairingsLoading(true);
+          enrichWine(scannedWines[nextIdx], nextIdx);
+        }
       }
     }
   };
@@ -802,6 +807,11 @@ RECOMMENDATION RULES:
                       <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
                       <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>
                     </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12, color: 'var(--muted)', cursor: 'pointer', justifyContent: 'center', userSelect: 'none' }}>
+                      <input type="checkbox" checked={wantSommelierNotes} onChange={e => setWantSommelierNotes(e.target.checked)} style={{ accentColor: 'var(--gold)', width: 14, height: 14, cursor: 'pointer' }} />
+                      Include sommelier notes &amp; pairings
+                      <span style={{ fontStyle: 'italic' }}>(takes a bit longer)</span>
+                    </label>
                   </div>
                 ) : (
                   <div>
