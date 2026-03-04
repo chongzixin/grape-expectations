@@ -470,6 +470,14 @@ RECOMMENDATION RULES:
     const updated = [...localWines, wine];
     setLocalWines(updated);
     storageSet('ge_local_wines', updated);
+    syncNewWineToSheets(wine).then(sheetId => {
+      if (!sheetId) return;
+      setLocalWines(prev => {
+        const promoted = prev.map(w => w.id === wine.id ? { ...w, id: sheetId } : w);
+        storageSet('ge_local_wines', promoted);
+        return promoted;
+      });
+    });
     advancePreview(previewIndex + 1);
   };
 
@@ -492,12 +500,41 @@ RECOMMENDATION RULES:
     const updated = [...localWines, wine];
     setLocalWines(updated);
     storageSet('ge_local_wines', updated);
+    syncNewWineToSheets(wine).then(sheetId => {
+      if (!sheetId) return;
+      setLocalWines(prev => {
+        const promoted = prev.map(w => w.id === wine.id ? { ...w, id: sheetId } : w);
+        storageSet('ge_local_wines', promoted);
+        return promoted;
+      });
+    });
     if (scannedWines.length > 0 && previewIndex < scannedWines.length - 1) {
       // Multi-wine flow: return to preview for next wine (with notes + loading)
       setAddTab('photo');
       advancePreview(previewIndex + 1);
     } else {
       closeModal();
+    }
+  };
+
+  /* ─── Sync new wine to Google Sheets ───────────────────────────── */
+  const syncNewWineToSheets = async (wine: Wine): Promise<string | null> => {
+    try {
+      const res = await fetch('/.netlify/functions/sheets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: wine.name, winery: wine.winery, vintage: wine.vintage,
+          price: wine.price, inventory: wine.inventory, style: wine.style,
+          country: wine.country, region: wine.region, subRegion: wine.subRegion,
+          type: wine.type,
+        }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.wineIndex != null ? `sheet_${data.wineIndex}` : null;
+    } catch {
+      return null;
     }
   };
 

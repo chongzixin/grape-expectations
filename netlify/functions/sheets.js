@@ -68,6 +68,44 @@ exports.handler = async function (event) {
       return { statusCode: 200, body: JSON.stringify({ success: true }) };
     }
 
+    // ── PUT: append new wine row ──────────────────────────────────────
+    if (event.httpMethod === 'PUT') {
+      const { name, winery, vintage, price, inventory, style, country, region, subRegion, type } = JSON.parse(event.body);
+
+      const row = [
+        name       || '',
+        winery     || '',
+        vintage    || '',
+        price      != null ? price : '',
+        inventory  != null ? inventory : 1,
+        style      || '',
+        country    || '',
+        region     || '',
+        subRegion  || '',
+        type       || '',
+      ];
+
+      const appendResponse = await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAME}!A:J`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [row] },
+      });
+
+      // updatedRange looks like "inventory!A5:J5" — extract appended row number
+      const updatedRange = appendResponse.data.updates.updatedRange;
+      const rowMatch = updatedRange.match(/!A(\d+)/);
+      const rowNum = rowMatch ? parseInt(rowMatch[1], 10) : null;
+      // Row 1 = header; data rows start at row 2 → wineIndex 0
+      const wineIndex = rowNum != null ? rowNum - 2 : null;
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, wineIndex }),
+      };
+    }
+
     return { statusCode: 405, body: 'Method Not Allowed' };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
