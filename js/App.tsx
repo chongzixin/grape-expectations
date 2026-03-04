@@ -1,19 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm } from './types';
+import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile } from './types';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from './supabaseClient';
+import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
 /* ═══════════════════════════════════════════════════════════════════
    GRAPE EXPECTATIONS — Singaporean Cellar Sommelier
 ═══════════════════════════════════════════════════════════════════ */
-
-const SAMPLE_WINES: Wine[] = [
-  { id: 's1', name: 'Vosne-Romanee La Croix Blanche', winery: 'Domaine Chevillon-Chezeaux', vintage: '2022', price: null, inventory: 1, style: 'Pinot Noir', country: 'France', region: 'Burgundy', subRegion: 'Vosne-Romanee', type: 'Red' },
-  { id: 's2', name: 'Vosne-Romanee 1er Cru Les Rouges', winery: 'Bruno Desaunay-Bissey', vintage: '2013', price: 170, inventory: 1, style: 'Pinot Noir', country: 'France', region: 'Burgundy', subRegion: 'Vosne-Romanee', type: 'Red' },
-  { id: 's3', name: 'Julienas', winery: 'Chateau Des Capitans', vintage: '2022', price: null, inventory: 1, style: 'Gamay', country: 'France', region: 'Beaujolais', subRegion: 'Julienas', type: 'Red' },
-  { id: 's4', name: 'Single Vineyard Chardonnay', winery: 'PepperGreen Estate', vintage: '2021', price: null, inventory: 1, style: 'Chardonnay', country: 'Australia', region: 'New South Wales', subRegion: 'Southern Highlands', type: 'White' },
-  { id: 's5', name: 'Lluerna Xarel-lo', winery: 'Els Vinyerons', vintage: '2022', price: null, inventory: 1, style: 'Xarel-lo', country: 'Spain', region: 'Catalunya', subRegion: 'Penedes', type: 'White' },
-  { id: 's6', name: 'Cuvee St-Denis Brut Champagne Grand Cru', winery: 'Varnier Fanniere', vintage: 'NV', price: null, inventory: 1, style: 'Chardonnay', country: 'France', region: 'Champagne', subRegion: 'Champagne Grand Cru', type: 'Sparkling' },
-];
 
 const FLAGS: Record<string, string> = {
   France: '🇫🇷', Australia: '🇦🇺', Spain: '🇪🇸', Italy: '🇮🇹',
@@ -58,13 +52,22 @@ function computeStats(wines: Wine[]): Stats {
   };
 }
 
-/* ─── Storage helpers ───────────────────────────────────────────── */
-function storageGet(key: string): unknown {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
-  catch { return null; }
-}
-function storageSet(key: string, val: unknown): void {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* silent */ }
+/* ─── DB → App model ────────────────────────────────────────────── */
+function mapDbWine(row: Record<string, unknown>): Wine {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    winery: (row.winery as string) || '',
+    vintage: (row.vintage as string) || '',
+    price: (row.price as number | null) ?? null,
+    inventory: row.inventory as number,
+    style: (row.style as string) || '',
+    country: (row.country as string) || '',
+    region: (row.region as string) || '',
+    subRegion: (row.sub_region as string) || '',
+    type: (row.type as string) || 'Red',
+    source: (row.source as string) || 'manual',
+  };
 }
 
 /* ─── Claude API (proxied via Netlify function) ──────────────────── */
@@ -131,26 +134,36 @@ function RichText({ text }: { text: string }) {
    MAIN APP
 ═══════════════════════════════════════════════════════════════════ */
 export default function GrapeExpectations() {
-  const [wines, setWines]           = useState<Wine[]>([]);
-  const [overrides, setOverrides]   = useState<Record<string, number>>({});
-  const [localWines, setLocalWines] = useState<Wine[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [usingDemo, setUsingDemo]   = useState(false);
+  /* ─── Auth ───────────────────────────────────────────────────── */
+  const [session, setSession]           = useState<Session | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [profile, setProfile]           = useState<UserProfile | null>(null);
 
+  /* ─── Cellar ─────────────────────────────────────────────────── */
+  const [wines, setWines]   = useState<Wine[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ─── UI ─────────────────────────────────────────────────────── */
   const [tab, setTab]       = useState<'cellar' | 'analytics'>('cellar');
   const [filter, setFilter] = useState('All');
   const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type'>('name');
   const [search, setSearch] = useState('');
 
+  /* ─── Chat ───────────────────────────────────────────────────── */
   const [chatOpen, setChatOpen]         = useState(false);
   const [chatInput, setChatInput]       = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading]   = useState(false);
   const [copiedIdx, setCopiedIdx]       = useState<number | null>(null);
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, 'thumbs_up' | 'thumbs_down'>>({});
+  const [lastUserQuery, setLastUserQuery] = useState('');
 
+  /* ─── Analytics ──────────────────────────────────────────────── */
   const [aiSummary, setAiSummary]           = useState('');
   const [summaryLoading, setSummaryLoading] = useState(false);
 
+  /* ─── Add Wine Modal ─────────────────────────────────────────── */
   const [showAdd, setShowAdd]       = useState(false);
   const [addTab, setAddTab]         = useState<'photo' | 'manual'>('photo');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -171,39 +184,50 @@ export default function GrapeExpectations() {
 
   const chatEndRef      = useRef<HTMLDivElement>(null);
   const chatInputRef    = useRef<HTMLInputElement>(null);
-  const fileInputRef    = useRef<HTMLInputElement>(null);   // camera (capture)
-  const galleryInputRef = useRef<HTMLInputElement>(null);   // gallery/file picker
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  /* ─── Load Data ─────────────────────────────────────────────── */
+  /* ─── Auth Setup ─────────────────────────────────────────────── */
   useEffect(() => {
-    const savedOverrides = storageGet('ge_overrides') as Record<string, number> | null;
-    if (savedOverrides) setOverrides(savedOverrides);
-    const savedLocal = storageGet('ge_local_wines') as Wine[] | null;
-    if (savedLocal) setLocalWines(savedLocal);
-
-    (async () => {
-      try {
-        const res = await fetch('/.netlify/functions/sheets');
-        if (!res.ok) throw new Error();
-        const parsed = await res.json() as Wine[];
-        if (parsed.length > 0) { setWines(parsed); setLoading(false); return; }
-        throw new Error();
-      } catch {
-        setWines(SAMPLE_WINES);
-        setUsingDemo(true);
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      setSessionReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      if (!s) {
+        setWines([]);
+        setProfile(null);
+        setChatMessages([]);
+        setChatSessionId(null);
+        setMessageFeedback({});
       }
-      setLoading(false);
-    })();
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  /* ─── Merged wine list ──────────────────────────────────────── */
-  const allWines = useMemo(() => [...wines, ...localWines], [wines, localWines]);
+  /* ─── Load Profile ───────────────────────────────────────────── */
+  useEffect(() => {
+    if (!session) return;
+    supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      .then(({ data }) => { if (data) setProfile(data as UserProfile); });
+  }, [session]);
+
+  /* ─── Load Wines from Supabase ───────────────────────────────── */
+  useEffect(() => {
+    if (!session) { setLoading(false); return; }
+    setLoading(true);
+    supabase.from('wines').select('*').eq('user_id', session.user.id)
+      .then(({ data, error }) => {
+        if (!error && data) setWines(data.map(mapDbWine));
+        setLoading(false);
+      });
+  }, [session]);
+
+  /* ─── Derived wine lists ─────────────────────────────────────── */
   const activeWines = useMemo(() =>
-    allWines.map(w => ({
-      ...w,
-      inventory: overrides[w.id] !== undefined ? overrides[w.id] : w.inventory,
-    })).filter(w => w.inventory > 0),
-    [allWines, overrides]
+    wines.filter(w => w.inventory > 0),
+    [wines]
   );
   const stats = useMemo(() => computeStats(activeWines), [activeWines]);
   const types = useMemo(() => ['All', ...Array.from(new Set(activeWines.map(w => w.type).filter(Boolean)))], [activeWines]);
@@ -225,27 +249,46 @@ export default function GrapeExpectations() {
     return ws;
   }, [activeWines, filter, search, sort]);
 
-  /* ─── Inventory ─────────────────────────────────────────────── */
-  const updateInventory = useCallback((id: string, delta: number) => {
-    const wine = allWines.find(w => w.id === id);
-    const cur = overrides[id] !== undefined ? overrides[id] : (wine?.inventory || 0);
-    const next = Math.max(0, cur + delta);
-    const updated = { ...overrides, [id]: next };
-    setOverrides(updated);
-    storageSet('ge_overrides', updated);
+  /* ─── Inventory ──────────────────────────────────────────────── */
+  const updateInventory = useCallback(async (id: string, delta: number) => {
+    const wine = wines.find(w => w.id === id);
+    if (!wine) return;
+    const next = Math.max(0, wine.inventory + delta);
+    // Optimistic update
+    setWines(prev => prev.map(w => w.id === id ? { ...w, inventory: next } : w));
+    // Persist
+    await supabase.from('wines')
+      .update({ inventory: next, updated_at: new Date().toISOString() })
+      .eq('id', id);
+  }, [wines]);
 
-    // Sync back to Google Sheets for sheet-sourced wines
-    if (id.startsWith('sheet_')) {
-      const wineIndex = parseInt(id.replace('sheet_', ''), 10);
-      fetch('/.netlify/functions/sheets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wineIndex, inventory: next }),
-      }).catch(console.error);
-    }
-  }, [allWines, overrides]);
+  /* ─── Auth: Sign Out ─────────────────────────────────────────── */
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
-  /* ─── AI Summary ────────────────────────────────────────────── */
+  /* ─── Add Wine to Supabase ───────────────────────────────────── */
+  const addWineToDb = async (form: NewWineForm, source: string): Promise<Wine | null> => {
+    if (!session) return null;
+    const { data, error } = await supabase.from('wines').insert({
+      user_id: session.user.id,
+      name: form.name.trim(),
+      winery: form.winery.trim(),
+      vintage: form.vintage.trim(),
+      price: form.price ? parseFloat(form.price) : null,
+      inventory: parseInt(form.inventory) || 1,
+      style: form.style.trim(),
+      country: form.country.trim(),
+      region: form.region.trim(),
+      sub_region: form.subRegion.trim(),
+      type: form.type || 'Red',
+      source,
+    }).select().single();
+    if (error || !data) { console.error('Failed to add wine:', error); return null; }
+    return mapDbWine(data as Record<string, unknown>);
+  };
+
+  /* ─── AI Summary ─────────────────────────────────────────────── */
   const loadSummary = async () => {
     if (aiSummary || summaryLoading) return;
     setSummaryLoading(true);
@@ -265,20 +308,41 @@ export default function GrapeExpectations() {
     setSummaryLoading(false);
   };
 
-  /* ─── Chat ──────────────────────────────────────────────────── */
+  /* ─── Chat ───────────────────────────────────────────────────── */
   const sendChat = async (prefill?: string) => {
     const msg = (prefill || chatInput).trim();
     if (!msg || chatLoading) return;
+    setLastUserQuery(msg);
     const userMsg: ChatMessage = { role: 'user', content: msg };
     setChatMessages(prev => [...prev, userMsg]);
     setChatInput('');
     setChatLoading(true);
     setChatOpen(true);
     try {
+      // Ensure a chat session exists (fire-and-forget if fails)
+      let sid = chatSessionId;
+      if (!sid && session) {
+        const { data: sessionData } = await supabase
+          .from('recommendation_sessions')
+          .insert({ user_id: session.user.id })
+          .select('id')
+          .single();
+        sid = sessionData?.id ?? null;
+        if (sid) setChatSessionId(sid);
+      }
+
+      // Persist user message
+      if (sid && session) {
+        supabase.from('recommendation_messages').insert({
+          session_id: sid, user_id: session.user.id, role: 'user', content: msg,
+        }).then(() => {});
+      }
+
       const cellarCtx = activeWines.map(w =>
         `• ${w.name} | ${w.winery} | Vintage: ${w.vintage || 'NV'} | ${w.type} (${w.style}) | ${[w.subRegion, w.region, w.country].filter(Boolean).join(', ')} | ${w.inventory} bottle${w.inventory > 1 ? 's' : ''} | Price: ${w.price ? `S$${w.price}` : 'unpriced'}`
       ).join('\n');
-      const history: ChatMessage[] = [...chatMessages, userMsg];
+      // Strip messageId before sending to Claude
+      const history = [...chatMessages, userMsg].map(({ role, content }) => ({ role, content }));
       const txt = await callClaude({
         system: `You are "Grape Expectations" — an expert AI sommelier serving a Singaporean wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine.
 
@@ -329,11 +393,46 @@ RECOMMENDATION RULES:
         messages: history,
         maxTokens: 2000,
       });
-      setChatMessages(prev => [...prev, { role: 'assistant', content: txt }]);
+
+      // Persist assistant message and capture its ID for feedback linkage
+      let assistantMsgId: string | undefined;
+      if (sid && session) {
+        const { data: msgData } = await supabase.from('recommendation_messages').insert({
+          session_id: sid, user_id: session.user.id, role: 'assistant', content: txt,
+        }).select('id').single();
+        assistantMsgId = msgData?.id;
+      }
+
+      setChatMessages(prev => [...prev, { role: 'assistant', content: txt, messageId: assistantMsgId }]);
     } catch {
       setChatMessages(prev => [...prev, { role: 'assistant', content: 'Apologies, I encountered an error. Please try again.' }]);
     }
     setChatLoading(false);
+  };
+
+  /* ─── Feedback (thumbs up/down on assistant messages) ────────── */
+  const submitFeedback = async (msg: ChatMessage, thumbs: 'thumbs_up' | 'thumbs_down') => {
+    if (!msg.messageId || !session) return;
+    const mid = msg.messageId;
+    // Toggle off if same vote
+    if (messageFeedback[mid] === thumbs) {
+      setMessageFeedback(prev => { const next = { ...prev }; delete next[mid]; return next; });
+      await supabase.from('recommendation_feedback')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('message_id', mid)
+        .eq('wine_name', 'response');
+      return;
+    }
+    setMessageFeedback(prev => ({ ...prev, [mid]: thumbs }));
+    await supabase.from('recommendation_feedback').upsert({
+      user_id: session.user.id,
+      message_id: mid,
+      wine_name: 'response',
+      feedback: thumbs,
+      in_cellar: false,
+      context_query: lastUserQuery,
+    });
   };
 
   const copyMessage = useCallback((text: string, idx: number) => {
@@ -346,7 +445,7 @@ RECOMMENDATION RULES:
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages, chatLoading]);
 
-  /* ─── Photo Scan ────────────────────────────────────────────── */
+  /* ─── Photo Scan ─────────────────────────────────────────────── */
   const populateFormFromWine = (wine: Partial<Wine>) => {
     setNewWine(p => ({
       ...p,
@@ -417,7 +516,7 @@ RECOMMENDATION RULES:
       populateFormFromWine(parsed[0]);
       if (wantSommelierNotes) {
         setPairingsLoading(true);
-        (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i)); // prefetch all wines in parallel
+        (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i));
       }
     } catch {
       alert('Could not read label — please enter details manually.');
@@ -426,7 +525,7 @@ RECOMMENDATION RULES:
     setScanLoading(false);
   };
 
-  /* ─── Preview Confirm / Skip ────────────────────────────────── */
+  /* ─── Preview Confirm / Skip ─────────────────────────────────── */
   const advancePreview = (nextIdx: number) => {
     if (nextIdx >= scannedWines.length) {
       closeModal();
@@ -452,93 +551,31 @@ RECOMMENDATION RULES:
     }
   };
 
-  const confirmCurrentWine = () => {
+  const confirmCurrentWine = async () => {
     if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
-    const wine: Wine = {
-      id: `local_${Date.now()}`,
-      name: newWine.name.trim(),
-      winery: newWine.winery.trim(),
-      vintage: newWine.vintage.trim(),
-      price: newWine.price ? parseFloat(newWine.price) : null,
-      inventory: parseInt(newWine.inventory) || 1,
-      style: newWine.style.trim(),
-      country: newWine.country.trim(),
-      region: newWine.region.trim(),
-      subRegion: newWine.subRegion.trim(),
-      type: newWine.type || 'Red',
-    };
-    const updated = [...localWines, wine];
-    setLocalWines(updated);
-    storageSet('ge_local_wines', updated);
-    syncNewWineToSheets(wine).then(sheetId => {
-      if (!sheetId) return;
-      setLocalWines(prev => {
-        const promoted = prev.map(w => w.id === wine.id ? { ...w, id: sheetId } : w);
-        storageSet('ge_local_wines', promoted);
-        return promoted;
-      });
-    });
-    advancePreview(previewIndex + 1);
-  };
-
-  /* ─── Add Wine (manual entry form) ─────────────────────────── */
-  const addWine = () => {
-    if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
-    const wine: Wine = {
-      id: `local_${Date.now()}`,
-      name: newWine.name.trim(),
-      winery: newWine.winery.trim(),
-      vintage: newWine.vintage.trim(),
-      price: newWine.price ? parseFloat(newWine.price) : null,
-      inventory: parseInt(newWine.inventory) || 1,
-      style: newWine.style.trim(),
-      country: newWine.country.trim(),
-      region: newWine.region.trim(),
-      subRegion: newWine.subRegion.trim(),
-      type: newWine.type || 'Red',
-    };
-    const updated = [...localWines, wine];
-    setLocalWines(updated);
-    storageSet('ge_local_wines', updated);
-    syncNewWineToSheets(wine).then(sheetId => {
-      if (!sheetId) return;
-      setLocalWines(prev => {
-        const promoted = prev.map(w => w.id === wine.id ? { ...w, id: sheetId } : w);
-        storageSet('ge_local_wines', promoted);
-        return promoted;
-      });
-    });
-    if (scannedWines.length > 0 && previewIndex < scannedWines.length - 1) {
-      // Multi-wine flow: return to preview for next wine (with notes + loading)
-      setAddTab('photo');
+    const wine = await addWineToDb(newWine, 'photo_scan');
+    if (wine) {
+      setWines(prev => [...prev, wine]);
       advancePreview(previewIndex + 1);
-    } else {
-      closeModal();
     }
   };
 
-  /* ─── Sync new wine to Google Sheets ───────────────────────────── */
-  const syncNewWineToSheets = async (wine: Wine): Promise<string | null> => {
-    try {
-      const res = await fetch('/.netlify/functions/sheets', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: wine.name, winery: wine.winery, vintage: wine.vintage,
-          price: wine.price, inventory: wine.inventory, style: wine.style,
-          country: wine.country, region: wine.region, subRegion: wine.subRegion,
-          type: wine.type,
-        }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.wineIndex != null ? `sheet_${data.wineIndex}` : null;
-    } catch {
-      return null;
+  /* ─── Add Wine (manual entry form) ──────────────────────────── */
+  const addWine = async () => {
+    if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
+    const wine = await addWineToDb(newWine, 'manual');
+    if (wine) {
+      setWines(prev => [...prev, wine]);
+      if (scannedWines.length > 0 && previewIndex < scannedWines.length - 1) {
+        setAddTab('photo');
+        advancePreview(previewIndex + 1);
+      } else {
+        closeModal();
+      }
     }
   };
 
-  /* ─── Render Helpers ────────────────────────────────────────── */
+  /* ─── Render Helpers ─────────────────────────────────────────── */
   const Badge = ({ type }: { type: string }) => {
     const s = TYPE_STYLE[type] || TYPE_STYLE.Red;
     return <span className="tbadge" style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>{type}</span>;
@@ -570,6 +607,16 @@ RECOMMENDATION RULES:
     );
   };
 
+  /* ─── Auth guards ────────────────────────────────────────────── */
+  if (!sessionReady) return (
+    <div className="loading-screen">
+      <div className="loading-title">🍷 Grape Expectations</div>
+      <img src={champagneGif} alt="Loading..." className="loading-gif" />
+    </div>
+  );
+
+  if (!session) return <AuthPage />;
+
   if (loading) return (
     <div className="loading-screen">
       <div className="loading-title">🍷 Grape Expectations</div>
@@ -590,9 +637,26 @@ RECOMMENDATION RULES:
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {usingDemo && <span className="demo-tag">Demo data</span>}
           <span className="ornament hide-m">✦ ✦ ✦</span>
           <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={profile.display_name || 'Profile'}
+              title={`${profile.display_name || session.user.email} · Sign out`}
+              onClick={handleSignOut}
+              style={{
+                width: 32, height: 32, borderRadius: '50%',
+                border: '1px solid var(--border)',
+                cursor: 'pointer', flexShrink: 0,
+                transition: 'border-color 0.2s',
+              }}
+            />
+          ) : (
+            <button className="ge-btn btn-o" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
+              Sign out
+            </button>
+          )}
         </div>
       </header>
 
@@ -773,13 +837,29 @@ RECOMMENDATION RULES:
                   {msg.role === 'assistant' ? <RichText text={msg.content} /> : msg.content}
                 </div>
                 {msg.role === 'assistant' && (
-                  <button
-                    className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
-                    onClick={() => copyMessage(msg.content, i)}
-                    title="Copy to clipboard"
-                  >
-                    {copiedIdx === i ? 'Copied!' : '⎘'}
-                  </button>
+                  <div className="cm-actions">
+                    <button
+                      className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
+                      onClick={() => copyMessage(msg.content, i)}
+                      title="Copy to clipboard"
+                    >
+                      {copiedIdx === i ? 'Copied!' : '⎘'}
+                    </button>
+                    {msg.messageId && (
+                      <div className="cm-feedback">
+                        <button
+                          className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_up' ? 'active' : ''}`}
+                          onClick={() => submitFeedback(msg, 'thumbs_up')}
+                          title="Helpful"
+                        >👍</button>
+                        <button
+                          className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_down' ? 'active' : ''}`}
+                          onClick={() => submitFeedback(msg, 'thumbs_down')}
+                          title="Not helpful"
+                        >👎</button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
@@ -831,10 +911,8 @@ RECOMMENDATION RULES:
 
             {addTab === 'photo' && (
               <div>
-                {/* Camera: capture="environment" opens camera directly on Android */}
                 <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
                   onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
-                {/* Gallery: no capture, opens photo/file picker */}
                 <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                   onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
                 {!photoPreview ? (

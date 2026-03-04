@@ -1,3 +1,7 @@
+import type { Session } from '@supabase/supabase-js';
+
+export type { Session };
+
 export interface Wine {
   id: string;
   name: string;
@@ -10,11 +14,14 @@ export interface Wine {
   region: string;
   subRegion: string;
   type: string;
+  source?: string;
 }
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  /** Set on assistant messages after they are persisted to Supabase */
+  messageId?: string;
 }
 
 export interface Stats {
@@ -51,4 +58,18 @@ export interface NewWineForm {
   region: string;
   subRegion: string;
   type: string;
+}
+
+export interface UserProfile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface RecommendationFeedback {
+  wine_name: string;
+  winery?: string;
+  feedback: 'thumbs_up' | 'thumbs_down';
+  in_cellar: boolean;
+  cellar_wine_id?: string | null;
 }
