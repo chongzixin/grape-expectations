@@ -521,6 +521,35 @@ html, body {
   border-color: var(--gold);
 }
 
+/* ─── Chat Feedback (thumbs up/down) ────────────────────────────── */
+.cm-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.cm-feedback {
+  display: flex;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.cm-fb {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 2px 6px;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+
+.cm-fb:hover { opacity: 0.85; border-color: var(--border); }
+.cm-fb.active { opacity: 1; border-color: var(--gold); }
+
 /* ─── Add Wine Modal ─────────────────────────────────────────────── */
 .ge-modal-bg {
   position: fixed;
