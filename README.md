@@ -3,8 +3,7 @@
 Your Singaporean sommelier web app (supports both desktop and mobile) that recommends what to drink based on what is in the cellar and what food you are having.
 
 ## Database
-
-As this is a prototype, a Google Sheets will be used as a database so that it's easy to view records. Sample below. Full list can be found at https://docs.google.com/spreadsheets/d/1yeu5nTSClzdWkjqboPPGoU627w7r5HytGTisSj9CDf0/edit?usp=drivesdk. 
+We originally used Google Sheets as database but have since moved to Supabase given that we will be expanding the app for more users. Sample table below.
 
 | Name | Winery | Vintage | Price | Inventory | Style | Country | Region | Sub-Region | Type |
 |---|---|---|---|---|---|---|---|---|---|
