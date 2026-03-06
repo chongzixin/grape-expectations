@@ -850,3 +850,9 @@ html, body {
   .wpc-actions { flex-direction: column; }
   .wpc-actions .ge-btn { width: 100%; }
 }
+
+/* ─── Drinking window ────────────────────────────────────────────── */
+td.window-cell {
+  vertical-align: middle;
+  white-space: nowrap;
+}

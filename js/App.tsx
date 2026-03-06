@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile } from './types';
+import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import AuthPage from './AuthPage';
@@ -25,6 +25,65 @@ const TYPE_STYLE: Record<string, TypeStyle> = {
   Dessert:   { dot: '#d4a45a', bg: 'rgba(139,90,26,0.2)',   border: 'rgba(180,120,50,0.4)',  text: '#f5d4aa' },
   Fortified: { dot: '#8a5ad4', bg: 'rgba(90,26,139,0.2)',   border: 'rgba(120,50,180,0.4)', text: '#c4aaf5' },
 };
+
+/* ─── Drinking window ───────────────────────────────────────────── */
+const CURRENT_YEAR = new Date().getFullYear();
+
+const DRINKING_STATUS_PRIORITY: Record<DrinkingStatus, number> = {
+  prime: 1,
+  approaching_end: 2,
+  unknown: 3,
+  too_young: 4,
+  past_peak: 5,
+};
+
+const BADGE_STYLES: Record<DrinkingStatus, { background: string; color: string; label: string }> = {
+  prime:           { background: '#16a34a', color: '#ffffff', label: 'Prime' },
+  approaching_end: { background: '#d97706', color: '#ffffff', label: 'Drink Soon' },
+  past_peak:       { background: '#dc2626', color: '#ffffff', label: 'Past Peak' },
+  too_young:       { background: '#2563eb', color: '#ffffff', label: 'Too Young' },
+  unknown:         { background: '#6b7280', color: '#ffffff', label: 'Unknown' },
+};
+
+function getDrinkingStatus(wine: Wine): DrinkingStatus {
+  const { drinkFrom, drinkBy } = wine;
+  if (drinkFrom == null && drinkBy == null) return 'unknown';
+  const from = drinkFrom ?? -Infinity;
+  const by   = drinkBy   ??  Infinity;
+  if (CURRENT_YEAR < from) return 'too_young';
+  if (CURRENT_YEAR > by)   return 'past_peak';
+  if (drinkBy != null && drinkBy - CURRENT_YEAR <= 2) return 'approaching_end';
+  return 'prime';
+}
+
+function DrinkingWindowBadge({ wine }: { wine: Wine }) {
+  const status = getDrinkingStatus(wine);
+  const { background, color, label } = BADGE_STYLES[status];
+  const windowText = wine.drinkFrom || wine.drinkBy
+    ? `${wine.drinkFrom ?? '?'}–${wine.drinkBy ?? '?'}`
+    : null;
+  return (
+    <span
+      title={windowText ?? 'No window data'}
+      style={{
+        display: 'inline-block',
+        padding: '2px 8px',
+        borderRadius: '9999px',
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        background,
+        color,
+        whiteSpace: 'nowrap',
+        letterSpacing: '0.02em',
+      }}
+    >
+      {label}
+      {windowText && (
+        <span style={{ fontWeight: 400, marginLeft: 4, opacity: 0.85 }}>{windowText}</span>
+      )}
+    </span>
+  );
+}
 
 /* ─── Analytics ─────────────────────────────────────────────────── */
 function computeStats(wines: Wine[]): Stats {
@@ -67,6 +126,8 @@ function mapDbWine(row: Record<string, unknown>): Wine {
     subRegion: (row.sub_region as string) || '',
     type: (row.type as string) || 'Red',
     source: (row.source as string) || 'manual',
+    drinkFrom: (row.drink_from as number | null) ?? null,
+    drinkBy:   (row.drink_by   as number | null) ?? null,
   };
 }
 
@@ -146,7 +207,7 @@ export default function GrapeExpectations() {
   /* ─── UI ─────────────────────────────────────────────────────── */
   const [tab, setTab]       = useState<'cellar' | 'analytics'>('cellar');
   const [filter, setFilter] = useState('All');
-  const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type'>('name');
+  const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('name');
   const [search, setSearch] = useState('');
 
   /* ─── Chat ───────────────────────────────────────────────────── */
@@ -174,7 +235,10 @@ export default function GrapeExpectations() {
   const [newWine, setNewWine] = useState<NewWineForm>({
     name: '', winery: '', vintage: '', price: '', inventory: '1',
     style: '', country: '', region: '', subRegion: '', type: 'Red',
+    drinkFrom: '', drinkBy: '',
   });
+  const [isEstimatingWindows, setIsEstimatingWindows] = useState(false);
+  const [windowEstimationProgress, setWindowEstimationProgress] = useState<{ current: number; total: number } | null>(null);
   const scannedWine = scannedWines[previewIndex] ?? null;
 
   const [localPairings, setLocalPairings] = useState<string[]>([]);
@@ -244,6 +308,11 @@ export default function GrapeExpectations() {
       if (sort === 'vintage') return (b.vintage || '') > (a.vintage || '') ? 1 : -1;
       if (sort === 'price') return (b.price || 0) - (a.price || 0);
       if (sort === 'type') return (a.type || '').localeCompare(b.type || '');
+      if (sort === 'window') {
+        const diff = DRINKING_STATUS_PRIORITY[getDrinkingStatus(a)] - DRINKING_STATUS_PRIORITY[getDrinkingStatus(b)];
+        if (diff !== 0) return diff;
+        return (a.drinkBy ?? 9999) - (b.drinkBy ?? 9999);
+      }
       return (a.name || '').localeCompare(b.name || '');
     });
     return ws;
@@ -283,9 +352,40 @@ export default function GrapeExpectations() {
       sub_region: form.subRegion.trim(),
       type: form.type || 'Red',
       source,
+      drink_from: form.drinkFrom ? parseInt(form.drinkFrom, 10) : null,
+      drink_by:   form.drinkBy   ? parseInt(form.drinkBy,   10) : null,
     }).select().single();
     if (error || !data) { console.error('Failed to add wine:', error); return null; }
     return mapDbWine(data as Record<string, unknown>);
+  };
+
+  /* ─── Batch Drinking Window Estimation ───────────────────────── */
+  const estimateDrinkingWindows = async () => {
+    const winesNeedingWindow = wines.filter(w => w.drinkFrom == null && w.drinkBy == null);
+    if (winesNeedingWindow.length === 0) return;
+    setIsEstimatingWindows(true);
+    setWindowEstimationProgress({ current: 0, total: winesNeedingWindow.length });
+    for (let i = 0; i < winesNeedingWindow.length; i++) {
+      const wine = winesNeedingWindow[i];
+      setWindowEstimationProgress({ current: i + 1, total: winesNeedingWindow.length });
+      try {
+        const raw = await callClaude({
+          messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
+          maxTokens: 60,
+        });
+        const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+        const drinkFrom: number | null = parsed.drinkFrom != null ? parseInt(String(parsed.drinkFrom), 10) : null;
+        const drinkBy:   number | null = parsed.drinkBy   != null ? parseInt(String(parsed.drinkBy),   10) : null;
+        if (drinkFrom !== null || drinkBy !== null) {
+          await supabase.from('wines').update({ drink_from: drinkFrom, drink_by: drinkBy }).eq('id', wine.id);
+          setWines(prev => prev.map(w => w.id === wine.id ? { ...w, drinkFrom, drinkBy } : w));
+        }
+      } catch {
+        // Continue to next wine
+      }
+    }
+    setIsEstimatingWindows(false);
+    setWindowEstimationProgress(null);
   };
 
   /* ─── AI Summary ─────────────────────────────────────────────── */
@@ -338,9 +438,13 @@ export default function GrapeExpectations() {
         }).then(() => {});
       }
 
-      const cellarCtx = activeWines.map(w =>
-        `• ${w.name} | ${w.winery} | Vintage: ${w.vintage || 'NV'} | ${w.type} (${w.style}) | ${[w.subRegion, w.region, w.country].filter(Boolean).join(', ')} | ${w.inventory} bottle${w.inventory > 1 ? 's' : ''} | Price: ${w.price ? `S$${w.price}` : 'unpriced'}`
-      ).join('\n');
+      const cellarCtx = activeWines.map(w => {
+        const status = getDrinkingStatus(w);
+        const windowStr = w.drinkFrom || w.drinkBy
+          ? ` | Window: ${w.drinkFrom ?? '?'}–${w.drinkBy ?? '?'} [${status}]`
+          : ' | Window: unknown';
+        return `• ${w.name} | ${w.winery} | Vintage: ${w.vintage || 'NV'} | ${w.type} (${w.style}) | ${[w.subRegion, w.region, w.country].filter(Boolean).join(', ')} | ${w.inventory} bottle${w.inventory > 1 ? 's' : ''} | Price: ${w.price ? `S$${w.price}` : 'unpriced'}${windowStr}`;
+      }).join('\n');
       // Strip messageId before sending to Claude
       const history = [...chatMessages, userMsg].map(({ role, content }) => ({ role, content }));
       const txt = await callClaude({
@@ -389,7 +493,15 @@ RECOMMENDATION RULES:
 5. Consider budget, occasion, mood if mentioned
 6. Bold wine names using **Wine Name** format
 7. Be conversational — ask a follow-up if helpful
-8. All prices in SGD`,
+8. All prices in SGD
+
+DRINKING WINDOW PRIORITY:
+When recommending wines from the cellar, prioritise by drinking window status in this order:
+1. prime — Wine is currently at its best drinking window. Recommend these first.
+2. approaching_end — Wine is within 2 years of its window end. Recommend urgently ("drink soon").
+3. unknown — Window data not available; treat as potentially drinkable.
+4. too_young — Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.
+5. past_peak — Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.`,
         messages: history,
         maxTokens: 2000,
       });
@@ -458,7 +570,7 @@ RECOMMENDATION RULES:
 
   const closeModal = () => {
     setShowAdd(false);
-    setNewWine({ name: '', winery: '', vintage: '', price: '', inventory: '1', style: '', country: '', region: '', subRegion: '', type: 'Red' });
+    setNewWine({ name: '', winery: '', vintage: '', price: '', inventory: '1', style: '', country: '', region: '', subRegion: '', type: 'Red', drinkFrom: '', drinkBy: '' });
     setPhotoPreview(null);
     setScannedWines([]);
     setPreviewIndex(0);
@@ -472,8 +584,8 @@ RECOMMENDATION RULES:
     if (!wine?.name) return;
     try {
       const raw = await callClaude({
-        messages: [{ role: 'user', content: `You are a Singapore sommelier. Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
-        maxTokens: 500,
+        messages: [{ role: 'user', content: `You are a Singapore sommelier. Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity.","drinkFrom":integer year or null,"drinkBy":integer year or null}\n\nFor drinkFrom and drinkBy: estimate the drinking window based on the wine type, region, vintage, and style. Return integer years (e.g. 2024) or null if uncertain. Suggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
+        maxTokens: 600,
       });
       const enriched = JSON.parse(raw.replace(/```json|```/g, '').trim());
       setScannedWines(prev => {
@@ -486,6 +598,10 @@ RECOMMENDATION RULES:
         if (enriched.wineSummary || enriched.winerySummary || enriched.tastingNotes) {
           setScanNotes({ wine: enriched.wineSummary || '', winery: enriched.winerySummary || '', tasting: enriched.tastingNotes || '' });
         }
+        // Pre-populate drinking window fields from AI estimate
+        const df = enriched.drinkFrom != null ? String(enriched.drinkFrom) : '';
+        const db = enriched.drinkBy   != null ? String(enriched.drinkBy)   : '';
+        if (df || db) setNewWine(p => ({ ...p, drinkFrom: df, drinkBy: db }));
         setPairingsLoading(false);
       }
     } catch {
@@ -638,6 +754,18 @@ RECOMMENDATION RULES:
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span className="ornament hide-m">✦ ✦ ✦</span>
+          {wines.some(w => w.drinkFrom == null && w.drinkBy == null) && (
+            <button
+              className="ge-btn btn-o hide-m"
+              onClick={estimateDrinkingWindows}
+              disabled={isEstimatingWindows}
+              style={{ fontSize: 12, padding: '6px 14px', opacity: isEstimatingWindows ? 0.6 : 1, cursor: isEstimatingWindows ? 'not-allowed' : 'pointer' }}
+            >
+              {isEstimatingWindows && windowEstimationProgress
+                ? `Estimating… ${windowEstimationProgress.current}/${windowEstimationProgress.total}`
+                : 'Estimate Windows'}
+            </button>
+          )}
           <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
           {profile?.avatar_url ? (
             <img
@@ -762,6 +890,7 @@ RECOMMENDATION RULES:
                   <option value="vintage">Vintage</option>
                   <option value="price">Price</option>
                   <option value="type">Type</option>
+                  <option value="window">Drinking Window</option>
                 </select>
               </div>
             </div>
@@ -781,6 +910,7 @@ RECOMMENDATION RULES:
                     <th onClick={() => setSort('vintage')}>Vintage {sort === 'vintage' && '↑'}</th>
                     <th className="hide-m">Region</th>
                     <th onClick={() => setSort('price')} className="hide-m">Price {sort === 'price' && '↑'}</th>
+                    <th onClick={() => setSort('window')} className="hide-m" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>Window {sort === 'window' && '↑'}</th>
                     <th>Bottles</th>
                   </tr>
                 </thead>
@@ -801,6 +931,9 @@ RECOMMENDATION RULES:
                       </td>
                       <td className="hide-m" style={{ fontSize: 13, color: wine.price ? 'var(--gold)' : 'var(--dim)' }}>
                         {wine.price ? `S$${wine.price}` : '—'}
+                      </td>
+                      <td className="hide-m window-cell">
+                        <DrinkingWindowBadge wine={wine} />
                       </td>
                       <td>
                         <div className="inv">
@@ -1006,6 +1139,14 @@ RECOMMENDATION RULES:
                                   <button className="ivb" onClick={() => setNewWine(p => ({ ...p, inventory: String(parseInt(p.inventory) + 1) }))}>+</button>
                                 </div>
                               </div>
+                              <div className="wpc-field">
+                                <label className="fl">Drink From</label>
+                                <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2024" value={newWine.drinkFrom} onChange={e => setNewWine(p => ({ ...p, drinkFrom: e.target.value }))} />
+                              </div>
+                              <div className="wpc-field">
+                                <label className="fl">Drink To</label>
+                                <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2032" value={newWine.drinkBy} onChange={e => setNewWine(p => ({ ...p, drinkBy: e.target.value }))} />
+                              </div>
                             </div>
                             {pairingsLoading && !scanNotes && localPairings.length === 0 && (
                               <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13, marginTop: 12 }}>
@@ -1104,6 +1245,14 @@ RECOMMENDATION RULES:
                   <div className="ff">
                     <label className="fl">Number of Bottles</label>
                     <input className="fi" type="number" min="1" value={newWine.inventory} onChange={e => setNewWine(p => ({ ...p, inventory: e.target.value }))} />
+                  </div>
+                  <div className="ff">
+                    <label className="fl">Drink From</label>
+                    <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2024" value={newWine.drinkFrom} onChange={e => setNewWine(p => ({ ...p, drinkFrom: e.target.value }))} />
+                  </div>
+                  <div className="ff">
+                    <label className="fl">Drink To</label>
+                    <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2032" value={newWine.drinkBy} onChange={e => setNewWine(p => ({ ...p, drinkBy: e.target.value }))} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
