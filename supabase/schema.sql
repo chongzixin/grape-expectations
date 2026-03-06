@@ -36,6 +36,8 @@ CREATE TABLE wines (
   sub_region  TEXT,
   type        TEXT    NOT NULL,
   source      TEXT    DEFAULT 'manual', -- 'manual' | 'photo_scan' | 'import'
+  drink_from  INTEGER,
+  drink_by    INTEGER,
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
