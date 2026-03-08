@@ -32,9 +32,9 @@ const CURRENT_YEAR = new Date().getFullYear();
 const DRINKING_STATUS_PRIORITY: Record<DrinkingStatus, number> = {
   prime: 1,
   approaching_end: 2,
-  unknown: 3,
+  past_peak: 3,
   too_young: 4,
-  past_peak: 5,
+  unknown: 5,
 };
 
 const BADGE_STYLES: Record<DrinkingStatus, { background: string; color: string; label: string }> = {
