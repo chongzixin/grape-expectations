@@ -597,7 +597,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
     if (!wine?.name) return;
     try {
       const raw = await callClaude({
-        messages: [{ role: 'user', content: `You are a Singapore sommelier. Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity.","drinkFrom":integer year or null,"drinkBy":integer year or null}\n\nFor drinkFrom and drinkBy: estimate the drinking window based on the wine type, region, vintage, and style. Return integer years (e.g. 2024) or null if uncertain. Suggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
+        messages: [{ role: 'user', content: `You are a Singapore sommelier. Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
         maxTokens: 600,
       });
       const enriched = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -611,14 +611,35 @@ When recommending wines from the cellar, prioritise by drinking window status in
         if (enriched.wineSummary || enriched.winerySummary || enriched.tastingNotes) {
           setScanNotes({ wine: enriched.wineSummary || '', winery: enriched.winerySummary || '', tasting: enriched.tastingNotes || '' });
         }
-        // Pre-populate drinking window fields from AI estimate
-        const df = enriched.drinkFrom != null ? String(enriched.drinkFrom) : '';
-        const db = enriched.drinkBy   != null ? String(enriched.drinkBy)   : '';
-        if (df || db) setNewWine(p => ({ ...p, drinkFrom: df, drinkBy: db }));
         setPairingsLoading(false);
       }
     } catch {
       if (index === previewIndexRef.current) setPairingsLoading(false);
+    }
+  };
+
+  const fetchDrinkingWindow = async (wine: Partial<Wine>, index: number) => {
+    if (!wine?.name) return;
+    try {
+      const raw = await callClaude({
+        messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
+        maxTokens: 60,
+      });
+      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      const drinkFrom = parsed.drinkFrom != null ? parseInt(String(parsed.drinkFrom), 10) : null;
+      const drinkBy   = parsed.drinkBy   != null ? parseInt(String(parsed.drinkBy),   10) : null;
+      setScannedWines(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], drinkFrom, drinkBy, _windowFetched: true } as any;
+        return updated;
+      });
+      if (index === previewIndexRef.current) {
+        const df = drinkFrom != null ? String(drinkFrom) : '';
+        const db = drinkBy   != null ? String(drinkBy)   : '';
+        if (df || db) setNewWine(p => ({ ...p, drinkFrom: df, drinkBy: db }));
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -643,8 +664,11 @@ When recommending wines from the cellar, prioritise by drinking window status in
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
-      if (wantSommelierNotes) setPairingsLoading(true);
-      (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i));
+      (parsed as Partial<Wine>[]).forEach((w, i) => fetchDrinkingWindow(w, i));
+      if (wantSommelierNotes) {
+        setPairingsLoading(true);
+        (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i));
+      }
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -670,8 +694,12 @@ When recommending wines from the cellar, prioritise by drinking window status in
       } else {
         setLocalPairings([]);
         setScanNotes(null);
-        if (wantSommelierNotes) setPairingsLoading(true);
-        enrichWine(scannedWines[nextIdx], nextIdx);
+        const wnNext = scannedWines[nextIdx] as any;
+        if (!wnNext?._windowFetched) fetchDrinkingWindow(scannedWines[nextIdx], nextIdx);
+        if (wantSommelierNotes) {
+          setPairingsLoading(true);
+          enrichWine(scannedWines[nextIdx], nextIdx);
+        }
       }
     }
   };
