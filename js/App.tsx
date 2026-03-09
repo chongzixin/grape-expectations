@@ -620,7 +620,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
   };
 
   const fetchDrinkingWindow = async (wine: Partial<Wine>, index: number) => {
-    if (!wine?.name || !wine?.vintage) return;
+    const v = wine?.vintage?.trim();
+    if (!wine?.name || !v || v === 'NV' || v.toLowerCase() === 'null') return;
     if (index === previewIndexRef.current) setWindowLoading(true);
     try {
       const raw = await callClaude({
