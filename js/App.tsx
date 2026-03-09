@@ -573,13 +573,15 @@ When recommending wines from the cellar, prioritise by drinking window status in
 
   /* ─── Photo Scan ─────────────────────────────────────────────── */
   const populateFormFromWine = (wine: Partial<Wine>) => {
-    setNewWine(p => ({
-      ...p,
+    setNewWine({
+      name: '', winery: '', vintage: '', price: '', inventory: '1',
+      style: '', country: '', region: '', subRegion: '', type: 'Red',
+      drinkFrom: '', drinkBy: '',
       ...(Object.fromEntries(
         Object.entries(wine as Record<string, unknown>).map(([k, v]) => [k, v ?? ''])
       ) as Partial<NewWineForm>),
       inventory: '1',
-    }));
+    });
   };
 
   const closeModal = () => {
