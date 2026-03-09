@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grape Expectations — Cave des Étoiles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #090C18;
+      --surface: #0F1322;
+      --card: #141828;
+      --card-h: #1C2235;
+      --glass: rgba(20, 24, 40, 0.85);
+      --border: rgba(184, 155, 255, 0.1);
+      --border-strong: rgba(184, 155, 255, 0.22);
+      --violet: #9B7AE8;
+      --violet-b: #B89BFF;
+      --violet-dim: rgba(155, 122, 232, 0.15);
+      --violet-glow: rgba(155, 122, 232, 0.3);
+      --gold: #D4A843;
+      --gold-b: #EDCC7A;
+      --gold-dim: rgba(212, 168, 67, 0.15);
+      --gold-glow: rgba(212, 168, 67, 0.3);
+      --accent: linear-gradient(135deg, #9B7AE8, #D4A843);
+      --rose: #E87A9B;
+      --rose-dim: rgba(232, 122, 155, 0.15);
+      --text: #E8EAF2;
+      --text-dim: rgba(232, 234, 242, 0.7);
+      --muted: #5A6080;
+      --dim: #2A3050;
+      --radius: 12px;
+      --radius-lg: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; }
+    input, select, textarea { font-family: inherit; }
+
+    /* ── STARFIELD CANVAS ── */
+    #starfield {
+      position: fixed; top: 0; left: 0; z-index: 0;
+      pointer-events: none; opacity: 0.5;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 70px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1C2235, #0F1322);
+      border: 1px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 0 20px var(--violet-glow);
+    }
+    .logo-mark::before {
+      content: '✦';
+      position: absolute; font-size: 8px; top: 4px; right: 6px;
+      color: var(--gold); opacity: 0.7;
+    }
+    .logo-mark-inner { font-size: 22px; }
+    .logo-text { display: flex; flex-direction: column; gap: 2px; }
+    .logo-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px; font-weight: 600;
+      background: var(--accent);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+    .logo-tagline { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+    .hdr-actions { display: flex; align-items: center; gap: 10px; }
+    .btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--violet), var(--gold));
+      color: #fff; box-shadow: 0 2px 16px var(--violet-glow);
+    }
+    .btn-gradient:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 24px var(--violet-glow); }
+    .btn-ghost {
+      background: var(--surface); color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--border-strong); color: var(--text); }
+    .score-badge {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--card); border: 1px solid var(--border-strong);
+      border-radius: 20px; padding: 6px 14px;
+    }
+    .score-star { color: var(--gold); font-size: 14px; }
+    .score-val { font-size: 13px; font-weight: 700; color: var(--text); }
+    .score-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--violet-dim); border: 1.5px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--violet-b);
+    }
+
+    /* ── MAIN ── */
+    .main { max-width: 1120px; margin: 0 auto; padding: 28px 28px 140px; position: relative; z-index: 1; }
+
+    /* ── HERO STATS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .stat:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(9,12,24,0.6); }
+    .stat-icon { font-size: 18px; margin-bottom: 10px; display: block; }
+    .stat-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px; font-weight: 600; color: var(--text);
+      line-height: 1; margin-bottom: 4px;
+    }
+    .stat-val.accent { background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .stat-score { position: relative; }
+    .stat-score .ring {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: conic-gradient(var(--violet) 0% 82%, var(--dim) 82% 100%);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .stat-score .ring-inner {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--card);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600;
+      color: var(--violet-b);
+    }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 2px; margin-bottom: 24px; }
+    .tab {
+      padding: 10px 24px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      transition: all 0.2s;
+    }
+    .tab:hover { color: var(--text-dim); background: var(--surface); }
+    .tab.active {
+      background: linear-gradient(135deg, var(--violet-dim), var(--gold-dim));
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── FILTERS ── */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filter-btn {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: var(--surface); color: var(--muted); border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--border-strong); color: var(--text-dim); }
+    .filter-btn.active { background: var(--violet-dim); color: var(--violet-b); border-color: var(--border-strong); }
+    .search-box {
+      margin-left: auto; padding: 8px 14px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px; width: 200px; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-box:focus { border-color: var(--border-strong); box-shadow: 0 0 0 3px var(--violet-dim); }
+    .search-box::placeholder { color: var(--muted); }
+
+    /* ── TABLE ── */
+    .tbl-wrap {
+      overflow-x: auto; border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 24px rgba(9,12,24,0.5);
+    }
+    .tbl { width: 100%; border-collapse: collapse; background: var(--card); }
+    .tbl thead { background: var(--surface); }
+    .tbl th {
+      padding: 12px 16px; text-align: left;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    .tbl td { padding: 15px 16px; border-bottom: 1px solid var(--border); }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tbody tr { transition: background 0.15s; }
+    .tbl tbody tr:hover { background: var(--card-h); }
+    .wine-name { font-weight: 600; font-size: 14px; color: var(--text); }
+    .wine-winery { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .type-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .window-badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; color: #fff; }
+    .inv { display: flex; align-items: center; gap: 8px; }
+    .inv-btn {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--violet-b); font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .inv-btn:hover { background: var(--violet-dim); border-color: var(--border-strong); }
+    .inv-count { font-size: 14px; font-weight: 700; width: 22px; text-align: center; }
+    .price-cell { font-size: 14px; font-weight: 700; color: var(--gold-b); }
+    .empty-row td { text-align: center; padding: 48px; color: var(--muted); }
+
+    /* ── ANALYTICS ── */
+    .ai-box {
+      background: var(--card); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg); padding: 26px;
+      margin-bottom: 24px; position: relative; overflow: hidden;
+    }
+    .ai-box-glow {
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, var(--violet-dim) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .ai-box-glow2 {
+      position: absolute; bottom: -40px; left: -40px;
+      width: 150px; height: 150px; border-radius: 50%;
+      background: radial-gradient(circle, var(--gold-dim) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .ai-hdr { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; position: relative; }
+    .ai-orb {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--violet-dim), var(--gold-dim));
+      border: 1px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+      box-shadow: 0 0 16px var(--violet-glow);
+    }
+    .ai-ttl {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px; font-weight: 600; color: var(--text);
+    }
+    .ai-sub { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .ai-text { font-size: 14px; line-height: 1.8; color: var(--text-dim); position: relative; }
+    .ai-text strong { color: var(--gold-b); }
+    .brk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    .brk-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .brk-card:hover { border-color: var(--border-strong); box-shadow: 0 4px 24px rgba(9,12,24,0.5); }
+    .brk-ttl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 14px; }
+    .brk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .brk-row:last-child { margin-bottom: 0; }
+    .brk-label { font-size: 13px; color: var(--text-dim); flex: 1; }
+    .brk-bar-wrap { width: 80px; height: 4px; background: var(--surface); border-radius: 2px; overflow: hidden; }
+    .brk-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--violet), var(--gold)); }
+    .brk-count { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 18px; text-align: right; }
+    .vintage-row { display: flex; align-items: flex-end; gap: 4px; height: 64px; margin-top: 10px; }
+    .vintage-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .vintage-bar-col { width: 100%; border-radius: 4px 4px 0 0; background: linear-gradient(to top, var(--violet), var(--gold-b)); min-height: 4px; }
+    .vintage-yr { font-size: 9px; color: var(--muted); }
+    .cellar-score-card {
+      background: linear-gradient(135deg, var(--violet-dim), var(--gold-dim));
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius); padding: 20px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .score-ring-lg {
+      width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+      background: conic-gradient(var(--violet) 0% 82%, rgba(155,122,232,0.1) 82% 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 24px var(--violet-glow);
+    }
+    .score-ring-inner {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--card);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .score-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px; font-weight: 600; line-height: 1;
+      background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .score-sub { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .score-details { flex: 1; }
+    .score-title { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--text); margin-bottom: 6px; }
+    .score-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+    /* ── SOMMELIER FAB ── */
+    .sommelier-fab {
+      position: fixed; bottom: 28px; right: 28px; z-index: 200;
+      background: linear-gradient(135deg, var(--violet), var(--gold));
+      color: #fff; padding: 14px 22px; border-radius: 32px;
+      font-size: 14px; font-weight: 700;
+      box-shadow: 0 4px 28px var(--violet-glow);
+      display: flex; align-items: center; gap: 9px;
+      transition: all 0.22s;
+      animation: fabGlow 3s ease-in-out infinite;
+    }
+    @keyframes fabGlow {
+      0%,100% { box-shadow: 0 4px 28px var(--violet-glow); }
+      50% { box-shadow: 0 4px 40px var(--gold-glow), 0 0 0 4px rgba(155,122,232,0.1); }
+    }
+    .sommelier-fab:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--violet-glow); animation: none; }
+    .fab-stars { display: flex; gap: 2px; font-size: 10px; opacity: 0.8; }
+
+    /* ── CHAT DRAWER ── */
+    .chat-drawer {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+      background: var(--glass);
+      backdrop-filter: blur(32px);
+      border-top: 1px solid var(--border-strong);
+      box-shadow: 0 -12px 64px rgba(9,12,24,0.8);
+      border-radius: 24px 24px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.34s cubic-bezier(0.34, 1.2, 0.64, 1);
+      display: flex; flex-direction: column; max-height: 72vh;
+      overflow: hidden;
+    }
+    .chat-drawer::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--violet), var(--gold), transparent);
+    }
+    .chat-drawer.open { transform: translateY(0); }
+    .chat-drag { width: 40px; height: 3px; border-radius: 2px; background: var(--border-strong); margin: 14px auto 0; }
+    .chat-hdr { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px 10px; }
+    .chat-hdr-left { display: flex; align-items: center; gap: 12px; }
+    .chat-hdr-orb {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--violet-dim), var(--gold-dim));
+      border: 1px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center; font-size: 17px;
+      box-shadow: 0 0 12px var(--violet-glow);
+    }
+    .chat-hdr-title { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--text); }
+    .chat-hdr-sub { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .chat-close {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--surface); color: var(--muted); font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); transition: all 0.15s;
+    }
+    .chat-close:hover { border-color: var(--border-strong); color: var(--text); }
+    .chat-msgs { flex: 1; overflow-y: auto; padding: 10px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .quick-prompts { padding: 4px 24px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .qp {
+      padding: 6px 13px; border-radius: 16px; font-size: 12px; font-weight: 600;
+      background: var(--surface); color: var(--violet-b); border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .qp:hover { background: var(--violet-dim); border-color: var(--border-strong); }
+    .msg { display: flex; flex-direction: column; gap: 3px; }
+    .msg.user { align-items: flex-end; }
+    .msg.assistant { align-items: flex-start; }
+    .msg-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .bubble { max-width: 80%; padding: 11px 15px; border-radius: 14px; font-size: 13px; line-height: 1.65; }
+    .msg.user .bubble { background: linear-gradient(135deg, var(--violet), #7B5ABF); color: #fff; border-radius: 14px 14px 4px 14px; }
+    .msg.assistant .bubble { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: 14px 14px 14px 4px; }
+    .msg.assistant .bubble strong { color: var(--gold-b); }
+    .chat-input-bar { padding: 12px 20px 18px; display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid var(--border); }
+    .chat-input {
+      flex: 1; padding: 11px 15px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); font-size: 13px;
+      resize: none; outline: none; max-height: 100px;
+      transition: border-color 0.15s;
+    }
+    .chat-input:focus { border-color: var(--border-strong); box-shadow: 0 0 0 3px var(--violet-dim); }
+    .chat-input::placeholder { color: var(--muted); }
+    .send-btn {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--violet), var(--gold));
+      color: #fff; font-size: 18px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+      box-shadow: 0 2px 12px var(--violet-glow);
+    }
+    .send-btn:hover { transform: scale(1.06); box-shadow: 0 4px 20px var(--violet-glow); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(5, 7, 14, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--card); border-radius: 20px;
+      width: 100%; max-width: 540px; max-height: 85vh; overflow-y: auto;
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 24px 80px rgba(9,12,24,0.9);
+      position: relative;
+    }
+    .modal::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px; border-radius: 20px 20px 0 0;
+      background: linear-gradient(90deg, transparent, var(--violet), var(--gold), transparent);
+    }
+    .modal-hdr { padding: 22px 26px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-ttl { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--text); }
+    .modal-body { padding: 22px 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-field { display: flex; flex-direction: column; gap: 5px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .form-input {
+      padding: 10px 13px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px; outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--border-strong); box-shadow: 0 0 0 3px var(--violet-dim); }
+    .modal-footer { padding: 16px 26px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 700px) {
+      .main { padding: 16px 16px 140px; }
+      .hdr { padding: 0 16px; }
+      .logo-tagline, .score-badge { display: none; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .tbl th:nth-child(4), .tbl td:nth-child(4),
+      .tbl th:nth-child(5), .tbl td:nth-child(5) { display: none; }
+      .sommelier-fab { right: 16px; bottom: 20px; }
+      .modal-body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Starfield Canvas -->
+  <canvas id="starfield"></canvas>
+
+  <!-- ── HEADER ── -->
+  <header class="hdr">
+    <div class="logo">
+      <div class="logo-mark"><div class="logo-mark-inner">🍷</div></div>
+      <div class="logo-text">
+        <div class="logo-name">Grape Expectations</div>
+        <div class="logo-tagline">Cave des Étoiles</div>
+      </div>
+    </div>
+    <div class="hdr-actions">
+      <div class="score-badge">
+        <span class="score-star">★</span>
+        <div>
+          <div class="score-val">82</div>
+          <div class="score-lbl">Cellar Score</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="openModal()">+ Add Wine</button>
+      <button class="btn btn-gradient">Estimate Windows</button>
+      <div class="avatar">JT</div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat">
+        <span class="stat-icon">🍾</span>
+        <div class="stat-val accent" id="stat-bottles">24</div>
+        <div class="stat-lbl">Total Bottles</div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon">🏷️</span>
+        <div class="stat-val">8</div>
+        <div class="stat-lbl">Unique Wines</div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon">💰</span>
+        <div class="stat-val">S$220</div>
+        <div class="stat-lbl">Avg Price</div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon">🌍</span>
+        <div class="stat-val">France</div>
+        <div class="stat-lbl">Top Country</div>
+      </div>
+      <div class="stat stat-score">
+        <div class="ring"><div class="ring-inner">82</div></div>
+        <div class="stat-lbl">Cellar Score</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('cellar', this)">✦ Cellar</button>
+      <button class="tab" onclick="switchTab('analytics', this)">◈ Analytics</button>
+    </div>
+
+    <!-- ── CELLAR TAB ── -->
+    <div class="tab-content active" id="cellar-tab">
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterWines('All', this)">All</button>
+        <button class="filter-btn" onclick="filterWines('Red', this)">Red</button>
+        <button class="filter-btn" onclick="filterWines('White', this)">White</button>
+        <button class="filter-btn" onclick="filterWines('Sparkling', this)">Sparkling</button>
+        <button class="filter-btn" onclick="filterWines('Dessert', this)">Dessert</button>
+        <input class="search-box" placeholder="Search the cave…" oninput="searchWines(this.value)" />
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Wine</th>
+              <th>Type</th>
+              <th>Vintage</th>
+              <th>Region</th>
+              <th>Price</th>
+              <th>Drinking Window</th>
+              <th>Bottles</th>
+            </tr>
+          </thead>
+          <tbody id="wine-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS TAB ── -->
+    <div class="tab-content" id="analytics-tab">
+
+      <!-- Cellar Score Card -->
+      <div class="cellar-score-card" style="margin-bottom:24px;">
+        <div class="score-ring-lg">
+          <div class="score-ring-inner">
+            <div class="score-number">82</div>
+            <div class="score-sub">/100</div>
+          </div>
+        </div>
+        <div class="score-details">
+          <div class="score-title">Excellent Collection</div>
+          <div class="score-desc">Your cellar scores highly on depth (15 bottles from France), investment potential (Ornellaia + d'Yquem), and readiness. The Cloudy Bay is your only urgency — open it before 2025.</div>
+        </div>
+      </div>
+
+      <!-- AI Summary -->
+      <div class="ai-box">
+        <div class="ai-box-glow"></div>
+        <div class="ai-box-glow2"></div>
+        <div class="ai-hdr">
+          <div class="ai-orb">✦</div>
+          <div>
+            <div class="ai-ttl">Sommelier's Assessment</div>
+            <div class="ai-sub">Powered by Claude AI · Real-time analysis</div>
+          </div>
+        </div>
+        <div class="ai-text">
+          Your cellar reflects a discerning palate with a clear affection for French terroir — <strong>15 of your 24 bottles</strong> hail from France, with Bordeaux and Burgundy representing your core holdings. The 2016 Pichon Baron is approaching its prime drinking window and deserves early attention.
+          <br><br>
+          At an average spend of <strong>S$220 per bottle</strong>, your collection balances investment-grade bottles (the Ornellaia and d'Yquem) with everyday drinking options. I'd recommend adding 2–3 more bottles in the S$50–80 range for regular enjoyment — perhaps a Côtes du Rhône or a New World Pinot Noir to diversify the portfolio.
+        </div>
+      </div>
+
+      <div class="brk-grid">
+        <!-- By Type -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Type</div>
+          <div class="brk-row">
+            <span style="width:8px;height:8px;border-radius:50%;background:#e05c6b;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Red</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:67%;"></div></div>
+            <span class="brk-count">10</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:8px;height:8px;border-radius:50%;background:#d4c44a;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">White</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:53%;"></div></div>
+            <span class="brk-count">8</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:8px;height:8px;border-radius:50%;background:#5bbad5;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Sparkling</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:20%;"></div></div>
+            <span class="brk-count">3</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:8px;height:8px;border-radius:50%;background:#d4a45a;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Dessert</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:13%;"></div></div>
+            <span class="brk-count">2</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:8px;height:8px;border-radius:50%;background:#e87a9b;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Rosé</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:7%;"></div></div>
+            <span class="brk-count">1</span>
+          </div>
+        </div>
+
+        <!-- By Country -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Country</div>
+          <div class="brk-row"><span class="brk-label">🇫🇷 France</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:100%;"></div></div><span class="brk-count">15</span></div>
+          <div class="brk-row"><span class="brk-label">🇮🇹 Italy</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:27%;"></div></div><span class="brk-count">4</span></div>
+          <div class="brk-row"><span class="brk-label">🇪🇸 Spain</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:20%;"></div></div><span class="brk-count">3</span></div>
+          <div class="brk-row"><span class="brk-label">🇳🇿 New Zealand</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:13%;"></div></div><span class="brk-count">2</span></div>
+        </div>
+
+        <!-- By Varietal -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Varietal</div>
+          <div class="brk-row"><span class="brk-label">Cabernet Sauvignon</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:80%;"></div></div><span class="brk-count">7</span></div>
+          <div class="brk-row"><span class="brk-label">Chardonnay</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:57%;"></div></div><span class="brk-count">5</span></div>
+          <div class="brk-row"><span class="brk-label">Riesling</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:34%;"></div></div><span class="brk-count">3</span></div>
+          <div class="brk-row"><span class="brk-label">Tempranillo</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:23%;"></div></div><span class="brk-count">2</span></div>
+        </div>
+
+        <!-- By Vintage -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Vintage</div>
+          <div class="vintage-row">
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:30px;"></div><div class="vintage-yr">2015</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:48px;"></div><div class="vintage-yr">2016</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:20px;"></div><div class="vintage-yr">2017</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:40px;"></div><div class="vintage-yr">2018</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:30px;"></div><div class="vintage-yr">2019</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:16px;"></div><div class="vintage-yr">2020</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:8px;"></div><div class="vintage-yr">2023</div></div>
+          </div>
+        </div>
+
+        <!-- Drinking Windows -->
+        <div class="brk-card">
+          <div class="brk-ttl">Drinking Windows</div>
+          <div class="brk-row"><span class="brk-label" style="color:#4ade80;">● Prime Now</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:50%;background:#4ade80;"></div></div><span class="brk-count">5</span></div>
+          <div class="brk-row"><span class="brk-label" style="color:#fbbf24;">● Drink Soon</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:8%;background:#fbbf24;"></div></div><span class="brk-count">1</span></div>
+          <div class="brk-row"><span class="brk-label" style="color:#818cf8;">● Too Young</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:33%;background:#818cf8;"></div></div><span class="brk-count">3</span></div>
+          <div class="brk-row"><span class="brk-label" style="color:var(--muted);">● Unknown</span><div class="brk-bar-wrap"><div class="brk-bar" style="width:8%;"></div></div><span class="brk-count">1</span></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ── FAB ── -->
+  <button class="sommelier-fab" onclick="toggleChat()">
+    ✦ Ask Sommelier
+    <div class="fab-stars">★★★</div>
+  </button>
+
+  <!-- ── CHAT DRAWER ── -->
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-drag"></div>
+    <div class="chat-hdr">
+      <div class="chat-hdr-left">
+        <div class="chat-hdr-orb">✦</div>
+        <div>
+          <div class="chat-hdr-title">Your Sommelier</div>
+          <div class="chat-hdr-sub">AI · Wine Pairing · Cellar Intelligence</div>
+        </div>
+      </div>
+      <button class="chat-close" onclick="toggleChat()">×</button>
+    </div>
+    <div class="quick-prompts" id="quickPrompts">
+      <button class="qp" onclick="sendQuick('What wine pairs with Hainanese Chicken Rice?')">🍚 Chicken Rice</button>
+      <button class="qp" onclick="sendQuick('Best wine for a Peranakan dinner?')">🌶 Peranakan Feast</button>
+      <button class="qp" onclick="sendQuick('What should I drink from my cellar tonight?')">🌙 Tonight's Pick</button>
+      <button class="qp" onclick="sendQuick('Which wines should I drink before they peak?')">⏰ Drink Soon?</button>
+    </div>
+    <div class="chat-msgs" id="chatMsgs"></div>
+    <div class="chat-input-bar">
+      <textarea class="chat-input" id="chatInput" placeholder="Ask your sommelier anything…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+      <button class="send-btn" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+
+  <!-- ── MODAL ── -->
+  <div class="modal-overlay hidden" id="addModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="modal-ttl">Add Wine to Cave</div>
+        <button class="chat-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field full">
+          <label class="form-label">Wine Name</label>
+          <input class="form-input" placeholder="e.g. Château Margaux" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Winery / Producer</label>
+          <input class="form-input" placeholder="e.g. Château Margaux" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Vintage</label>
+          <input class="form-input" placeholder="e.g. 2018" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Type</label>
+          <select class="form-input">
+            <option>Red</option><option>White</option><option>Sparkling</option>
+            <option>Rosé</option><option>Dessert</option><option>Fortified</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Varietal</label>
+          <input class="form-input" placeholder="e.g. Cabernet Sauvignon" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Country</label>
+          <input class="form-input" placeholder="e.g. France" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Region</label>
+          <input class="form-input" placeholder="e.g. Bordeaux" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Price (SGD)</label>
+          <input class="form-input" placeholder="e.g. 120" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Bottles</label>
+          <input class="form-input" type="number" value="1" min="1" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-gradient" onclick="closeModal()">Add to Cave</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── STARFIELD ──
+    (function() {
+      const canvas = document.getElementById('starfield');
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      function init() {
+        stars = Array.from({ length: 180 }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.2 + 0.2,
+          o: Math.random() * 0.7 + 0.1,
+          speed: Math.random() * 0.3 + 0.05,
+          phase: Math.random() * Math.PI * 2,
+        }));
+      }
+
+      function draw(t) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(s => {
+          const opacity = s.o * (0.7 + 0.3 * Math.sin(t / 1000 * s.speed + s.phase));
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(230, 225, 255, ${opacity})`;
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', () => { resize(); init(); });
+      resize(); init(); requestAnimationFrame(draw);
+    })();
+
+    // ── WINE DATA ──
+    const WINES = [
+      { id:1, name:'Château Pichon Baron', winery:'Pichon Baron', vintage:'2016', type:'Red', style:'Cabernet Sauvignon', country:'France', region:'Pauillac', price:220, inventory:3, drinkFrom:2022, drinkBy:2035 },
+      { id:2, name:'Puligny-Montrachet 1er Cru', winery:'Louis Jadot', vintage:'2020', type:'White', style:'Chardonnay', country:'France', region:'Burgundy', price:185, inventory:2, drinkFrom:2024, drinkBy:2030 },
+      { id:3, name:'Special Cuvée', winery:'Bollinger', vintage:'NV', type:'Sparkling', style:'Chardonnay Blend', country:'France', region:'Champagne', price:110, inventory:4, drinkFrom:null, drinkBy:null },
+      { id:4, name:'Riesling Clos des Capucins', winery:'Domaine Weinbach', vintage:'2019', type:'White', style:'Riesling', country:'France', region:'Alsace', price:98, inventory:2, drinkFrom:2021, drinkBy:2028 },
+      { id:5, name:'Ornellaia', winery:'Tenuta dell\'Ornellaia', vintage:'2018', type:'Red', style:'Bordeaux Blend', country:'Italy', region:'Tuscany', price:380, inventory:1, drinkFrom:2025, drinkBy:2040 },
+      { id:6, name:'Reserva', winery:'Bodegas Muga', vintage:'2019', type:'Red', style:'Tempranillo', country:'Spain', region:'Rioja', price:65, inventory:6, drinkFrom:2023, drinkBy:2030 },
+      { id:7, name:'Sauvignon Blanc', winery:'Cloudy Bay', vintage:'2023', type:'White', style:'Sauvignon Blanc', country:'New Zealand', region:'Marlborough', price:52, inventory:3, drinkFrom:2023, drinkBy:2025 },
+      { id:8, name:'Château d\'Yquem', winery:'Lur Saluces', vintage:'2015', type:'Dessert', style:'Sémillon/Sauvignon', country:'France', region:'Sauternes', price:650, inventory:1, drinkFrom:2025, drinkBy:2050 },
+    ];
+
+    const TYPE_STYLES = {
+      Red:       { dot:'#e05c6b', bg:'rgba(224,92,107,0.13)' },
+      White:     { dot:'#d4c44a', bg:'rgba(212,196,74,0.1)' },
+      Sparkling: { dot:'#5bbad5', bg:'rgba(91,186,213,0.1)' },
+      Rosé:      { dot:'#e87a9b', bg:'rgba(232,122,155,0.1)' },
+      Dessert:   { dot:'#d4a45a', bg:'rgba(212,164,90,0.1)' },
+      Fortified: { dot:'#9B7AE8', bg:'rgba(155,122,232,0.1)' },
+    };
+
+    const WINDOW_STYLES = {
+      prime:           { bg:'#16a34a', label:'Prime' },
+      approaching_end: { bg:'#d97706', label:'Drink Soon' },
+      past_peak:       { bg:'#dc2626', label:'Past Peak' },
+      too_young:       { bg:'#4f46e5', label:'Too Young' },
+      unknown:         { bg:'#4b5563', label:'Unknown' },
+    };
+
+    function getStatus(wine) {
+      const yr = new Date().getFullYear();
+      if (!wine.drinkFrom || !wine.drinkBy) return 'unknown';
+      if (yr < wine.drinkFrom) return 'too_young';
+      if (yr > wine.drinkBy) return 'past_peak';
+      if (wine.drinkBy - yr <= 1) return 'approaching_end';
+      return 'prime';
+    }
+
+    let inventories = {};
+    WINES.forEach(w => inventories[w.id] = w.inventory);
+    let activeFilter = 'All', searchTerm = '';
+
+    function renderTable() {
+      const tbody = document.getElementById('wine-tbody');
+      let filtered = WINES.filter(w => {
+        if (activeFilter !== 'All' && w.type !== activeFilter) return false;
+        if (searchTerm && !w.name.toLowerCase().includes(searchTerm) && !w.winery.toLowerCase().includes(searchTerm) && !w.region.toLowerCase().includes(searchTerm)) return false;
+        return true;
+      });
+      if (!filtered.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No wines in the cave</td></tr>'; return; }
+      tbody.innerHTML = filtered.map(w => {
+        const ts = TYPE_STYLES[w.type] || { dot:'#888', bg:'rgba(136,136,136,0.1)' };
+        const status = getStatus(w);
+        const ws = WINDOW_STYLES[status];
+        const windowLabel = (w.drinkFrom && w.drinkBy) ? `${w.drinkFrom}–${w.drinkBy}` : '';
+        return `<tr>
+          <td><div class="wine-name">${w.name}</div><div class="wine-winery">${w.winery}</div></td>
+          <td><span class="type-badge" style="background:${ts.bg};color:${ts.dot};">
+            <span class="type-dot" style="background:${ts.dot};"></span>${w.type}
+          </span></td>
+          <td style="color:var(--text-dim);">${w.vintage}</td>
+          <td style="color:var(--muted);font-size:13px;">${w.region}, ${w.country}</td>
+          <td class="price-cell">${w.price ? 'S$' + w.price : '—'}</td>
+          <td>
+            <span class="window-badge" style="background:${ws.bg};">${ws.label}</span>
+            ${windowLabel ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;">${windowLabel}</div>` : ''}
+          </td>
+          <td>
+            <div class="inv">
+              <button class="inv-btn" onclick="changeInv(${w.id},-1)">−</button>
+              <span class="inv-count" id="inv-${w.id}">${inventories[w.id]}</span>
+              <button class="inv-btn" onclick="changeInv(${w.id},+1)">+</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function changeInv(id, delta) {
+      inventories[id] = Math.max(0, (inventories[id] || 0) + delta);
+      const el = document.getElementById('inv-' + id);
+      if (el) el.textContent = inventories[id];
+      document.getElementById('stat-bottles').textContent = Object.values(inventories).reduce((a,b)=>a+b,0);
+    }
+
+    function filterWines(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    }
+
+    function searchWines(val) { searchTerm = val.toLowerCase(); renderTable(); }
+
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(name + '-tab').classList.add('active');
+      btn.classList.add('active');
+    }
+
+    let chatOpen = false;
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      document.getElementById('chatDrawer').classList.toggle('open', chatOpen);
+    }
+
+    const MOCK_RESPONSES = {
+      'What wine pairs with Hainanese Chicken Rice?': `For Hainanese Chicken Rice, reach for the **Domaine Weinbach Riesling 2019** — currently in its **Prime** drinking window (2021–2028, Cellar Score impact: ★★★★).\n\nThe dish's delicate poached chicken and ginger-soy sauces call for a wine with **brilliant acidity** and **aromatic complexity**. This Riesling's stone fruit, white flower, and vibrant backbone cut through the subtle richness while harmonising beautifully with the condiments.\n\n**Serve at:** 10–12°C · No decanting needed\n\nAlternate pick: Your **Bollinger Special Cuvée** brings yeasty depth that complements the dish's umami beautifully.`,
+      'Best wine for a Peranakan dinner?': `A Peranakan feast is the ultimate pairing challenge. Bold spices, coconut gravies, and complex fermented flavours need a wine with **generosity and backbone**.\n\nFrom your cave, I'd pour the **Bodegas Muga Reserva 2019** (S$65, **Prime** through 2030). Tempranillo's **ripe cherry-plum fruit and medium tannins** stand up to the spice, while its **bright acidity** refreshes between rich, flavour-packed mouthfuls.\n\nFor lighter Peranakan courses (Chap Chye, Itik Tim), the **Puligny-Montrachet 2020** would be extraordinary in 2024–2025 — it's **Too Young** now but developing well.`,
+      "What should I drink from my cellar tonight?": `Tonight, I'd open the **Bodegas Muga Reserva 2019** — prime condition and remarkable pleasure-per-bottle at S$65.\n\nFor a more special occasion, the **Domaine Weinbach Riesling 2019** is at a luminous moment — its primary citrus and stone fruit are vivid, with just a whisper of developing petrol complexity.\n\n✦ **Urgent pick:** Your **Cloudy Bay Sauvignon Blanc 2023** closes its window in 2025. Consider opening it within the next few months.`,
+      "Which wines should I drink before they peak?": `**Open within 6–12 months:**\n🟡 **Cloudy Bay Sauvignon Blanc 2023** — window ends 2025. Fresh and brilliant now; don't wait.\n\n**Drinking beautifully now:**\n🟢 **Château Pichon Baron 2016** — prime through 2035, showing secondary complexity this year\n🟢 **Bodegas Muga Reserva 2019** — peak expression over the next 2–3 years\n🟢 **Domaine Weinbach Riesling 2019** — enjoy within 5 years for best fruit integrity\n\n**Hold — patience rewarded:**\n✦ **Ornellaia 2018** & **Château d'Yquem 2015** — each needs 3–5+ more years in the cave.`,
+    };
+
+    function sendQuick(prompt) {
+      document.getElementById('quickPrompts').style.display = 'none';
+      addMsg('user', prompt);
+      setTimeout(() => addMsg('assistant', MOCK_RESPONSES[prompt] || "A magnificent question — let me consult the stars and your cellar..."), 850);
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const val = input.value.trim();
+      if (!val) return;
+      document.getElementById('quickPrompts').style.display = 'none';
+      addMsg('user', val);
+      input.value = '';
+      setTimeout(() => addMsg('assistant', "From your cave, I'd suggest the **Bodegas Muga Reserva 2019** — in prime condition and wonderfully versatile with Singaporean cuisine. Its medium body and food-friendly acidity make it an ideal companion."), 950);
+    }
+
+    function addMsg(role, text) {
+      const msgs = document.getElementById('chatMsgs');
+      const el = document.createElement('div');
+      el.className = `msg ${role}`;
+      el.innerHTML = `
+        <div class="msg-role">${role === 'user' ? 'You' : '✦ Sommelier'}</div>
+        <div class="bubble">${formatMsg(text)}</div>
+      `;
+      msgs.appendChild(el);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function formatMsg(t) {
+      return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    }
+
+    function openModal() { document.getElementById('addModal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('addModal').classList.add('hidden'); }
+
+    renderTable();
+  </script>
+</body>
+</html>

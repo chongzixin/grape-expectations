@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grape Expectations — Blanc de Blancs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── THEME VARIABLES ── */
+    :root {
+      --bg: #FAFAF8;
+      --surface: #F4F0EB;
+      --card: #FFFFFF;
+      --card-h: #F9F6F2;
+      --border: rgba(114, 47, 55, 0.12);
+      --border-strong: rgba(114, 47, 55, 0.25);
+      --burgundy: #722F37;
+      --burgundy-b: #9B2335;
+      --burgundy-dim: rgba(114, 47, 55, 0.15);
+      --rosegold: #C4956A;
+      --rosegold-dim: rgba(196, 149, 106, 0.2);
+      --text: #1A1108;
+      --text-mid: #4A3828;
+      --muted: #8A7060;
+      --dim: #BCA89A;
+      --shadow: 0 2px 12px rgba(114,47,55,0.08);
+      --shadow-lg: 0 8px 32px rgba(114,47,55,0.12);
+      --radius: 10px;
+    }
+    [data-theme="dark"] {
+      --bg: #120B09;
+      --surface: #1C100C;
+      --card: #261610;
+      --card-h: #2E1C13;
+      --border: rgba(196, 149, 106, 0.15);
+      --border-strong: rgba(196, 149, 106, 0.3);
+      --burgundy: #C45060;
+      --burgundy-b: #E05570;
+      --burgundy-dim: rgba(196, 80, 96, 0.2);
+      --rosegold: #D4A87A;
+      --rosegold-dim: rgba(212, 168, 122, 0.15);
+      --text: #F0E6DC;
+      --text-mid: #C8A898;
+      --muted: #8A6858;
+      --dim: #4A3028;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; }
+    input, select, textarea { font-family: inherit; }
+
+    /* ── HEADER ── */
+    .hdr {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 0 24px;
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--burgundy), var(--rosegold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { display: flex; flex-direction: column; }
+    .logo-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px; font-weight: 700;
+      color: var(--burgundy);
+      line-height: 1;
+    }
+    .logo-tagline { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+    .hdr-actions { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      transition: all 0.18s;
+    }
+    .btn-primary {
+      background: var(--burgundy);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--burgundy-b); transform: translateY(-1px); box-shadow: 0 4px 12px var(--burgundy-dim); }
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--text-mid);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--card-h); border-color: var(--border-strong); }
+    .theme-toggle {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-mid); font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.18s;
+    }
+    .theme-toggle:hover { background: var(--card-h); transform: rotate(20deg); }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--burgundy-dim); border: 2px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--burgundy);
+    }
+
+    /* ── MAIN ── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 120px; }
+
+    /* ── STATS BAR ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.18s, transform 0.18s;
+    }
+    .stat:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+    .stat-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px; font-weight: 700; color: var(--burgundy);
+      line-height: 1;
+    }
+    .stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tab {
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 700;
+      color: var(--muted);
+      transition: all 0.18s;
+    }
+    .tab:hover { color: var(--burgundy); background: var(--burgundy-dim); }
+    .tab.active { background: var(--burgundy); color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── FILTERS ── */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+    .filter-btn {
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+      background: var(--surface); color: var(--text-mid);
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--burgundy); color: var(--burgundy); }
+    .filter-btn.active { background: var(--burgundy); color: #fff; border-color: transparent; }
+    .search-box {
+      margin-left: auto;
+      padding: 8px 14px; border-radius: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px;
+      width: 200px; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-box:focus { border-color: var(--burgundy); box-shadow: 0 0 0 3px var(--burgundy-dim); }
+    .search-box::placeholder { color: var(--dim); }
+
+    /* ── WINE TABLE ── */
+    .tbl-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .tbl {
+      width: 100%; border-collapse: collapse;
+      background: var(--card);
+    }
+    .tbl thead { background: var(--surface); }
+    .tbl th {
+      padding: 11px 14px; text-align: left;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    .tbl td { padding: 13px 14px; border-bottom: 1px solid var(--border); }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tbody tr { transition: background 0.12s; }
+    .tbl tbody tr:hover { background: var(--card-h); }
+    .wine-name { font-weight: 700; font-size: 14px; color: var(--text); }
+    .wine-winery { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .type-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 12px;
+      font-size: 11px; font-weight: 700;
+    }
+    .type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .window-badge {
+      display: inline-block; padding: 3px 9px; border-radius: 12px;
+      font-size: 11px; font-weight: 700; color: #fff;
+    }
+    .inv { display: flex; align-items: center; gap: 8px; }
+    .inv-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--burgundy); font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; line-height: 1;
+    }
+    .inv-btn:hover { background: var(--burgundy); color: #fff; border-color: transparent; }
+    .inv-count { font-size: 14px; font-weight: 700; width: 20px; text-align: center; }
+    .price-cell { font-size: 14px; font-weight: 700; color: var(--text-mid); }
+
+    /* ── ANALYTICS ── */
+    .ai-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px;
+      box-shadow: var(--shadow); margin-bottom: 24px;
+      position: relative; overflow: hidden;
+    }
+    .ai-box::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--burgundy), var(--rosegold));
+    }
+    .ai-hdr {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .ai-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--burgundy-dim); border: 1px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .ai-ttl {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px; font-weight: 700; color: var(--burgundy);
+    }
+    .ai-text { font-size: 14px; line-height: 1.7; color: var(--text-mid); }
+    .brk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .brk-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .brk-ttl {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--muted); margin-bottom: 12px;
+    }
+    .brk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .brk-row:last-child { margin-bottom: 0; }
+    .brk-label { font-size: 13px; color: var(--text); flex: 1; }
+    .brk-bar-wrap { width: 80px; height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+    .brk-bar { height: 100%; border-radius: 3px; background: var(--burgundy); }
+    .brk-count { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 20px; text-align: right; }
+    .vintage-row { display: flex; align-items: flex-end; gap: 4px; height: 64px; margin-top: 8px; }
+    .vintage-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .vintage-bar-col { width: 100%; border-radius: 3px 3px 0 0; background: var(--burgundy); min-height: 4px; }
+    .vintage-yr { font-size: 9px; color: var(--muted); }
+
+    /* ── SOMMELIER FAB ── */
+    .sommelier-fab {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--burgundy);
+      color: #fff; padding: 14px 22px;
+      border-radius: 32px; font-size: 14px; font-weight: 700;
+      box-shadow: 0 4px 20px rgba(114,47,55,0.35);
+      display: flex; align-items: center; gap: 8px;
+      z-index: 200; transition: all 0.2s;
+    }
+    .sommelier-fab:hover { background: var(--burgundy-b); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(114,47,55,0.45); }
+    .fab-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: 0.6; }
+
+    /* ── CHAT DRAWER ── */
+    .chat-drawer {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 40px rgba(114,47,55,0.12);
+      border-radius: 20px 20px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.34, 1.26, 0.64, 1);
+      display: flex; flex-direction: column;
+      max-height: 70vh;
+    }
+    .chat-drawer.open { transform: translateY(0); }
+    .chat-drag {
+      width: 40px; height: 4px; border-radius: 2px;
+      background: var(--border-strong); margin: 12px auto 0;
+    }
+    .chat-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px 10px;
+    }
+    .chat-hdr-left { display: flex; align-items: center; gap: 10px; }
+    .chat-hdr-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--burgundy); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    .chat-hdr-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px; font-weight: 700; color: var(--burgundy);
+    }
+    .chat-hdr-sub { font-size: 11px; color: var(--muted); }
+    .chat-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--surface); color: var(--muted);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+      transition: all 0.15s;
+    }
+    .chat-close:hover { background: var(--card-h); color: var(--text); }
+    .chat-msgs { flex: 1; overflow-y: auto; padding: 12px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .quick-prompts { padding: 4px 20px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .qp {
+      padding: 6px 13px; border-radius: 16px; font-size: 12px; font-weight: 700;
+      background: var(--surface); color: var(--burgundy);
+      border: 1px solid var(--border-strong); transition: all 0.15s;
+    }
+    .qp:hover { background: var(--burgundy-dim); border-color: var(--burgundy); }
+    .msg { display: flex; flex-direction: column; gap: 3px; }
+    .msg.user { align-items: flex-end; }
+    .msg.assistant { align-items: flex-start; }
+    .msg-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .bubble {
+      max-width: 80%; padding: 10px 14px; border-radius: 14px;
+      font-size: 13px; line-height: 1.6;
+    }
+    .msg.user .bubble { background: var(--burgundy); color: #fff; border-radius: 14px 14px 4px 14px; }
+    .msg.assistant .bubble { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px 14px 14px 4px; }
+    .bubble strong { color: var(--burgundy-b); }
+    .msg.user .bubble strong { color: #ffe0e4; }
+    .chat-input-bar {
+      padding: 12px 16px 16px;
+      display: flex; gap: 10px; align-items: flex-end;
+      border-top: 1px solid var(--border);
+    }
+    .chat-input {
+      flex: 1; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); font-size: 13px;
+      resize: none; outline: none; line-height: 1.4; max-height: 100px;
+      transition: border-color 0.15s;
+    }
+    .chat-input:focus { border-color: var(--burgundy); }
+    .chat-input::placeholder { color: var(--dim); }
+    .send-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--burgundy); color: #fff; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .send-btn:hover { background: var(--burgundy-b); transform: scale(1.05); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(26, 17, 8, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--card); border-radius: 16px;
+      width: 100%; max-width: 540px; max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+    .modal-hdr {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-ttl {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; font-weight: 700; color: var(--burgundy);
+    }
+    .modal-body { padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-field { display: flex; flex-direction: column; gap: 5px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .form-input {
+      padding: 9px 12px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--burgundy); box-shadow: 0 0 0 3px var(--burgundy-dim); }
+    .modal-footer {
+      padding: 16px 24px 20px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+
+    /* ── UTIL ── */
+    .hidden { display: none !important; }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; font-weight: 700; color: var(--burgundy);
+      margin-bottom: 16px;
+    }
+    .empty-row td { text-align: center; padding: 40px; color: var(--muted); }
+
+    @media (max-width: 700px) {
+      .main { padding: 16px 14px 120px; }
+      .hdr { padding: 0 14px; }
+      .logo-tagline { display: none; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .tbl th:nth-child(4), .tbl td:nth-child(4),
+      .tbl th:nth-child(5), .tbl td:nth-child(5) { display: none; }
+      .sommelier-fab { bottom: 20px; right: 16px; padding: 12px 18px; font-size: 13px; }
+      .modal-body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="hdr">
+    <div class="logo">
+      <div class="logo-icon">🍷</div>
+      <div class="logo-text">
+        <div class="logo-name">Grape Expectations</div>
+        <div class="logo-tagline">Your Personal Sommelier</div>
+      </div>
+    </div>
+    <div class="hdr-actions">
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+      <button class="btn btn-ghost" onclick="openModal()">+ Add Wine</button>
+      <div class="avatar">JT</div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-val" id="stat-bottles">24</div>
+        <div class="stat-lbl">Total Bottles</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">8</div>
+        <div class="stat-lbl">Unique Wines</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">S$220</div>
+        <div class="stat-lbl">Avg Price</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">France</div>
+        <div class="stat-lbl">Top Country</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">Cab Sauv</div>
+        <div class="stat-lbl">Top Varietal</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('cellar', this)">🏺 Cellar</button>
+      <button class="tab" onclick="switchTab('analytics', this)">📊 Analytics</button>
+    </div>
+
+    <!-- ── CELLAR TAB ── -->
+    <div class="tab-content active" id="cellar-tab">
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterWines('All', this)">All</button>
+        <button class="filter-btn" onclick="filterWines('Red', this)">Red</button>
+        <button class="filter-btn" onclick="filterWines('White', this)">White</button>
+        <button class="filter-btn" onclick="filterWines('Sparkling', this)">Sparkling</button>
+        <button class="filter-btn" onclick="filterWines('Dessert', this)">Dessert</button>
+        <input class="search-box" placeholder="Search wines…" oninput="searchWines(this.value)" />
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Wine</th>
+              <th>Type</th>
+              <th>Vintage</th>
+              <th>Region</th>
+              <th>Price</th>
+              <th>Drinking Window</th>
+              <th>Bottles</th>
+            </tr>
+          </thead>
+          <tbody id="wine-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS TAB ── -->
+    <div class="tab-content" id="analytics-tab">
+      <div class="ai-box">
+        <div class="ai-hdr">
+          <div class="ai-icon">🤵</div>
+          <div>
+            <div class="ai-ttl">Sommelier's Assessment</div>
+            <div style="font-size:11px;color:var(--muted);">AI-generated cellar insight</div>
+          </div>
+        </div>
+        <div class="ai-text">
+          Your cellar reflects a discerning palate with a clear affection for French terroir — <strong>15 of your 24 bottles</strong> hail from France, with Bordeaux and Burgundy representing your core holdings. The 2016 Pichon Baron is approaching its prime drinking window and deserves early attention.
+          <br><br>
+          At an average spend of <strong>S$220 per bottle</strong>, your collection balances investment-grade bottles (the Ornellaia and d'Yquem) with everyday drinking options. I'd recommend adding 2–3 more bottles in the S$50–80 range for regular enjoyment, perhaps a Côtes du Rhône or a New World Pinot Noir to diversify the portfolio.
+        </div>
+      </div>
+
+      <div class="brk-grid">
+        <!-- By Type -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Type</div>
+          <div class="brk-row">
+            <span style="width:10px;height:10px;border-radius:50%;background:#e05c6b;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Red</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:67%;background:#e05c6b;"></div></div>
+            <span class="brk-count">10</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:10px;height:10px;border-radius:50%;background:#d4c44a;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">White</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:53%;background:#d4c44a;"></div></div>
+            <span class="brk-count">8</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:10px;height:10px;border-radius:50%;background:#5bbad5;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Sparkling</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:20%;background:#5bbad5;"></div></div>
+            <span class="brk-count">3</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:10px;height:10px;border-radius:50%;background:#d4a45a;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Dessert</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:13%;background:#d4a45a;"></div></div>
+            <span class="brk-count">2</span>
+          </div>
+          <div class="brk-row">
+            <span style="width:10px;height:10px;border-radius:50%;background:#d45aa0;flex-shrink:0;display:inline-block;"></span>
+            <span class="brk-label">Rosé</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:7%;background:#d45aa0;"></div></div>
+            <span class="brk-count">1</span>
+          </div>
+        </div>
+
+        <!-- By Country -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Country</div>
+          <div class="brk-row">
+            <span class="brk-label">🇫🇷 France</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:100%;"></div></div>
+            <span class="brk-count">15</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">🇮🇹 Italy</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:27%;"></div></div>
+            <span class="brk-count">4</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">🇪🇸 Spain</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:20%;"></div></div>
+            <span class="brk-count">3</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">🇳🇿 New Zealand</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:13%;"></div></div>
+            <span class="brk-count">2</span>
+          </div>
+        </div>
+
+        <!-- By Varietal -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Varietal</div>
+          <div class="brk-row">
+            <span class="brk-label">Cabernet Sauvignon</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:80%;"></div></div>
+            <span class="brk-count">7</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">Chardonnay</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:57%;"></div></div>
+            <span class="brk-count">5</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">Riesling</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:34%;"></div></div>
+            <span class="brk-count">3</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">Tempranillo</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:23%;"></div></div>
+            <span class="brk-count">2</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label">Sauvignon Blanc</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:12%;"></div></div>
+            <span class="brk-count">1</span>
+          </div>
+        </div>
+
+        <!-- By Vintage -->
+        <div class="brk-card">
+          <div class="brk-ttl">By Vintage</div>
+          <div class="vintage-row">
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:30px;"></div><div class="vintage-yr">2015</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:48px;"></div><div class="vintage-yr">2016</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:20px;"></div><div class="vintage-yr">2017</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:40px;"></div><div class="vintage-yr">2018</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:30px;"></div><div class="vintage-yr">2019</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:16px;"></div><div class="vintage-yr">2020</div></div>
+            <div class="vintage-bar-wrap"><div class="vintage-bar-col" style="height:8px;"></div><div class="vintage-yr">2023</div></div>
+          </div>
+        </div>
+
+        <!-- Drinking Windows -->
+        <div class="brk-card">
+          <div class="brk-ttl">Drinking Windows</div>
+          <div class="brk-row">
+            <span class="brk-label" style="color:#16a34a;font-weight:700;">● Prime Now</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:50%;background:#16a34a;"></div></div>
+            <span class="brk-count">5</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label" style="color:#d97706;font-weight:700;">● Drink Soon</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:8%;background:#d97706;"></div></div>
+            <span class="brk-count">1</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label" style="color:#2563eb;font-weight:700;">● Too Young</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:33%;background:#2563eb;"></div></div>
+            <span class="brk-count">3</span>
+          </div>
+          <div class="brk-row">
+            <span class="brk-label" style="color:var(--muted);font-weight:700;">● Unknown</span>
+            <div class="brk-bar-wrap"><div class="brk-bar" style="width:8%;background:var(--muted);"></div></div>
+            <span class="brk-count">1</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── SOMMELIER FAB ── -->
+  <button class="sommelier-fab" id="sommelierFab" onclick="toggleChat()">
+    🍷 Ask Sommelier
+    <div class="fab-dot"></div>
+  </button>
+
+  <!-- ── CHAT DRAWER ── -->
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-drag"></div>
+    <div class="chat-hdr">
+      <div class="chat-hdr-left">
+        <div class="chat-hdr-icon">🤵</div>
+        <div>
+          <div class="chat-hdr-title">Your Sommelier</div>
+          <div class="chat-hdr-sub">Pairing advice • Cellar insights • Wine discovery</div>
+        </div>
+      </div>
+      <button class="chat-close" onclick="toggleChat()">×</button>
+    </div>
+
+    <div class="quick-prompts" id="quickPrompts">
+      <button class="qp" onclick="sendQuick('What wine pairs with Hainanese Chicken Rice?')">🍚 Hainanese Chicken Rice</button>
+      <button class="qp" onclick="sendQuick('Best wine for a Peranakan dinner?')">🌶 Peranakan Feast</button>
+      <button class="qp" onclick="sendQuick('What should I drink from my cellar tonight?')">🌙 Tonight\'s Cellar Pick</button>
+      <button class="qp" onclick="sendQuick('Which wines should I drink before they peak?')">⏰ Drink Soon?</button>
+    </div>
+
+    <div class="chat-msgs" id="chatMsgs"></div>
+
+    <div class="chat-input-bar">
+      <textarea class="chat-input" id="chatInput" placeholder="Ask your sommelier anything…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+      <button class="send-btn" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+
+  <!-- ── ADD WINE MODAL ── -->
+  <div class="modal-overlay hidden" id="addModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-hdr">
+        <div class="modal-ttl">Add Wine to Cellar</div>
+        <button class="chat-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field full">
+          <label class="form-label">Wine Name</label>
+          <input class="form-input" placeholder="e.g. Château Margaux" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Winery / Producer</label>
+          <input class="form-input" placeholder="e.g. Château Margaux" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Vintage</label>
+          <input class="form-input" placeholder="e.g. 2018" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Type</label>
+          <select class="form-input">
+            <option>Red</option><option>White</option><option>Sparkling</option>
+            <option>Rosé</option><option>Dessert</option><option>Fortified</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Varietal / Style</label>
+          <input class="form-input" placeholder="e.g. Cabernet Sauvignon" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Country</label>
+          <input class="form-input" placeholder="e.g. France" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Region</label>
+          <input class="form-input" placeholder="e.g. Bordeaux" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Price (SGD)</label>
+          <input class="form-input" placeholder="e.g. 120" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Bottles</label>
+          <input class="form-input" type="number" value="1" min="1" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="closeModal()">Add to Cellar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── MOCK DATA ──
+    const WINES = [
+      { id:1, name:'Château Pichon Baron', winery:'Pichon Baron', vintage:'2016', type:'Red', style:'Cabernet Sauvignon', country:'France', region:'Pauillac', price:220, inventory:3, drinkFrom:2022, drinkBy:2035 },
+      { id:2, name:'Puligny-Montrachet 1er Cru', winery:'Louis Jadot', vintage:'2020', type:'White', style:'Chardonnay', country:'France', region:'Burgundy', price:185, inventory:2, drinkFrom:2024, drinkBy:2030 },
+      { id:3, name:'Special Cuvée', winery:'Bollinger', vintage:'NV', type:'Sparkling', style:'Chardonnay Blend', country:'France', region:'Champagne', price:110, inventory:4, drinkFrom:null, drinkBy:null },
+      { id:4, name:'Riesling Clos des Capucins', winery:'Domaine Weinbach', vintage:'2019', type:'White', style:'Riesling', country:'France', region:'Alsace', price:98, inventory:2, drinkFrom:2021, drinkBy:2028 },
+      { id:5, name:'Ornellaia', winery:'Tenuta dell\'Ornellaia', vintage:'2018', type:'Red', style:'Bordeaux Blend', country:'Italy', region:'Tuscany', price:380, inventory:1, drinkFrom:2025, drinkBy:2040 },
+      { id:6, name:'Reserva', winery:'Bodegas Muga', vintage:'2019', type:'Red', style:'Tempranillo', country:'Spain', region:'Rioja', price:65, inventory:6, drinkFrom:2023, drinkBy:2030 },
+      { id:7, name:'Sauvignon Blanc', winery:'Cloudy Bay', vintage:'2023', type:'White', style:'Sauvignon Blanc', country:'New Zealand', region:'Marlborough', price:52, inventory:3, drinkFrom:2023, drinkBy:2025 },
+      { id:8, name:'Château d\'Yquem', winery:'Lur Saluces', vintage:'2015', type:'Dessert', style:'Sémillon/Sauvignon', country:'France', region:'Sauternes', price:650, inventory:1, drinkFrom:2025, drinkBy:2050 },
+    ];
+
+    const TYPE_STYLES = {
+      Red:       { dot:'#e05c6b', bg:'rgba(224,92,107,0.12)' },
+      White:     { dot:'#c9b830', bg:'rgba(201,184,48,0.12)' },
+      Sparkling: { dot:'#5bbad5', bg:'rgba(91,186,213,0.12)' },
+      Rosé:      { dot:'#d45aa0', bg:'rgba(212,90,160,0.12)' },
+      Dessert:   { dot:'#d4a45a', bg:'rgba(212,164,90,0.12)' },
+      Fortified: { dot:'#8a5ad4', bg:'rgba(138,90,212,0.12)' },
+    };
+
+    const WINDOW_STYLES = {
+      prime:           { bg:'#16a34a', label:'Prime' },
+      approaching_end: { bg:'#d97706', label:'Drink Soon' },
+      past_peak:       { bg:'#dc2626', label:'Past Peak' },
+      too_young:       { bg:'#2563eb', label:'Too Young' },
+      unknown:         { bg:'#6b7280', label:'Unknown' },
+    };
+
+    function getStatus(wine) {
+      const yr = new Date().getFullYear();
+      if (!wine.drinkFrom || !wine.drinkBy) return 'unknown';
+      if (yr < wine.drinkFrom) return 'too_young';
+      if (yr > wine.drinkBy) return 'past_peak';
+      if (wine.drinkBy - yr <= 1) return 'approaching_end';
+      return 'prime';
+    }
+
+    let inventories = {};
+    WINES.forEach(w => inventories[w.id] = w.inventory);
+
+    let activeFilter = 'All';
+    let searchTerm = '';
+
+    function renderTable() {
+      const tbody = document.getElementById('wine-tbody');
+      let filtered = WINES.filter(w => {
+        if (activeFilter !== 'All' && w.type !== activeFilter) return false;
+        if (searchTerm && !w.name.toLowerCase().includes(searchTerm) && !w.winery.toLowerCase().includes(searchTerm) && !w.region.toLowerCase().includes(searchTerm)) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No wines found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(w => {
+        const ts = TYPE_STYLES[w.type] || { dot:'#888', bg:'rgba(136,136,136,0.1)' };
+        const status = getStatus(w);
+        const ws = WINDOW_STYLES[status];
+        const windowLabel = (w.drinkFrom && w.drinkBy) ? `${w.drinkFrom}–${w.drinkBy}` : '';
+        const inv = inventories[w.id];
+        return `<tr>
+          <td><div class="wine-name">${w.name}</div><div class="wine-winery">${w.winery}</div></td>
+          <td><span class="type-badge" style="background:${ts.bg};color:${ts.dot};">
+            <span class="type-dot" style="background:${ts.dot};"></span>${w.type}
+          </span></td>
+          <td>${w.vintage}</td>
+          <td>${w.region}, ${w.country}</td>
+          <td class="price-cell">${w.price ? 'S$' + w.price : '—'}</td>
+          <td>
+            <span class="window-badge" style="background:${ws.bg};">${ws.label}</span>
+            ${windowLabel ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;">${windowLabel}</div>` : ''}
+          </td>
+          <td>
+            <div class="inv">
+              <button class="inv-btn" onclick="changeInv(${w.id}, -1)">−</button>
+              <span class="inv-count" id="inv-${w.id}">${inv}</span>
+              <button class="inv-btn" onclick="changeInv(${w.id}, +1)">+</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function changeInv(id, delta) {
+      inventories[id] = Math.max(0, (inventories[id] || 0) + delta);
+      const el = document.getElementById('inv-' + id);
+      if (el) el.textContent = inventories[id];
+      updateTotalBottles();
+    }
+
+    function updateTotalBottles() {
+      const total = Object.values(inventories).reduce((a,b) => a+b, 0);
+      document.getElementById('stat-bottles').textContent = total;
+    }
+
+    function filterWines(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    }
+
+    function searchWines(val) {
+      searchTerm = val.toLowerCase();
+      renderTable();
+    }
+
+    // ── TABS ──
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(name + '-tab').classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // ── CHAT ──
+    let chatOpen = false;
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      document.getElementById('chatDrawer').classList.toggle('open', chatOpen);
+    }
+
+    const MOCK_RESPONSES = {
+      'What wine pairs with Hainanese Chicken Rice?': `Great choice for a classic Singapore dish! From your cellar, I'd recommend the **Domaine Weinbach Riesling 2019** (currently in its **Prime** window: 2021–2028).
+
+The dish's delicate poached chicken and light soy-ginger sauce call for a wine with **high acidity** and **aromatic complexity** — the Riesling's stone fruit notes and vibrant acidity cut through the rich chicken fat while complementing the ginger condiments beautifully.
+
+**Serve at:** 10–12°C
+**Decant:** Not needed — pour straight from the bottle
+
+If you prefer something bubblier, your **Bollinger Special Cuvée** would also work wonderfully, with its yeasty complexity matching the dish's subtle umami depth.`,
+      'Best wine for a Peranakan dinner?': `A Peranakan feast — what a pairing challenge! The bold spices of Babi Pongteh, the sourness of Ayam Buah Keluak, and the rich, herb-forward Nyonya curries demand a wine with **structure** and **fruit-forward character**.
+
+From your cellar, the **Bodegas Muga Reserva 2019** (S$65, **Prime** 2023–2030) is my top pick. Tempranillo's **medium tannins and cherry-plum fruit** hold their own against the spice, while its **moderate acidity** refreshes the palate between rich, coconut-based dishes.
+
+For lighter Peranakan dishes like Chap Chye or Itek Tim, pivot to your **Puligny-Montrachet 2020** — but I'd wait another year; it's still **Too Young** and will be better in 2024–2025.`,
+      "What should I drink from my cellar tonight?": `For tonight, I'd reach for the **Bodegas Muga Reserva 2019** — it's firmly in its prime window and at S$65, it's your best value-for-pleasure option right now.
+
+Alternatively, the **Domaine Weinbach Riesling 2019** is drinking beautifully this year — its primary fruit hasn't started to fade yet and the petrol notes that Riesling lovers prize are just beginning to emerge.
+
+One gentle warning: the **Cloudy Bay Sauvignon Blanc 2023** is approaching its end (window closes 2025). I'd prioritise opening those bottles within the next few months.`,
+      "Which wines should I drink before they peak?": `**Drink within 6–12 months:**
+- 🟡 **Cloudy Bay Sauvignon Blanc 2023** — drinking window closes 2025. Fresh and zesty now; don't wait.
+
+**Drinking well now (no rush, but enjoy soon):**
+- 🟢 **Château Pichon Baron 2016** — peak window 2022–2035, but the secondary flavours are beautiful right now
+- 🟢 **Bodegas Muga Reserva 2019** — prime through 2030, but showing its best in the next 2–3 years
+- 🟢 **Domaine Weinbach Riesling 2019** — enjoy within the next 5 years for optimal fruit expression
+
+**Hold:**
+- 🔵 **Ornellaia 2018** & **Château d'Yquem 2015** — both need 3–5+ more years. Patience rewarded.`,
+    };
+
+    function sendQuick(prompt) {
+      document.getElementById('quickPrompts').style.display = 'none';
+      addMsg('user', prompt);
+      setTimeout(() => {
+        addMsg('assistant', MOCK_RESPONSES[prompt] || "Let me think about that pairing for you...");
+      }, 800);
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const val = input.value.trim();
+      if (!val) return;
+      document.getElementById('quickPrompts').style.display = 'none';
+      addMsg('user', val);
+      input.value = '';
+      setTimeout(() => {
+        addMsg('assistant', "That's a great question! Based on your cellar, I'd suggest the **Bodegas Muga Reserva 2019** — it's currently in its prime window and pairs beautifully with most Singaporean cuisine thanks to its medium body and food-friendly acidity.");
+      }, 900);
+    }
+
+    function addMsg(role, text) {
+      const msgs = document.getElementById('chatMsgs');
+      const el = document.createElement('div');
+      el.className = `msg ${role}`;
+      el.innerHTML = `
+        <div class="msg-role">${role === 'user' ? 'You' : 'Sommelier'}</div>
+        <div class="bubble">${formatMsg(text)}</div>
+      `;
+      msgs.appendChild(el);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function formatMsg(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // ── MODAL ──
+    function openModal() { document.getElementById('addModal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('addModal').classList.add('hidden'); }
+
+    // ── THEME TOGGLE ──
+    const toggle = document.getElementById('themeToggle');
+    toggle.onclick = () => {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+      toggle.textContent = dark ? '🌙' : '☀️';
+    };
+
+    // ── INIT ──
+    renderTable();
+  </script>
+</body>
+</html>
