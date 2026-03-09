@@ -2,6 +2,8 @@ import type { Session } from '@supabase/supabase-js';
 
 export type { Session };
 
+export type DrinkingStatus = 'prime' | 'approaching_end' | 'past_peak' | 'too_young' | 'unknown';
+
 export interface Wine {
   id: string;
   name: string;
@@ -15,6 +17,8 @@ export interface Wine {
   subRegion: string;
   type: string;
   source?: string;
+  drinkFrom: number | null;
+  drinkBy: number | null;
 }
 
 export interface ChatMessage {
@@ -58,6 +62,8 @@ export interface NewWineForm {
   region: string;
   subRegion: string;
   type: string;
+  drinkFrom: string;
+  drinkBy: string;
 }
 
 export interface UserProfile {
