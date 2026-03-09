@@ -377,8 +377,10 @@ export default function GrapeExpectations() {
         const drinkFrom: number | null = parsed.drinkFrom != null ? parseInt(String(parsed.drinkFrom), 10) : null;
         const drinkBy:   number | null = parsed.drinkBy   != null ? parseInt(String(parsed.drinkBy),   10) : null;
         if (drinkFrom !== null || drinkBy !== null) {
-          await supabase.from('wines').update({ drink_from: drinkFrom, drink_by: drinkBy }).eq('id', wine.id);
-          setWines(prev => prev.map(w => w.id === wine.id ? { ...w, drinkFrom, drinkBy } : w));
+          const { error } = await supabase.from('wines').update({ drink_from: drinkFrom, drink_by: drinkBy }).eq('id', wine.id);
+          if (!error) {
+            setWines(prev => prev.map(w => w.id === wine.id ? { ...w, drinkFrom, drinkBy } : w));
+          }
         }
       } catch {
         // Continue to next wine
