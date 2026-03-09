@@ -499,7 +499,7 @@ RECOMMENDATION RULES:
 7. Structure every recommendation response as follows:
    - Open with 1–2 sentence intro (plain prose) explaining the pairing logic, naming specific local dish characteristics (e.g. "the lemongrass in laksa", "the wok hei smokiness", "the gula melaka sweetness")
    - **From your cellar:** (bold, no ## header) — bullet list, one wine per bullet:
-     `- 🍷 **Wine Name Vintage** — S$XX | Drink YYYY–YYYY (status)`
+     e.g. "- 🍷 **Wine Name Vintage** — S$XX | Drink YYYY–YYYY (status)"
      Indented second line: brief winery/winemaker note + WSET pairing rationale tied to named local flavour cues
    - **Worth seeking out:** (bold, no ## header) — same bullet format for non-cellar picks with ~SGD price estimate
    - Close with a short conversational follow-up question
