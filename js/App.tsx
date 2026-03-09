@@ -643,10 +643,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
       if (!Array.isArray(parsed)) parsed = [parsed];
       setScannedWines(parsed as Partial<Wine>[]);
       populateFormFromWine(parsed[0]);
-      if (wantSommelierNotes) {
-        setPairingsLoading(true);
-        (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i));
-      }
+      if (wantSommelierNotes) setPairingsLoading(true);
+      (parsed as Partial<Wine>[]).forEach((w, i) => enrichWine(w, i));
     } catch {
       alert('Could not read label — please enter details manually.');
       setAddTab('manual');
@@ -672,10 +670,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
       } else {
         setLocalPairings([]);
         setScanNotes(null);
-        if (wantSommelierNotes) {
-          setPairingsLoading(true);
-          enrichWine(scannedWines[nextIdx], nextIdx);
-        }
+        if (wantSommelierNotes) setPairingsLoading(true);
+        enrichWine(scannedWines[nextIdx], nextIdx);
       }
     }
   };
