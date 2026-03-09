@@ -492,9 +492,18 @@ html, body {
   font-size: 14px;
   line-height: 1.65;
   max-width: 92%;
-  display: inline-block;
+  display: block;
   text-align: left;
 }
+.cb p { margin: 0 0 0.6em; }
+.cb p:last-child { margin-bottom: 0; }
+.cb ul, .cb ol { margin: 0.3em 0 0.6em 1.2em; padding: 0; }
+.cb li { margin-bottom: 0.25em; }
+.cb h1, .cb h2, .cb h3 { font-size: 1em; font-weight: 700; margin: 0.8em 0 0.3em; color: var(--gold, #c9a84c); }
+.cb table { border-collapse: collapse; font-size: 13px; margin: 0.5em 0; }
+.cb th, .cb td { border: 1px solid var(--border); padding: 4px 8px; }
+.cb th { background: var(--card); }
+.cb code { font-family: monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); padding: 1px 4px; border-radius: 3px; }
 
 .cm-copy {
   display: inline-flex;

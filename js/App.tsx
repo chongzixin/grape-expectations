@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
@@ -494,9 +496,10 @@ RECOMMENDATION RULES:
 4. For each recommendation: share interesting winery/winemaker history
 5. Explain pairings using WSET framework (acidity, tannin, body, alcohol, flavour compounds) tied to specific local dish characteristics (fat, spice, umami, cooking method, key sauces)
 6. Consider budget, occasion, mood if mentioned
-7. Be conversational — ask a follow-up if helpful
-8. All prices in SGD
-9. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason)
+7. Format responses using markdown: bold wine names (e.g. **Chateau Margaux 2015**), use bullet points for comparisons, short paragraphs for narrative. Avoid heavy headers (## or ###) — keep it conversational.
+8. Be conversational — ask a follow-up if helpful
+9. All prices in SGD
+10. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason)
 
 DRINKING WINDOW PRIORITY:
 When recommending wines from the cellar, prioritise by drinking window status in this order:
@@ -970,7 +973,15 @@ When recommending wines from the cellar, prioritise by drinking window status in
               <div key={i} className={`cm ${msg.role}`}>
                 <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
                 <div className="cb">
-                  {msg.role === 'assistant' ? <RichText text={msg.content} /> : msg.content}
+                  {msg.role === 'assistant'
+                    ? <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          strong: ({ children }) => <strong style={{ color: '#c9a84c' }}>{children}</strong>,
+                          a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+                        }}
+                      >{msg.content}</ReactMarkdown>
+                    : msg.content}
                 </div>
                 {msg.role === 'assistant' && (
                   <div className="cm-actions">
