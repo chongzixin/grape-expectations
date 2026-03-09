@@ -389,7 +389,8 @@ RECOMMENDATION RULES:
 5. Consider budget, occasion, mood if mentioned
 6. Bold wine names using **Wine Name** format
 7. Be conversational — ask a follow-up if helpful
-8. All prices in SGD`,
+8. All prices in SGD
+9. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason)`,
         messages: history,
         maxTokens: 2000,
       });
