@@ -245,6 +245,7 @@ export default function GrapeExpectations() {
 
   const [localPairings, setLocalPairings] = useState<string[]>([]);
   const [pairingsLoading, setPairingsLoading] = useState(false);
+  const [windowLoading, setWindowLoading] = useState(false);
   const [scanNotes, setScanNotes] = useState<{ wine: string; winery: string; tasting: string } | null>(null);
   const [wantSommelierNotes, setWantSommelierNotes] = useState(false);
 
@@ -619,7 +620,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
   };
 
   const fetchDrinkingWindow = async (wine: Partial<Wine>, index: number) => {
-    if (!wine?.name) return;
+    if (!wine?.name || !wine?.vintage) return;
+    if (index === previewIndexRef.current) setWindowLoading(true);
     try {
       const raw = await callClaude({
         messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
@@ -637,9 +639,10 @@ When recommending wines from the cellar, prioritise by drinking window status in
         const df = drinkFrom != null ? String(drinkFrom) : '';
         const db = drinkBy   != null ? String(drinkBy)   : '';
         if (df || db) setNewWine(p => ({ ...p, drinkFrom: df, drinkBy: db }));
+        setWindowLoading(false);
       }
     } catch {
-      // ignore
+      if (index === previewIndexRef.current) setWindowLoading(false);
     }
   };
 
@@ -649,6 +652,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
     setScannedWines([]);
     setLocalPairings([]);
     setScanNotes(null);
+    setWindowLoading(false);
     setPreviewIndex(0);
     previewIndexRef.current = 0;
     try {
@@ -683,6 +687,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
     } else {
       setPreviewIndex(nextIdx);
       previewIndexRef.current = nextIdx;
+      setWindowLoading(false);
       populateFormFromWine(scannedWines[nextIdx]);
       const wn = scannedWines[nextIdx] as any;
       if (wn?._enriched) {
@@ -1193,6 +1198,11 @@ When recommending wines from the cellar, prioritise by drinking window status in
                                 <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2032" value={newWine.drinkBy} onChange={e => setNewWine(p => ({ ...p, drinkBy: e.target.value }))} />
                               </div>
                             </div>
+                            {windowLoading && !newWine.drinkFrom && !newWine.drinkBy && (
+                              <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>
+                                <div className="spin" /> Estimating drinking window…
+                              </div>
+                            )}
                             {pairingsLoading && !scanNotes && localPairings.length === 0 && (
                               <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13, marginTop: 12 }}>
                                 <div className="spin" /> Preparing sommelier notes…
