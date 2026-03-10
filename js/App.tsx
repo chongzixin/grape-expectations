@@ -266,15 +266,38 @@ export default function GrapeExpectations() {
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  /* ─── Auth Setup ─────────────────────────────────────────────── */
+  /* ─── Auth + Wines init (parallel) ───────────────────────────── */
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    document.getElementById('static-splash')?.remove();
+    let cancelled = false;
+    Promise.all([
+      supabase.auth.getSession(),
+      supabase.from('wines').select('*'),
+    ]).then(([{ data: { session: s } }, { data: wineData, error: wineErr }]) => {
+      if (cancelled) return;
       setSession(s);
       setSessionReady(true);
+      if (s) {
+        if (!wineErr && wineData) setWines(wineData.map(mapDbWine));
+        supabase.from('profiles').select('*').eq('id', s.user.id).single()
+          .then(({ data }) => { if (!cancelled && data) setProfile(data as UserProfile); });
+      }
+      setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      if (!s) {
+      if (_event === 'SIGNED_IN') {
+        setSession(s);
+        setLoading(true);
+        Promise.all([
+          supabase.from('wines').select('*'),
+          supabase.from('profiles').select('*').eq('id', s!.user.id).single(),
+        ]).then(([{ data: wd, error: we }, { data: pd }]) => {
+          if (!we && wd) setWines(wd.map(mapDbWine));
+          if (pd) setProfile(pd as UserProfile);
+          setLoading(false);
+        });
+      } else if (_event === 'SIGNED_OUT') {
+        setSession(null);
         setWines([]);
         setProfile(null);
         setChatMessages([]);
@@ -282,7 +305,7 @@ export default function GrapeExpectations() {
         setMessageFeedback({});
       }
     });
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
   /* ─── Time-based theme (sunrise ~6:30am / sunset ~7:30pm local) ─ */
@@ -308,23 +331,6 @@ export default function GrapeExpectations() {
     setThemeMode(m => m === 'dark' ? 'light' : 'dark');
   };
 
-  /* ─── Load Profile ───────────────────────────────────────────── */
-  useEffect(() => {
-    if (!session) return;
-    supabase.from('profiles').select('*').eq('id', session.user.id).single()
-      .then(({ data }) => { if (data) setProfile(data as UserProfile); });
-  }, [session]);
-
-  /* ─── Load Wines from Supabase ───────────────────────────────── */
-  useEffect(() => {
-    if (!session) { setLoading(false); return; }
-    setLoading(true);
-    supabase.from('wines').select('*').eq('user_id', session.user.id)
-      .then(({ data, error }) => {
-        if (!error && data) setWines(data.map(mapDbWine));
-        setLoading(false);
-      });
-  }, [session]);
 
   /* ─── Derived wine lists ─────────────────────────────────────── */
   const activeWines = useMemo(() =>

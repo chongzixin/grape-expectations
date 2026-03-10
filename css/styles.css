@@ -42,7 +42,8 @@
 }
 
 html, body {
-  background: var(--bg) url('/images/background-img.png') center / cover fixed;
+  background: var(--bg) url('/images/background-dark.svg') repeat;
+  background-size: 400px 400px;
   color: var(--parch);
   overflow-x: hidden;
 }
