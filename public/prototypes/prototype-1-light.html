@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="champagne">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,44 +7,90 @@
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet" />
   <style>
     /* ── THEME VARIABLES ── */
-    :root {
-      --bg: #FAFAF8;
-      --surface: #F4F0EB;
-      --card: #FFFFFF;
-      --card-h: #F9F6F2;
-      --border: rgba(114, 47, 55, 0.12);
-      --border-strong: rgba(114, 47, 55, 0.25);
-      --burgundy: #722F37;
-      --burgundy-b: #9B2335;
-      --burgundy-dim: rgba(114, 47, 55, 0.15);
+    :root { --radius: 10px; }
+
+    /* ── Champagne & Amber — straw/cream, antique gold ── */
+    [data-theme="champagne"] {
+      --bg: #FDFAF2;
+      --surface: #F4EDD8;
+      --card: #FFFEF9;
+      --card-h: #FAF6E8;
+      --border: rgba(155, 120, 40, 0.15);
+      --border-strong: rgba(155, 120, 40, 0.30);
+      --burgundy: #8B6914;
+      --burgundy-b: #A07818;
+      --burgundy-dim: rgba(139, 105, 20, 0.12);
       --rosegold: #C4956A;
       --rosegold-dim: rgba(196, 149, 106, 0.2);
-      --text: #1A1108;
-      --text-mid: #4A3828;
-      --muted: #8A7060;
-      --dim: #BCA89A;
-      --shadow: 0 2px 12px rgba(114,47,55,0.08);
-      --shadow-lg: 0 8px 32px rgba(114,47,55,0.12);
-      --radius: 10px;
+      --text: #1A1505;
+      --text-mid: #4A3A18;
+      --muted: #8A7848;
+      --dim: #C0A870;
+      --shadow: 0 2px 12px rgba(139, 105, 20, 0.08);
+      --shadow-lg: 0 8px 32px rgba(139, 105, 20, 0.12);
     }
+
+    /* ── Rosé & Terracotta — blush/salmon, clay accent ── */
+    [data-theme="rose"] {
+      --bg: #FDF5F2;
+      --surface: #F5E6E0;
+      --card: #FFFAFB;
+      --card-h: #FAEDEB;
+      --border: rgba(176, 80, 58, 0.12);
+      --border-strong: rgba(176, 80, 58, 0.25);
+      --burgundy: #B0503A;
+      --burgundy-b: #C45A40;
+      --burgundy-dim: rgba(176, 80, 58, 0.12);
+      --rosegold: #D4846A;
+      --rosegold-dim: rgba(212, 132, 106, 0.2);
+      --text: #1E1008;
+      --text-mid: #4A2818;
+      --muted: #8A5848;
+      --dim: #C0988A;
+      --shadow: 0 2px 12px rgba(176, 80, 58, 0.08);
+      --shadow-lg: 0 8px 32px rgba(176, 80, 58, 0.12);
+    }
+
+    /* ── Cellar Stone & Harvest Gold — linen/ecru, tannin brown ── */
+    [data-theme="cellar"] {
+      --bg: #F4F2EE;
+      --surface: #E8E2D8;
+      --card: #FAFAF6;
+      --card-h: #F2EEE6;
+      --border: rgba(80, 65, 40, 0.14);
+      --border-strong: rgba(80, 65, 40, 0.28);
+      --burgundy: #5C4A28;
+      --burgundy-b: #6B5530;
+      --burgundy-dim: rgba(92, 74, 40, 0.12);
+      --rosegold: #9B7A3E;
+      --rosegold-dim: rgba(155, 122, 62, 0.2);
+      --text: #1A1508;
+      --text-mid: #3C2E14;
+      --muted: #7A6848;
+      --dim: #B8A478;
+      --shadow: 0 2px 12px rgba(80, 65, 40, 0.08);
+      --shadow-lg: 0 8px 32px rgba(80, 65, 40, 0.12);
+    }
+
+    /* ── Dark — production palette ── */
     [data-theme="dark"] {
-      --bg: #120B09;
-      --surface: #1C100C;
-      --card: #261610;
-      --card-h: #2E1C13;
-      --border: rgba(196, 149, 106, 0.15);
-      --border-strong: rgba(196, 149, 106, 0.3);
-      --burgundy: #C45060;
-      --burgundy-b: #E05570;
-      --burgundy-dim: rgba(196, 80, 96, 0.2);
-      --rosegold: #D4A87A;
-      --rosegold-dim: rgba(212, 168, 122, 0.15);
-      --text: #F0E6DC;
-      --text-mid: #C8A898;
-      --muted: #8A6858;
-      --dim: #4A3028;
-      --shadow: 0 2px 12px rgba(0,0,0,0.4);
-      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+      --bg: #0a0706;
+      --surface: #141009;
+      --card: #1c1510;
+      --card-h: #231a13;
+      --border: rgba(201, 168, 76, 0.14);
+      --border-strong: rgba(201, 168, 76, 0.30);
+      --burgundy: #8b1a2e;
+      --burgundy-b: #b02438;
+      --burgundy-dim: rgba(139, 26, 46, 0.2);
+      --rosegold: #c9a84c;
+      --rosegold-dim: rgba(201, 168, 76, 0.45);
+      --text: #ede4d2;
+      --text-mid: #c0a880;
+      --muted: #8a7a6a;
+      --dim: #4a3a2a;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
 
     /* ── RESET & BASE ── */
@@ -104,14 +150,14 @@
       border: 1px solid var(--border);
     }
     .btn-ghost:hover { background: var(--card-h); border-color: var(--border-strong); }
-    .theme-toggle {
-      width: 40px; height: 40px; border-radius: 50%;
+    .theme-picker {
+      padding: 7px 12px; border-radius: 8px;
       background: var(--surface); border: 1px solid var(--border);
-      color: var(--text-mid); font-size: 18px;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.18s;
+      color: var(--text-mid); font-size: 13px;
+      font-family: inherit; cursor: pointer; outline: none;
+      transition: border-color 0.18s;
     }
-    .theme-toggle:hover { background: var(--card-h); transform: rotate(20deg); }
+    .theme-picker:hover { border-color: var(--border-strong); }
     .avatar {
       width: 36px; height: 36px; border-radius: 50%;
       background: var(--burgundy-dim); border: 2px solid var(--border-strong);
@@ -430,7 +476,12 @@
       </div>
     </div>
     <div class="hdr-actions">
-      <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+      <select class="theme-picker" id="themePicker">
+        <option value="champagne">🍾 Champagne</option>
+        <option value="rose">🌸 Rosé</option>
+        <option value="cellar">🪨 Cellar Stone</option>
+        <option value="dark">🌙 Dark</option>
+      </select>
       <button class="btn btn-ghost" onclick="openModal()">+ Add Wine</button>
       <div class="avatar">JT</div>
     </div>
@@ -941,12 +992,10 @@ One gentle warning: the **Cloudy Bay Sauvignon Blanc 2023** is approaching its e
     function openModal() { document.getElementById('addModal').classList.remove('hidden'); }
     function closeModal() { document.getElementById('addModal').classList.add('hidden'); }
 
-    // ── THEME TOGGLE ──
-    const toggle = document.getElementById('themeToggle');
-    toggle.onclick = () => {
-      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
-      toggle.textContent = dark ? '🌙' : '☀️';
+    // ── THEME PICKER ──
+    const picker = document.getElementById('themePicker');
+    picker.onchange = (e) => {
+      document.documentElement.setAttribute('data-theme', e.target.value);
     };
 
     // ── INIT ──
