@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
   <rect width="400" height="400" fill="#0a0706"/>
-  <g stroke="rgba(180,50,70,0.45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+  <g stroke="rgba(180,50,70,0.28)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
 
     <!-- Wine bottle 1 -->
     <g transform="translate(55,62) rotate(12)">
