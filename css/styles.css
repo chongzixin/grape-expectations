@@ -115,6 +115,45 @@ html[data-theme="light"] body {
   color: var(--gold);
 }
 
+/* ── Mobile-only utility (inverse of .hide-m) ── */
+.show-m { display: none; }
+
+.hbg-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--muted);
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0; padding: 0;
+}
+.hbg-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+.hbg-menu {
+  position: fixed; top: 64px; right: 16px; z-index: 200;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+  min-width: 180px;
+  padding: 6px 0;
+  animation: fadeSlideDown 0.15s ease;
+}
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hbg-item {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px; font-size: 14px; font-family: 'Lato', sans-serif;
+  background: none; border: none; cursor: pointer;
+  color: var(--parch); text-align: left;
+  transition: background 0.15s;
+}
+.hbg-item:hover { background: var(--surface); }
+.hbg-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
 .ge-logo {
   font-family: 'Lato', sans-serif;
   font-size: 20px;
@@ -1004,6 +1043,7 @@ html[data-theme="light"] body {
 
 /* ─── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 700px) {
+  .show-m  { display: flex; }
   .ge-main { padding: 16px 16px 100px; }
   .ge-hdr  { padding: 0 16px; }
   .loading-gif { width: 100%; }

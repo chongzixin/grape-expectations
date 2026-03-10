@@ -224,6 +224,9 @@ export default function GrapeExpectations() {
   const [themeMode, setThemeMode]   = useState<'light' | 'dark'>('dark');
   const themeManualRef              = useRef(false);
 
+  /* ─── Mobile menu ────────────────────────────────────────────── */
+  const [menuOpen, setMenuOpen]         = useState(false);
+
   /* ─── Chat ───────────────────────────────────────────────────── */
   const [chatOpen, setChatOpen]         = useState(false);
   const [chatInput, setChatInput]       = useState('');
@@ -853,7 +856,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
                 : 'Estimate Windows'}
             </button>
           )}
-          <button className="theme-toggle" onClick={toggleTheme} title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <button className="theme-toggle hide-m" onClick={toggleTheme} title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
             {themeMode === 'dark' ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5"/>
@@ -873,26 +876,72 @@ When recommending wines from the cellar, prioritise by drinking window status in
             )}
           </button>
           <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt={profile.display_name || 'Profile'}
-              title={`${profile.display_name || session.user.email} · Sign out`}
-              onClick={handleSignOut}
-              style={{
-                width: 32, height: 32, borderRadius: '50%',
-                border: '1px solid var(--border)',
-                cursor: 'pointer', flexShrink: 0,
-                transition: 'border-color 0.2s',
-              }}
-            />
-          ) : (
-            <button className="ge-btn btn-o" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
-              Sign out
-            </button>
-          )}
+          <span className="hide-m" style={{ display: 'contents' }}>
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.display_name || 'Profile'}
+                title={`${profile.display_name || session.user.email} · Sign out`}
+                onClick={handleSignOut}
+                style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  border: '1px solid var(--border)',
+                  cursor: 'pointer', flexShrink: 0,
+                  transition: 'border-color 0.2s',
+                }}
+              />
+            ) : (
+              <button className="ge-btn btn-o" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
+                Sign out
+              </button>
+            )}
+          </span>
+          {/* Hamburger — mobile only */}
+          <button
+            className="hbg-btn show-m"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label="Menu"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <line x1="2" y1="4.5"  x2="16" y2="4.5"/>
+              <line x1="2" y1="9"    x2="16" y2="9"/>
+              <line x1="2" y1="13.5" x2="16" y2="13.5"/>
+            </svg>
+          </button>
         </div>
       </header>
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="hbg-menu show-m">
+          <button className="hbg-item" onClick={() => { toggleTheme(); setMenuOpen(false); }}>
+            {themeMode === 'dark' ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            )}
+            {themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
+          <div className="hbg-divider"/>
+          <button className="hbg-item" onClick={() => { handleSignOut(); setMenuOpen(false); }}>
+            {profile?.avatar_url && (
+              <img src={profile.avatar_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%' }}/>
+            )}
+            Sign out
+          </button>
+        </div>
+      )}
 
       <main className="ge-main">
         {/* ── STATS ── */}
