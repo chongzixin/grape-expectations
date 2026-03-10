@@ -1043,7 +1043,7 @@ html[data-theme="light"] body {
 
 /* ─── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 700px) {
-  .show-m  { display: flex; }
+  .show-m  { display: flex !important; }
   .ge-main { padding: 16px 16px 100px; }
   .ge-hdr  { padding: 0 16px; }
   .loading-gif { width: 100%; }
