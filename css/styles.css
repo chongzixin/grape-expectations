@@ -1047,7 +1047,9 @@ html[data-theme="light"] body {
   .ge-main { padding: 16px 16px 100px; }
   .ge-hdr  { padding: 0 16px; }
   .loading-gif { width: 100%; }
-  .hide-m  { display: none; }
+  .hide-m  { display: none !important; }
+  .ge-logo small { display: none; }
+  .ge-logo { font-size: 17px; }
   .ge-chat-bar { padding: 10px 14px; }
   .ge-chat-msgs { padding: 12px 14px; }
   .ge-chat-drawer { max-height: 72vh; }

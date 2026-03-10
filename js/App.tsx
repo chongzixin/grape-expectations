@@ -876,26 +876,25 @@ When recommending wines from the cellar, prioritise by drinking window status in
             )}
           </button>
           <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
-          <span className="hide-m" style={{ display: 'contents' }}>
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.display_name || 'Profile'}
-                title={`${profile.display_name || session.user.email} · Sign out`}
-                onClick={handleSignOut}
-                style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  border: '1px solid var(--border)',
-                  cursor: 'pointer', flexShrink: 0,
-                  transition: 'border-color 0.2s',
-                }}
-              />
-            ) : (
-              <button className="ge-btn btn-o" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
-                Sign out
-              </button>
-            )}
-          </span>
+          {profile?.avatar_url ? (
+            <img
+              className="hide-m"
+              src={profile.avatar_url}
+              alt={profile.display_name || 'Profile'}
+              title={`${profile.display_name || session.user.email} · Sign out`}
+              onClick={handleSignOut}
+              style={{
+                width: 32, height: 32, borderRadius: '50%',
+                border: '1px solid var(--border)',
+                cursor: 'pointer', flexShrink: 0,
+                transition: 'border-color 0.2s',
+              }}
+            />
+          ) : (
+            <button className="ge-btn btn-o hide-m" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
+              Sign out
+            </button>
+          )}
           {/* Hamburger — mobile only */}
           <button
             className="hbg-btn show-m"
