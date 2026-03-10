@@ -40,9 +40,9 @@ const TYPE_STYLE_LIGHT: Record<string, TypeStyle> = {
 const CURRENT_YEAR = new Date().getFullYear();
 
 const DRINKING_STATUS_PRIORITY: Record<DrinkingStatus, number> = {
-  prime: 1,
+  past_peak: 1,
   approaching_end: 2,
-  past_peak: 3,
+  prime: 3,
   too_young: 4,
   unknown: 5,
 };
