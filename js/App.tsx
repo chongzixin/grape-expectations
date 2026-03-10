@@ -27,6 +27,14 @@ const TYPE_STYLE: Record<string, TypeStyle> = {
   Dessert:   { dot: '#d4a45a', bg: 'rgba(139,90,26,0.2)',   border: 'rgba(180,120,50,0.4)',  text: '#f5d4aa' },
   Fortified: { dot: '#8a5ad4', bg: 'rgba(90,26,139,0.2)',   border: 'rgba(120,50,180,0.4)', text: '#c4aaf5' },
 };
+const TYPE_STYLE_LIGHT: Record<string, TypeStyle> = {
+  Red:       { dot: '#e05c6b', bg: 'rgba(180,50,70,0.12)',   border: 'rgba(180,50,70,0.30)',   text: '#8B1A2A' },
+  White:     { dot: '#d4c44a', bg: 'rgba(160,155,30,0.10)',  border: 'rgba(160,155,30,0.28)',  text: '#6B6512' },
+  Sparkling: { dot: '#5bbad5', bg: 'rgba(30,110,150,0.10)',  border: 'rgba(30,110,150,0.28)',  text: '#1A5A7A' },
+  'Rosé':    { dot: '#d45aa0', bg: 'rgba(180,50,140,0.10)',  border: 'rgba(180,50,140,0.28)',  text: '#8B1A6A' },
+  Dessert:   { dot: '#d4a45a', bg: 'rgba(160,100,30,0.10)',  border: 'rgba(160,100,30,0.28)',  text: '#7A4A10' },
+  Fortified: { dot: '#8a5ad4', bg: 'rgba(100,40,160,0.10)',  border: 'rgba(100,40,160,0.28)',  text: '#5A1A8A' },
+};
 
 /* ─── Drinking window ───────────────────────────────────────────── */
 const CURRENT_YEAR = new Date().getFullYear();
@@ -212,6 +220,13 @@ export default function GrapeExpectations() {
   const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('name');
   const [search, setSearch] = useState('');
 
+  /* ─── Theme ──────────────────────────────────────────────────── */
+  const [themeMode, setThemeMode]   = useState<'light' | 'dark'>('dark');
+  const themeManualRef              = useRef(false);
+
+  /* ─── Mobile menu ────────────────────────────────────────────── */
+  const [menuOpen, setMenuOpen]         = useState(false);
+
   /* ─── Chat ───────────────────────────────────────────────────── */
   const [chatOpen, setChatOpen]         = useState(false);
   const [chatInput, setChatInput]       = useState('');
@@ -254,15 +269,38 @@ export default function GrapeExpectations() {
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  /* ─── Auth Setup ─────────────────────────────────────────────── */
+  /* ─── Auth + Wines init (parallel) ───────────────────────────── */
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    document.getElementById('static-splash')?.remove();
+    let cancelled = false;
+    Promise.all([
+      supabase.auth.getSession(),
+      supabase.from('wines').select('*'),
+    ]).then(([{ data: { session: s } }, { data: wineData, error: wineErr }]) => {
+      if (cancelled) return;
       setSession(s);
       setSessionReady(true);
+      if (s) {
+        if (!wineErr && wineData) setWines(wineData.map(mapDbWine));
+        supabase.from('profiles').select('*').eq('id', s.user.id).single()
+          .then(({ data }) => { if (!cancelled && data) setProfile(data as UserProfile); });
+      }
+      setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      if (!s) {
+      if (_event === 'SIGNED_IN') {
+        setSession(s);
+        setLoading(true);
+        Promise.all([
+          supabase.from('wines').select('*'),
+          supabase.from('profiles').select('*').eq('id', s!.user.id).single(),
+        ]).then(([{ data: wd, error: we }, { data: pd }]) => {
+          if (!we && wd) setWines(wd.map(mapDbWine));
+          if (pd) setProfile(pd as UserProfile);
+          setLoading(false);
+        });
+      } else if (_event === 'SIGNED_OUT') {
+        setSession(null);
         setWines([]);
         setProfile(null);
         setChatMessages([]);
@@ -270,26 +308,32 @@ export default function GrapeExpectations() {
         setMessageFeedback({});
       }
     });
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
-  /* ─── Load Profile ───────────────────────────────────────────── */
+  /* ─── Time-based theme (sunrise ~6:30am / sunset ~7:30pm local) ─ */
   useEffect(() => {
-    if (!session) return;
-    supabase.from('profiles').select('*').eq('id', session.user.id).single()
-      .then(({ data }) => { if (data) setProfile(data as UserProfile); });
-  }, [session]);
+    const applyTimeTheme = () => {
+      if (themeManualRef.current) return;
+      const now   = new Date();
+      const total = now.getHours() * 60 + now.getMinutes();
+      setThemeMode(total >= 390 && total < 1170 ? 'light' : 'dark');
+    };
+    applyTimeTheme();
+    const id = setInterval(applyTimeTheme, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
-  /* ─── Load Wines from Supabase ───────────────────────────────── */
+  /* ─── Apply data-theme to <html> ────────────────────────────── */
   useEffect(() => {
-    if (!session) { setLoading(false); return; }
-    setLoading(true);
-    supabase.from('wines').select('*').eq('user_id', session.user.id)
-      .then(({ data, error }) => {
-        if (!error && data) setWines(data.map(mapDbWine));
-        setLoading(false);
-      });
-  }, [session]);
+    document.documentElement.setAttribute('data-theme', themeMode);
+  }, [themeMode]);
+
+  const toggleTheme = () => {
+    themeManualRef.current = true;
+    setThemeMode(m => m === 'dark' ? 'light' : 'dark');
+  };
+
 
   /* ─── Derived wine lists ─────────────────────────────────────── */
   const activeWines = useMemo(() =>
@@ -738,7 +782,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
 
   /* ─── Render Helpers ─────────────────────────────────────────── */
   const Badge = ({ type }: { type: string }) => {
-    const s = TYPE_STYLE[type] || TYPE_STYLE.Red;
+    const palette = themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE;
+    const s = palette[type] || palette.Red;
     return <span className="tbadge" style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>{type}</span>;
   };
 
@@ -790,6 +835,18 @@ When recommending wines from the cellar, prioritise by drinking window status in
     <div className="ge fade">
       {/* ── HEADER ── */}
       <header className="ge-hdr">
+        {/* Hamburger — mobile only, left side */}
+        <button
+          className="hbg-btn show-m"
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label="Menu"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <line x1="2" y1="4.5"  x2="16" y2="4.5"/>
+            <line x1="2" y1="9"    x2="16" y2="9"/>
+            <line x1="2" y1="13.5" x2="16" y2="13.5"/>
+          </svg>
+        </button>
         <div className="ge-logo">
           <span>🍷</span>
           <div>
@@ -811,9 +868,29 @@ When recommending wines from the cellar, prioritise by drinking window status in
                 : 'Estimate Windows'}
             </button>
           )}
-          <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
+          <button className="theme-toggle hide-m" onClick={toggleTheme} title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {themeMode === 'dark' ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            )}
+          </button>
+          <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>Add Wine</button>
           {profile?.avatar_url ? (
             <img
+              className="hide-m"
               src={profile.avatar_url}
               alt={profile.display_name || 'Profile'}
               title={`${profile.display_name || session.user.email} · Sign out`}
@@ -826,12 +903,44 @@ When recommending wines from the cellar, prioritise by drinking window status in
               }}
             />
           ) : (
-            <button className="ge-btn btn-o" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
+            <button className="ge-btn btn-o hide-m" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
               Sign out
             </button>
           )}
         </div>
       </header>
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="hbg-menu show-m">
+          <button className="hbg-item" onClick={() => { toggleTheme(); setMenuOpen(false); }}>
+            {themeMode === 'dark' ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            )}
+            {themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
+          <div className="hbg-divider"/>
+          <button className="hbg-item" onClick={() => { handleSignOut(); setMenuOpen(false); }}>
+            {profile?.avatar_url && (
+              <img src={profile.avatar_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%' }}/>
+            )}
+            Sign out
+          </button>
+        </div>
+      )}
 
       <main className="ge-main">
         {/* ── STATS ── */}
@@ -996,87 +1105,103 @@ When recommending wines from the cellar, prioritise by drinking window status in
         )}
       </main>
 
-      {/* ── CHAT DRAWER ── */}
-      <div className="ge-chat-wrap">
-        {chatOpen && (
-          <div className="ge-chat-msgs">
-            {chatMessages.length === 0 && (
-              <div style={{ paddingBottom: 8 }}>
-                <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 15, fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
-                  ✦ What shall we open tonight? ✦
-                </div>
-                <QuickPrompts />
-              </div>
-            )}
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`cm ${msg.role}`}>
-                <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
-                <div className="cb">
-                  {msg.role === 'assistant'
-                    ? <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          strong: ({ children }) => <strong style={{ color: '#c9a84c' }}>{children}</strong>,
-                          a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
-                        }}
-                      >{msg.content}</ReactMarkdown>
-                    : msg.content}
-                </div>
-                {msg.role === 'assistant' && (
-                  <div className="cm-actions">
-                    <button
-                      className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
-                      onClick={() => copyMessage(msg.content, i)}
-                      title="Copy to clipboard"
-                    >
-                      {copiedIdx === i ? 'Copied!' : '⎘'}
-                    </button>
-                    {msg.messageId && (
-                      <div className="cm-feedback">
-                        <button
-                          className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_up' ? 'active' : ''}`}
-                          onClick={() => submitFeedback(msg, 'thumbs_up')}
-                          title="Helpful"
-                        >👍</button>
-                        <button
-                          className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_down' ? 'active' : ''}`}
-                          onClick={() => submitFeedback(msg, 'thumbs_down')}
-                          title="Not helpful"
-                        >👎</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-            {chatLoading && (
-              <div className="cm assistant">
-                <div className="cr">✦ Sommelier</div>
-                <div className="cb"><div className="tdots"><span /><span /><span /></div></div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-        )}
+      {/* ── ASK SOMMELIER FAB ── */}
+      {!chatOpen && (
+        <button className="sommelier-fab" onClick={() => setChatOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 2h8l2 6H6L8 2z"/>
+            <path d="M6 8v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/>
+            <line x1="12" y1="12" x2="12" y2="18"/>
+          </svg>
+          Ask Sommelier
+        </button>
+      )}
 
-        <div style={{ background: 'rgba(10,7,6,0.98)', borderTop: '1px solid var(--border)' }}>
-          <div className="ge-chat-bar">
-            {chatOpen && (
-              <button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 20, flexShrink: 0, lineHeight: 1 }}>↓</button>
-            )}
-            <input
-              ref={chatInputRef}
-              className="ge-ci"
-              placeholder={chatOpen ? 'Ask your sommelier...' : '🍷 Ask for your local dish pairing...'}
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onFocus={() => setChatOpen(true)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
-            />
-            <button className="ge-cs" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()}>
-              {chatLoading ? <div className="spin" style={{ borderColor: 'rgba(10,7,6,0.3)', borderTopColor: '#080504' }} /> : '→'}
-            </button>
+      {/* ── CHAT DRAWER ── */}
+      <div className={`ge-chat-drawer${chatOpen ? ' open' : ''}`}>
+        <div className="ge-chat-drawer-drag" />
+        <div className="ge-chat-drawer-hdr">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="ge-chat-drawer-icon">🤵</div>
+            <div>
+              <div className="ge-chat-drawer-title">Your Sommelier</div>
+              <div className="ge-chat-drawer-sub">Pairing advice · Cellar insights · Wine discovery</div>
+            </div>
           </div>
+          <button className="ge-chat-drawer-close" onClick={() => setChatOpen(false)}>×</button>
+        </div>
+
+        <div className="ge-chat-msgs">
+          {chatMessages.length === 0 && (
+            <div style={{ paddingBottom: 8 }}>
+              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 15, fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
+                ✦ What shall we open tonight? ✦
+              </div>
+              <QuickPrompts />
+            </div>
+          )}
+          {chatMessages.map((msg, i) => (
+            <div key={i} className={`cm ${msg.role}`}>
+              <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
+              <div className="cb">
+                {msg.role === 'assistant'
+                  ? <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        strong: ({ children }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
+                        a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+                      }}
+                    >{msg.content}</ReactMarkdown>
+                  : msg.content}
+              </div>
+              {msg.role === 'assistant' && (
+                <div className="cm-actions">
+                  <button
+                    className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
+                    onClick={() => copyMessage(msg.content, i)}
+                    title="Copy to clipboard"
+                  >
+                    {copiedIdx === i ? 'Copied!' : '⎘'}
+                  </button>
+                  {msg.messageId && (
+                    <div className="cm-feedback">
+                      <button
+                        className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_up' ? 'active' : ''}`}
+                        onClick={() => submitFeedback(msg, 'thumbs_up')}
+                        title="Helpful"
+                      >👍</button>
+                      <button
+                        className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_down' ? 'active' : ''}`}
+                        onClick={() => submitFeedback(msg, 'thumbs_down')}
+                        title="Not helpful"
+                      >👎</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {chatLoading && (
+            <div className="cm assistant">
+              <div className="cr">✦ Sommelier</div>
+              <div className="cb"><div className="tdots"><span /><span /><span /></div></div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="ge-chat-bar">
+          <input
+            ref={chatInputRef}
+            className="ge-ci"
+            placeholder="Ask your sommelier..."
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
+          />
+          <button className="ge-cs" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()}>
+            {chatLoading ? <div className="spin" /> : '→'}
+          </button>
         </div>
       </div>
 
