@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#FDFAF5"/>
+  <g stroke="rgba(155,130,90,0.17)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+
+    <!-- Wine bottle 1 -->
+    <g transform="translate(55,62) rotate(12)">
+      <rect x="-3" y="-30" width="6" height="4" rx="1"/>
+      <line x1="-3" y1="-26" x2="-3" y2="-18"/>
+      <line x1="3" y1="-26" x2="3" y2="-18"/>
+      <path d="M -3,-18 Q -9,-12 -10,-2 M 3,-18 Q 9,-12 10,-2"/>
+      <rect x="-10" y="-2" width="20" height="30" rx="2"/>
+      <line x1="-10" y1="10" x2="10" y2="10"/>
+    </g>
+
+    <!-- Wine glass 1 -->
+    <g transform="translate(165,38) rotate(-5)">
+      <path d="M -11,-16 Q -14,0 0,9 Q 14,0 11,-16 Z"/>
+      <line x1="0" y1="9" x2="0" y2="24"/>
+      <path d="M -9,24 Q 0,26 9,24"/>
+    </g>
+
+    <!-- Grape cluster 1 -->
+    <g transform="translate(298,28) rotate(10)">
+      <circle cx="0" cy="-13" r="4.5"/>
+      <circle cx="7" cy="-7" r="4.5"/>
+      <circle cx="-7" cy="-7" r="4.5"/>
+      <circle cx="0" cy="1" r="4.5"/>
+      <circle cx="7" cy="9" r="4.5"/>
+      <circle cx="-7" cy="9" r="4.5"/>
+      <circle cx="0" cy="17" r="4.5"/>
+      <line x1="0" y1="-17" x2="4" y2="-24"/>
+      <path d="M 4,-24 Q 11,-26 13,-19"/>
+    </g>
+
+    <!-- Champagne flute 1 -->
+    <g transform="translate(362,52) rotate(-16)">
+      <path d="M -5,-22 Q -8,0 -3,11 L 3,11 Q 8,0 5,-22 Z"/>
+      <line x1="0" y1="11" x2="0" y2="28"/>
+      <path d="M -6,28 Q 0,30 6,28"/>
+    </g>
+
+    <!-- Grapevine leaf 1 -->
+    <g transform="translate(76,138) rotate(22)">
+      <path d="M 0,-20 Q -13,-11 -13,4 Q -13,18 0,24 Q 13,18 13,4 Q 13,-11 0,-20 Z"/>
+      <line x1="0" y1="-20" x2="0" y2="24"/>
+      <path d="M 0,-5 Q -8,2 -11,9"/>
+      <path d="M 0,-5 Q 8,2 11,9"/>
+      <path d="M 0,8 Q -7,15 -10,20"/>
+      <path d="M 0,8 Q 7,15 10,20"/>
+    </g>
+
+    <!-- Corkscrew 1 -->
+    <g transform="translate(342,112) rotate(-20)">
+      <path d="M -11,-22 Q 0,-27 11,-22"/>
+      <line x1="0" y1="-22" x2="0" y2="-13"/>
+      <path d="M 0,-13 Q 9,-9 9,-3 Q 9,4 0,4 Q -9,4 -9,11 Q -9,18 0,18 Q 9,18 9,25"/>
+    </g>
+
+    <!-- Barrel 1 -->
+    <g transform="translate(197,160) rotate(5)">
+      <ellipse cx="0" cy="-18" rx="13" ry="5"/>
+      <ellipse cx="0" cy="18" rx="13" ry="5"/>
+      <line x1="-13" y1="-18" x2="-13" y2="18"/>
+      <line x1="13" y1="-18" x2="13" y2="18"/>
+      <path d="M -13,-7 Q 0,-3 13,-7"/>
+      <path d="M -13,7 Q 0,11 13,7"/>
+    </g>
+
+    <!-- Wine glass 2 -->
+    <g transform="translate(362,145) rotate(10)">
+      <path d="M -11,-16 Q -14,0 0,9 Q 14,0 11,-16 Z"/>
+      <line x1="0" y1="9" x2="0" y2="24"/>
+      <path d="M -9,24 Q 0,26 9,24"/>
+    </g>
+
+    <!-- Wine bottle 2 -->
+    <g transform="translate(32,258) rotate(-9)">
+      <rect x="-3" y="-30" width="6" height="4" rx="1"/>
+      <line x1="-3" y1="-26" x2="-3" y2="-18"/>
+      <line x1="3" y1="-26" x2="3" y2="-18"/>
+      <path d="M -3,-18 Q -9,-12 -10,-2 M 3,-18 Q 9,-12 10,-2"/>
+      <rect x="-10" y="-2" width="20" height="30" rx="2"/>
+      <line x1="-10" y1="10" x2="10" y2="10"/>
+    </g>
+
+    <!-- Grape cluster 2 -->
+    <g transform="translate(250,218) rotate(-13)">
+      <circle cx="0" cy="-13" r="4.5"/>
+      <circle cx="7" cy="-7" r="4.5"/>
+      <circle cx="-7" cy="-7" r="4.5"/>
+      <circle cx="0" cy="1" r="4.5"/>
+      <circle cx="7" cy="9" r="4.5"/>
+      <circle cx="-7" cy="9" r="4.5"/>
+      <circle cx="0" cy="17" r="4.5"/>
+      <line x1="0" y1="-17" x2="4" y2="-24"/>
+      <path d="M 4,-24 Q 11,-26 13,-19"/>
+    </g>
+
+    <!-- Grapevine leaf 2 -->
+    <g transform="translate(358,202) rotate(28)">
+      <path d="M 0,-20 Q -13,-11 -13,4 Q -13,18 0,24 Q 13,18 13,4 Q 13,-11 0,-20 Z"/>
+      <line x1="0" y1="-20" x2="0" y2="24"/>
+      <path d="M 0,-5 Q -8,2 -11,9"/>
+      <path d="M 0,-5 Q 8,2 11,9"/>
+    </g>
+
+    <!-- Champagne flute 2 -->
+    <g transform="translate(140,308) rotate(6)">
+      <path d="M -5,-22 Q -8,0 -3,11 L 3,11 Q 8,0 5,-22 Z"/>
+      <line x1="0" y1="11" x2="0" y2="28"/>
+      <path d="M -6,28 Q 0,30 6,28"/>
+    </g>
+
+    <!-- Barrel 2 -->
+    <g transform="translate(310,280) rotate(-23)">
+      <ellipse cx="0" cy="-18" rx="13" ry="5"/>
+      <ellipse cx="0" cy="18" rx="13" ry="5"/>
+      <line x1="-13" y1="-18" x2="-13" y2="18"/>
+      <line x1="13" y1="-18" x2="13" y2="18"/>
+      <path d="M -13,-7 Q 0,-3 13,-7"/>
+      <path d="M -13,7 Q 0,11 13,7"/>
+    </g>
+
+    <!-- Corkscrew 2 -->
+    <g transform="translate(358,268) rotate(15)">
+      <path d="M -11,-22 Q 0,-27 11,-22"/>
+      <line x1="0" y1="-22" x2="0" y2="-13"/>
+      <path d="M 0,-13 Q 9,-9 9,-3 Q 9,4 0,4 Q -9,4 -9,11 Q -9,18 0,18 Q 9,18 9,25"/>
+    </g>
+
+    <!-- Wine bottle 3 -->
+    <g transform="translate(198,375) rotate(18)">
+      <rect x="-3" y="-30" width="6" height="4" rx="1"/>
+      <line x1="-3" y1="-26" x2="-3" y2="-18"/>
+      <line x1="3" y1="-26" x2="3" y2="-18"/>
+      <path d="M -3,-18 Q -9,-12 -10,-2 M 3,-18 Q 9,-12 10,-2"/>
+      <rect x="-10" y="-2" width="20" height="30" rx="2"/>
+      <line x1="-10" y1="10" x2="10" y2="10"/>
+    </g>
+
+    <!-- Wine glass 3 -->
+    <g transform="translate(358,352) rotate(-9)">
+      <path d="M -11,-16 Q -14,0 0,9 Q 14,0 11,-16 Z"/>
+      <line x1="0" y1="9" x2="0" y2="24"/>
+      <path d="M -9,24 Q 0,26 9,24"/>
+    </g>
+
+    <!-- Grape cluster 3 -->
+    <g transform="translate(70,388) rotate(7)">
+      <circle cx="0" cy="-13" r="4.5"/>
+      <circle cx="7" cy="-7" r="4.5"/>
+      <circle cx="-7" cy="-7" r="4.5"/>
+      <circle cx="0" cy="1" r="4.5"/>
+      <circle cx="7" cy="9" r="4.5"/>
+      <circle cx="-7" cy="9" r="4.5"/>
+      <circle cx="0" cy="17" r="4.5"/>
+      <line x1="0" y1="-17" x2="4" y2="-24"/>
+      <path d="M 4,-24 Q 11,-26 13,-19"/>
+    </g>
+
+    <!-- Grapevine leaf 3 -->
+    <g transform="translate(268,365) rotate(-18)">
+      <path d="M 0,-20 Q -13,-11 -13,4 Q -13,18 0,24 Q 13,18 13,4 Q 13,-11 0,-20 Z"/>
+      <line x1="0" y1="-20" x2="0" y2="24"/>
+      <path d="M 0,-5 Q -8,2 -11,9"/>
+      <path d="M 0,-5 Q 8,2 11,9"/>
+      <path d="M 0,8 Q -7,15 -10,20"/>
+      <path d="M 0,8 Q 7,15 10,20"/>
+    </g>
+
+    <!-- Champagne flute 3 -->
+    <g transform="translate(362,372) rotate(-7)">
+      <path d="M -5,-22 Q -8,0 -3,11 L 3,11 Q 8,0 5,-22 Z"/>
+      <line x1="0" y1="11" x2="0" y2="28"/>
+      <path d="M -6,28 Q 0,30 6,28"/>
+    </g>
+
+    <!-- Corkscrew 3 -->
+    <g transform="translate(150,370) rotate(11)">
+      <path d="M -11,-22 Q 0,-27 11,-22"/>
+      <line x1="0" y1="-22" x2="0" y2="-13"/>
+      <path d="M 0,-13 Q 9,-9 9,-3 Q 9,4 0,4 Q -9,4 -9,11 Q -9,18 0,18 Q 9,18 9,25"/>
+    </g>
+
+  </g>
+</svg>

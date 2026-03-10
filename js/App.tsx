@@ -212,6 +212,10 @@ export default function GrapeExpectations() {
   const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('name');
   const [search, setSearch] = useState('');
 
+  /* ─── Theme ──────────────────────────────────────────────────── */
+  const [themeMode, setThemeMode]   = useState<'light' | 'dark'>('dark');
+  const themeManualRef              = useRef(false);
+
   /* ─── Chat ───────────────────────────────────────────────────── */
   const [chatOpen, setChatOpen]         = useState(false);
   const [chatInput, setChatInput]       = useState('');
@@ -272,6 +276,29 @@ export default function GrapeExpectations() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  /* ─── Time-based theme (sunrise ~6:30am / sunset ~7:30pm local) ─ */
+  useEffect(() => {
+    const applyTimeTheme = () => {
+      if (themeManualRef.current) return;
+      const now   = new Date();
+      const total = now.getHours() * 60 + now.getMinutes();
+      setThemeMode(total >= 390 && total < 1170 ? 'light' : 'dark');
+    };
+    applyTimeTheme();
+    const id = setInterval(applyTimeTheme, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  /* ─── Apply data-theme to <html> ────────────────────────────── */
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeMode);
+  }, [themeMode]);
+
+  const toggleTheme = () => {
+    themeManualRef.current = true;
+    setThemeMode(m => m === 'dark' ? 'light' : 'dark');
+  };
 
   /* ─── Load Profile ───────────────────────────────────────────── */
   useEffect(() => {
@@ -811,6 +838,25 @@ When recommending wines from the cellar, prioritise by drinking window status in
                 : 'Estimate Windows'}
             </button>
           )}
+          <button className="theme-toggle" onClick={toggleTheme} title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {themeMode === 'dark' ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            )}
+          </button>
           <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
           {profile?.avatar_url ? (
             <img
@@ -996,87 +1042,103 @@ When recommending wines from the cellar, prioritise by drinking window status in
         )}
       </main>
 
-      {/* ── CHAT DRAWER ── */}
-      <div className="ge-chat-wrap">
-        {chatOpen && (
-          <div className="ge-chat-msgs">
-            {chatMessages.length === 0 && (
-              <div style={{ paddingBottom: 8 }}>
-                <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 15, fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
-                  ✦ What shall we open tonight? ✦
-                </div>
-                <QuickPrompts />
-              </div>
-            )}
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`cm ${msg.role}`}>
-                <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
-                <div className="cb">
-                  {msg.role === 'assistant'
-                    ? <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          strong: ({ children }) => <strong style={{ color: '#c9a84c' }}>{children}</strong>,
-                          a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
-                        }}
-                      >{msg.content}</ReactMarkdown>
-                    : msg.content}
-                </div>
-                {msg.role === 'assistant' && (
-                  <div className="cm-actions">
-                    <button
-                      className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
-                      onClick={() => copyMessage(msg.content, i)}
-                      title="Copy to clipboard"
-                    >
-                      {copiedIdx === i ? 'Copied!' : '⎘'}
-                    </button>
-                    {msg.messageId && (
-                      <div className="cm-feedback">
-                        <button
-                          className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_up' ? 'active' : ''}`}
-                          onClick={() => submitFeedback(msg, 'thumbs_up')}
-                          title="Helpful"
-                        >👍</button>
-                        <button
-                          className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_down' ? 'active' : ''}`}
-                          onClick={() => submitFeedback(msg, 'thumbs_down')}
-                          title="Not helpful"
-                        >👎</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-            {chatLoading && (
-              <div className="cm assistant">
-                <div className="cr">✦ Sommelier</div>
-                <div className="cb"><div className="tdots"><span /><span /><span /></div></div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-        )}
+      {/* ── ASK SOMMELIER FAB ── */}
+      {!chatOpen && (
+        <button className="sommelier-fab" onClick={() => setChatOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 2h8l2 6H6L8 2z"/>
+            <path d="M6 8v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/>
+            <line x1="12" y1="12" x2="12" y2="18"/>
+          </svg>
+          Ask Sommelier
+        </button>
+      )}
 
-        <div style={{ background: 'rgba(10,7,6,0.98)', borderTop: '1px solid var(--border)' }}>
-          <div className="ge-chat-bar">
-            {chatOpen && (
-              <button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 20, flexShrink: 0, lineHeight: 1 }}>↓</button>
-            )}
-            <input
-              ref={chatInputRef}
-              className="ge-ci"
-              placeholder={chatOpen ? 'Ask your sommelier...' : '🍷 Ask for your local dish pairing...'}
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onFocus={() => setChatOpen(true)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
-            />
-            <button className="ge-cs" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()}>
-              {chatLoading ? <div className="spin" style={{ borderColor: 'rgba(10,7,6,0.3)', borderTopColor: '#080504' }} /> : '→'}
-            </button>
+      {/* ── CHAT DRAWER ── */}
+      <div className={`ge-chat-drawer${chatOpen ? ' open' : ''}`}>
+        <div className="ge-chat-drawer-drag" />
+        <div className="ge-chat-drawer-hdr">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="ge-chat-drawer-icon">🤵</div>
+            <div>
+              <div className="ge-chat-drawer-title">Your Sommelier</div>
+              <div className="ge-chat-drawer-sub">Pairing advice · Cellar insights · Wine discovery</div>
+            </div>
           </div>
+          <button className="ge-chat-drawer-close" onClick={() => setChatOpen(false)}>×</button>
+        </div>
+
+        <div className="ge-chat-msgs">
+          {chatMessages.length === 0 && (
+            <div style={{ paddingBottom: 8 }}>
+              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 15, fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
+                ✦ What shall we open tonight? ✦
+              </div>
+              <QuickPrompts />
+            </div>
+          )}
+          {chatMessages.map((msg, i) => (
+            <div key={i} className={`cm ${msg.role}`}>
+              <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
+              <div className="cb">
+                {msg.role === 'assistant'
+                  ? <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        strong: ({ children }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
+                        a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+                      }}
+                    >{msg.content}</ReactMarkdown>
+                  : msg.content}
+              </div>
+              {msg.role === 'assistant' && (
+                <div className="cm-actions">
+                  <button
+                    className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
+                    onClick={() => copyMessage(msg.content, i)}
+                    title="Copy to clipboard"
+                  >
+                    {copiedIdx === i ? 'Copied!' : '⎘'}
+                  </button>
+                  {msg.messageId && (
+                    <div className="cm-feedback">
+                      <button
+                        className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_up' ? 'active' : ''}`}
+                        onClick={() => submitFeedback(msg, 'thumbs_up')}
+                        title="Helpful"
+                      >👍</button>
+                      <button
+                        className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_down' ? 'active' : ''}`}
+                        onClick={() => submitFeedback(msg, 'thumbs_down')}
+                        title="Not helpful"
+                      >👎</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {chatLoading && (
+            <div className="cm assistant">
+              <div className="cr">✦ Sommelier</div>
+              <div className="cb"><div className="tdots"><span /><span /><span /></div></div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="ge-chat-bar">
+          <input
+            ref={chatInputRef}
+            className="ge-ci"
+            placeholder="Ask your sommelier..."
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
+          />
+          <button className="ge-cs" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()}>
+            {chatLoading ? <div className="spin" /> : '→'}
+          </button>
         </div>
       </div>
 
