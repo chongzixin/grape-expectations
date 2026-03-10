@@ -27,6 +27,14 @@ const TYPE_STYLE: Record<string, TypeStyle> = {
   Dessert:   { dot: '#d4a45a', bg: 'rgba(139,90,26,0.2)',   border: 'rgba(180,120,50,0.4)',  text: '#f5d4aa' },
   Fortified: { dot: '#8a5ad4', bg: 'rgba(90,26,139,0.2)',   border: 'rgba(120,50,180,0.4)', text: '#c4aaf5' },
 };
+const TYPE_STYLE_LIGHT: Record<string, TypeStyle> = {
+  Red:       { dot: '#e05c6b', bg: 'rgba(180,50,70,0.12)',   border: 'rgba(180,50,70,0.30)',   text: '#8B1A2A' },
+  White:     { dot: '#d4c44a', bg: 'rgba(160,155,30,0.10)',  border: 'rgba(160,155,30,0.28)',  text: '#6B6512' },
+  Sparkling: { dot: '#5bbad5', bg: 'rgba(30,110,150,0.10)',  border: 'rgba(30,110,150,0.28)',  text: '#1A5A7A' },
+  'Rosé':    { dot: '#d45aa0', bg: 'rgba(180,50,140,0.10)',  border: 'rgba(180,50,140,0.28)',  text: '#8B1A6A' },
+  Dessert:   { dot: '#d4a45a', bg: 'rgba(160,100,30,0.10)',  border: 'rgba(160,100,30,0.28)',  text: '#7A4A10' },
+  Fortified: { dot: '#8a5ad4', bg: 'rgba(100,40,160,0.10)',  border: 'rgba(100,40,160,0.28)',  text: '#5A1A8A' },
+};
 
 /* ─── Drinking window ───────────────────────────────────────────── */
 const CURRENT_YEAR = new Date().getFullYear();
@@ -765,7 +773,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
 
   /* ─── Render Helpers ─────────────────────────────────────────── */
   const Badge = ({ type }: { type: string }) => {
-    const s = TYPE_STYLE[type] || TYPE_STYLE.Red;
+    const palette = themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE;
+    const s = palette[type] || palette.Red;
     return <span className="tbadge" style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>{type}</span>;
   };
 
