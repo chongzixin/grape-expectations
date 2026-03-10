@@ -116,7 +116,7 @@ html[data-theme="light"] body {
 }
 
 /* ── Mobile-only utility (inverse of .hide-m) ── */
-.show-m { display: none; }
+.show-m { display: none !important; }
 
 .hbg-btn {
   background: none;

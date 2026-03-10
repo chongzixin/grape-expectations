@@ -835,6 +835,18 @@ When recommending wines from the cellar, prioritise by drinking window status in
     <div className="ge fade">
       {/* ── HEADER ── */}
       <header className="ge-hdr">
+        {/* Hamburger — mobile only, left side */}
+        <button
+          className="hbg-btn show-m"
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label="Menu"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <line x1="2" y1="4.5"  x2="16" y2="4.5"/>
+            <line x1="2" y1="9"    x2="16" y2="9"/>
+            <line x1="2" y1="13.5" x2="16" y2="13.5"/>
+          </svg>
+        </button>
         <div className="ge-logo">
           <span>🍷</span>
           <div>
@@ -875,7 +887,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
               </svg>
             )}
           </button>
-          <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>+ Add Wine</button>
+          <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>Add Wine</button>
           {profile?.avatar_url ? (
             <img
               className="hide-m"
@@ -895,18 +907,6 @@ When recommending wines from the cellar, prioritise by drinking window status in
               Sign out
             </button>
           )}
-          {/* Hamburger — mobile only */}
-          <button
-            className="hbg-btn show-m"
-            onClick={() => setMenuOpen(o => !o)}
-            aria-label="Menu"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <line x1="2" y1="4.5"  x2="16" y2="4.5"/>
-              <line x1="2" y1="9"    x2="16" y2="9"/>
-              <line x1="2" y1="13.5" x2="16" y2="13.5"/>
-            </svg>
-          </button>
         </div>
       </header>
       {/* Mobile dropdown menu */}
