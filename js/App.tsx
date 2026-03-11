@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
+import { LOCAL_FLAVOUR_REFS, LOCAL_CUISINE_KNOWLEDGE } from './localCuisine';
 import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
@@ -546,37 +547,7 @@ export default function GrapeExpectations() {
 CELLAR INVENTORY:
 ${cellarCtx}
 
-LOCAL CUISINE KNOWLEDGE — You have deep, dish-level knowledge of Singapore and SEA cuisine. Always name specific local dishes when explaining pairings. Never give generic "Asian food" advice.
-
-REGIONAL CUISINES & SIGNATURE DISHES:
-- Teochew: suckling pig (乳猪), chai poh kway teow (菜脯粿条), steamed fish (清蒸鱼), braised duck (卤鸭), oyster omelette (蚵仔煎), orh nee (芋泥)
-- Hokkien: bak kut teh (肉骨茶), Hokkien prawn mee, char kway teow (炒粿条), popiah, lor bak
-- Cantonese: dim sum (har gow, siu mai, char siu bao), char siu (叉烧), siu yuk (烧肉), steamed fish with ginger-scallion, wonton noodles
-- Peranakan/Nonya: laksa lemak, ayam buah keluak, beef rendang, ngoh hiang, kueh pie tee
-- Malay: nasi lemak with sambal, rendang, satay with peanut sauce, mee rebus, lontong
-- Indian: fish head curry, roti prata, banana leaf rice, biryani (chicken or mutton), butter chicken
-- Zi char: kung pao prawns, cereal butter prawns, salted egg yolk crab, sweet & sour pork, sambal kangkong, steamed tofu
-- Hawker staples: Hainanese chicken rice, wonton mee, carrot cake (chai tow kway), rojak, cai png, chilli crab, black pepper crab
-
-PAIRING PRINCIPLES FOR LOCAL DISHES:
-- Rich/fatty (rendang, siu yuk, bak kut teh, char siu): high acidity cuts fat — Burgundy Pinot Noir, Champagne, Riesling, Barbera
-- Spicy (laksa, curry, sambal nasi lemak, chilli crab): off-dry aromatic whites tame heat — Gewürztraminer, off-dry Riesling, Pinot Gris, Viognier; avoid high-tannin reds
-- Delicate seafood (Teochew steamed fish, prawn dishes): crisp mineral whites — Chablis, Muscadet, Albariño, Mosel Riesling Kabinett
-- Oyster dishes: Champagne, Chablis, Muscadet
-- Umami/braised/soy (braised duck, lor bak, XO sauce, chicken rice): earthy medium-bodied reds or oxidative whites — Pinot Noir, aged Nebbiolo, Fino Sherry
-- Wok hei/char (char kway teow, Hokkien mee, carrot cake): wines with body and smoky/toasty notes — Grenache, Syrah, oaked Chardonnay, Alsatian Pinot Gris
-- Sweet/caramelised (char siu, satay peanut sauce): ripe fruit or slight sweetness — Grenache, Pinot Noir, off-dry Riesling
-- Tangy/tamarind (assam fish, rojak, tamarind prawns): bright acidity and citrus to mirror tartness
-- Suckling pig (Teochew style): fine bubbles and high acidity cut crackling fat without masking delicate pork — Champagne, Blanc de Blancs, dry Riesling
-- Chai poh kway teow (salty preserved radish noodles): salt demands slight sweetness or firm body — off-dry Gewürztraminer, Alsatian Pinot Gris, or crisp Chablis by contrast
-
-HANDLING MULTI-DISH MEAL QUERIES:
-When the user mentions multiple dishes or a cuisine style (e.g. "Teochew spread", "zichar dinner with suckling pig and chai poh kway teow"):
-1. Identify the dominant pairing challenge across all dishes (richest, spiciest, or most assertive sauce)
-2. Find the wine that satisfies the most dishes without failing any
-3. State trade-offs explicitly: "This wine is ideal for the suckling pig; for the chai poh kway teow alone you might prefer..."
-4. If dishes are genuinely incompatible (e.g. delicate steamed fish + fiery curry), recommend two bottles by course cluster
-5. Always name each specific dish — never say "the fish dish", say "the Teochew steamed pomfret"
+${LOCAL_CUISINE_KNOWLEDGE}
 
 RECOMMENDATION RULES:
 1. Recommend up to 3 bottles FROM the cellar that best suit the request — name them specifically and say why
@@ -689,7 +660,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
     try {
       const raw = await callClaude({
         system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
+        messages: [{ role: 'user', content: `Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: ${LOCAL_FLAVOUR_REFS}."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
         maxTokens: 600,
       });
       const enriched = JSON.parse(raw.replace(/```json|```/g, '').trim());
