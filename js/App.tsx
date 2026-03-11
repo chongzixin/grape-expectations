@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Toaster, toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
@@ -677,7 +678,10 @@ When recommending wines from the cellar, prioritise by drinking window status in
         setPairingsLoading(false);
       }
     } catch {
-      if (index === previewIndexRef.current) setPairingsLoading(false);
+      if (index === previewIndexRef.current) {
+        setPairingsLoading(false);
+        toast.error('Could not enrich wine details — please try again.');
+      }
     }
   };
 
@@ -706,7 +710,10 @@ When recommending wines from the cellar, prioritise by drinking window status in
         setWindowLoading(false);
       }
     } catch {
-      if (index === previewIndexRef.current) setWindowLoading(false);
+      if (index === previewIndexRef.current) {
+        setWindowLoading(false);
+        toast.error('Could not estimate drinking window — please enter dates manually.');
+      }
     }
   };
 
@@ -854,6 +861,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
 
   return (
     <div className="ge fade">
+      <Toaster position="bottom-center" richColors />
       {/* ── HEADER ── */}
       <header className="ge-hdr">
         {/* Hamburger — mobile only, left side */}
