@@ -34,15 +34,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--bg)',
-      padding: '24px',
-    }}>
+    <div className="auth-page">
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>🍷</div>
