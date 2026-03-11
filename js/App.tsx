@@ -1135,6 +1135,9 @@ When recommending wines from the cellar, prioritise by drinking window status in
                       <td>
                         <div className="wn">{wine.name}</div>
                         <div className="ww">{wine.winery}</div>
+                        <div className="show-m" style={{ marginTop: 4 }}>
+                          <DrinkingWindowBadge wine={wine} />
+                        </div>
                       </td>
                       <td className="hide-m">
                         <Badge type={wine.type} />
