@@ -182,6 +182,9 @@ function mapDbWine(row: Record<string, unknown>): Wine {
   };
 }
 
+/* ─── Sommelier persona (shared across all AI prompts) ──────────── */
+const SOMMELIER_SYSTEM = `You are "Grape Expectations" — an expert AI Singaporean sommelier serving a wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine. Your communication is playfully Singaporean yet professional, your suggestions have local references without overdoing it.`;
+
 /* ─── Claude API (proxied via Netlify function) ──────────────────── */
 async function callClaude({ messages, system = '', maxTokens = 1800, imageData = null }: ClaudeParams): Promise<string> {
   const res = await fetch('/.netlify/functions/claude', {
@@ -457,7 +460,8 @@ export default function GrapeExpectations() {
       setWindowEstimationProgress({ current: i + 1, total: winesNeedingWindow.length });
       try {
         const raw = await callClaude({
-          messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
+          system: SOMMELIER_SYSTEM,
+          messages: [{ role: 'user', content: `For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
           maxTokens: 60,
         });
         const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -486,7 +490,7 @@ export default function GrapeExpectations() {
         `${w.name} (${w.winery || 'unknown producer'}, ${w.vintage || 'NV'}, ${w.style || w.type}, ${w.subRegion || w.region || w.country}, ${w.inventory} btl${w.price ? `, S$${w.price}` : ''})`
       ).join('\n');
       const txt = await callClaude({
-        system: 'You are an expert sommelier writing for a sophisticated Singaporean wine collector. Be elegant, insightful and concise.',
+        system: SOMMELIER_SYSTEM,
         messages: [{ role: 'user', content: `Write a 3-4 sentence sommelier's assessment of this cellar collection. Note any highlights, themes, or interesting observations:\n\n${cellarList}` }],
         maxTokens: 400,
       });
@@ -537,7 +541,7 @@ export default function GrapeExpectations() {
       // Strip messageId before sending to Claude
       const history = [...chatMessages, userMsg].map(({ role, content }) => ({ role, content }));
       const txt = await callClaude({
-        system: `You are "Grape Expectations" — an expert AI sommelier serving a Singaporean wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine.
+        system: `${SOMMELIER_SYSTEM}
 
 CELLAR INVENTORY:
 ${cellarCtx}
@@ -684,7 +688,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
     if (!wine?.name) return;
     try {
       const raw = await callClaude({
-        messages: [{ role: 'user', content: `You are a Singapore sommelier. Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
+        system: SOMMELIER_SYSTEM,
+        messages: [{ role: 'user', content: `Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
         maxTokens: 600,
       });
       const enriched = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -711,7 +716,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
     if (index === previewIndexRef.current) setWindowLoading(true);
     try {
       const raw = await callClaude({
-        messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
+        system: SOMMELIER_SYSTEM,
+        messages: [{ role: 'user', content: `For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
         maxTokens: 60,
       });
       const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
