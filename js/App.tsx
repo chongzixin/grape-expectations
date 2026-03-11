@@ -1001,7 +1001,13 @@ When recommending wines from the cellar, prioritise by drinking window status in
                   <div className="spin" /> Analysing your cellar...
                 </div>
               ) : aiSummary ? (
-                <p style={{ color: 'var(--parch)', lineHeight: 1.75 }}>{aiSummary}</p>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    strong: ({ children }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
+                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+                  }}
+                >{aiSummary}</ReactMarkdown>
               ) : (
                 <button className="ge-btn btn-o" onClick={loadSummary}>✦ Generate AI Assessment</button>
               )}
