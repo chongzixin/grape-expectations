@@ -1030,6 +1030,7 @@ html[data-theme="light"] body {
   justify-content: center;
   padding: 24px;
   background: rgba(10, 7, 6, 0.82);
+  font-family: 'Lato', sans-serif;
 }
 
 [data-theme="light"] .auth-page {

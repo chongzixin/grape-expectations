@@ -41,7 +41,7 @@ export default function AuthPage() {
         <h1 style={{ color: 'var(--gold)', fontSize: 28, fontWeight: 700, margin: 0 }}>
           Grape Expectations
         </h1>
-        <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
+        <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 11, letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 300 }}>
           Your Singaporean Sommelier
         </p>
       </div>
