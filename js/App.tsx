@@ -577,7 +577,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
 4. too_young — Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.
 5. past_peak — Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.`,
         messages: history,
-        maxTokens: 2000,
+        maxTokens: 3000,
       });
 
       // Persist assistant message and capture its ID for feedback linkage
@@ -590,7 +590,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
       }
 
       setChatMessages(prev => [...prev, { role: 'assistant', content: txt, messageId: assistantMsgId }]);
-    } catch {
+    } catch (e) {
+      console.error('[sendChat error]', e);
       setChatMessages(prev => [...prev, { role: 'assistant', content: 'Apologies, I encountered an error. Please try again.' }]);
     }
     setChatLoading(false);
