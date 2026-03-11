@@ -493,8 +493,8 @@ export default function GrapeExpectations() {
       ).join('\n');
       const txt = await callClaude({
         system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `Write a 3-4 sentence sommelier's assessment of this cellar collection. Note any highlights, themes, or interesting observations:\n\n${cellarList}` }],
-        maxTokens: 400,
+        messages: [{ role: 'user', content: `Write a sommelier's assessment of this cellar collection. Note any highlights, themes, or interesting observations. Do not include a title or heading — begin directly with the assessment prose.\n\n${cellarList}` }],
+        maxTokens: 1200,
       });
       setAiSummary(txt);
     } catch {
