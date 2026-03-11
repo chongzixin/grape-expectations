@@ -475,6 +475,12 @@ html[data-theme="light"] body {
   gap: 14px;
 }
 
+@media (min-width: 768px) {
+  .brk-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .brk-card {
   background: var(--card);
   border: 1px solid var(--border);
