@@ -493,8 +493,8 @@ export default function GrapeExpectations() {
       ).join('\n');
       const txt = await callClaude({
         system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `Write a sommelier's assessment of this cellar collection. Note any highlights, themes, or interesting observations. Do not include a title or heading — begin directly with the assessment prose.\n\n${cellarList}` }],
-        maxTokens: 1200,
+        messages: [{ role: 'user', content: `Write a concise sommelier's assessment of this cellar collection in 150–180 words. Note any highlights, themes, or interesting observations. Do not include a title or heading — begin directly with the assessment prose.\n\n${cellarList}` }],
+        maxTokens: 700,
       });
       setAiSummary(txt);
     } catch (e) {
@@ -569,6 +569,7 @@ RECOMMENDATION RULES:
 8. Be conversational — ask a follow-up if helpful
 9. All prices in SGD
 10. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason)
+11. Keep your total response under 500 words. Be specific and sharp — cut preamble, not content.
 
 DRINKING WINDOW PRIORITY:
 When recommending wines from the cellar, prioritise by drinking window status in this order:
@@ -578,7 +579,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
 4. too_young — Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.
 5. past_peak — Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.`,
         messages: history,
-        maxTokens: 3000,
+        maxTokens: 1500,
       });
 
       // Persist assistant message and capture its ID for feedback linkage
