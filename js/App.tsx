@@ -258,7 +258,7 @@ export default function GrapeExpectations() {
   /* ─── UI ─────────────────────────────────────────────────────── */
   const [tab, setTab]       = useState<'cellar' | 'analytics'>('cellar');
   const [filter, setFilter] = useState('All');
-  const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('name');
+  const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('window');
   const [search, setSearch] = useState('');
 
   /* ─── Theme ──────────────────────────────────────────────────── */
@@ -996,8 +996,6 @@ When recommending wines from the cellar, prioritise by drinking window status in
           <StatCard v={stats.count2016 || 0} l="2016 Bottles" />
           <StatCard v={stats.count2018 || 0} l="2018 Bottles" />
           <StatCard v={stats.count2023 || 0} l="2023 Bottles" />
-          <StatCard v={stats.modeCountry} l="Top Country" />
-          <StatCard v={stats.modeStyle} l="Top Varietal" />
           <StatCard v={stats.drinkSoon} l="Drink Soon" accentColor="#d97706" onClick={() => { setTab('cellar'); setSort('window'); }} />
           <StatCard v={stats.pastPeak} l="Past Peak" accentColor="#dc2626" onClick={() => { setTab('cellar'); setSort('window'); }} />
         </div>
@@ -1025,18 +1023,31 @@ When recommending wines from the cellar, prioritise by drinking window status in
             </div>
 
             <div className="brk-grid">
-              {/* By Type */}
-              <div className="brk-card">
-                <div className="brk-ttl">By Type</div>
-                <DonutChart data={
-                  Object.entries(
-                    activeWines.reduce<Record<string, number>>((a, w) => { a[w.type || 'Unknown'] = (a[w.type || 'Unknown'] || 0) + w.inventory; return a; }, {})
-                  ).sort((a, b) => b[1] - a[1]).map(([t, c]) => ({
-                    label: t,
-                    value: c,
-                    color: (themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE)[t]?.dot || '#888',
-                  }))
-                } />
+              {/* By Type + By Drinking Window */}
+              <div className="brk-card" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div className="brk-ttl">By Type</div>
+                    <DonutChart data={
+                      Object.entries(
+                        activeWines.reduce<Record<string, number>>((a, w) => { a[w.type || 'Unknown'] = (a[w.type || 'Unknown'] || 0) + w.inventory; return a; }, {})
+                      ).sort((a, b) => b[1] - a[1]).map(([t, c]) => ({
+                        label: t,
+                        value: c,
+                        color: (themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE)[t]?.dot || '#888',
+                      }))
+                    } />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div className="brk-ttl">By Drinking Window</div>
+                    <DonutChart data={[
+                      { label: 'Too Young',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'      ? s + w.inventory : s, 0), color: '#2563eb' },
+                      { label: 'In Prime',   value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'prime'           ? s + w.inventory : s, 0), color: '#16a34a' },
+                      { label: 'Drink Soon', value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0), color: '#d97706' },
+                      { label: 'Past Peak',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0), color: '#dc2626' },
+                    ].filter(d => d.value > 0)} />
+                  </div>
+                </div>
               </div>
               {/* By Country */}
               <div className="brk-card">
@@ -1076,16 +1087,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
               </div>
             </div>
 
-            {/* By Drinking Window */}
-            <div className="brk-card" style={{ marginTop: 14 }}>
-              <div className="brk-ttl">By Drinking Window</div>
-              <DonutChart data={[
-                { label: 'Too Young',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'       ? s + w.inventory : s, 0), color: '#2563eb' },
-                { label: 'In Prime',   value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'prime'            ? s + w.inventory : s, 0), color: '#16a34a' },
-                { label: 'Drink Soon', value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end'  ? s + w.inventory : s, 0), color: '#d97706' },
-                { label: 'Past Peak',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'        ? s + w.inventory : s, 0), color: '#dc2626' },
-              ].filter(d => d.value > 0)} />
-            </div>
+
           </div>
         )}
 
