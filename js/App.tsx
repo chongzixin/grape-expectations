@@ -312,7 +312,6 @@ export default function GrapeExpectations() {
 
   /* ─── Auth + Wines init (parallel) ───────────────────────────── */
   useEffect(() => {
-    document.getElementById('static-splash')?.remove();
     let cancelled = false;
     Promise.all([
       supabase.auth.getSession(),
