@@ -95,9 +95,46 @@ function DrinkingWindowBadge({ wine }: { wine: Wine }) {
   );
 }
 
+/* ─── Donut Chart ────────────────────────────────────────────────── */
+interface DonutSegment { label: string; value: number; color: string; }
+
+function DonutChart({ data }: { data: DonutSegment[] }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (!total) return <div style={{ color: 'var(--muted)', fontSize: 13 }}>No data</div>;
+  const cx = 55, cy = 55, R = 42, r = 26;
+  let angle = -Math.PI / 2;
+  const segments = data.filter(d => d.value > 0).map(d => {
+    const sweep = (d.value / total) * 2 * Math.PI;
+    const sa = angle, ea = angle + sweep;
+    angle = ea;
+    const largeArc = sweep > Math.PI ? 1 : 0;
+    const ox1 = cx + R * Math.cos(sa), oy1 = cy + R * Math.sin(sa);
+    const ox2 = cx + R * Math.cos(ea), oy2 = cy + R * Math.sin(ea);
+    const ix1 = cx + r * Math.cos(sa), iy1 = cy + r * Math.sin(sa);
+    const ix2 = cx + r * Math.cos(ea), iy2 = cy + r * Math.sin(ea);
+    return { ...d, path: `M${ox1},${oy1} A${R},${R} 0 ${largeArc} 1 ${ox2},${oy2} L${ix2},${iy2} A${r},${r} 0 ${largeArc} 0 ${ix1},${iy1}Z` };
+  });
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <svg width="110" height="110" viewBox="0 0 110 110" style={{ flexShrink: 0 }}>
+        {segments.map(s => <path key={s.label} d={s.path} fill={s.color} />)}
+      </svg>
+      <div style={{ flex: 1 }}>
+        {data.filter(d => d.value > 0).map(d => (
+          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, fontSize: 12 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+            <span style={{ color: 'var(--parch)', flex: 1 }}>{d.label}</span>
+            <span style={{ color: 'var(--muted)' }}>{d.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Analytics ─────────────────────────────────────────────────── */
 function computeStats(wines: Wine[]): Stats {
-  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, count2016: 0, count2018: 0, count2023: 0, modeCountry: '—', modeStyle: '—' };
+  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, count2016: 0, count2018: 0, count2023: 0, modeCountry: '—', modeStyle: '—', drinkSoon: 0, pastPeak: 0 };
   const bottles = wines.flatMap(w => Array(Math.max(0, w.inventory)).fill(w) as Wine[]);
   const modeOf = (field: keyof Wine): string => {
     const freq: Record<string, number> = {};
@@ -109,6 +146,8 @@ function computeStats(wines: Wine[]): Stats {
     return sorted[0]?.[0] || '—';
   };
   const priced = wines.filter(w => w.price);
+  const drinkSoon = wines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0);
+  const pastPeak  = wines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0);
   return {
     totalBottles: bottles.length,
     uniqueWines: wines.length,
@@ -118,6 +157,8 @@ function computeStats(wines: Wine[]): Stats {
     count2023: bottles.filter(w => w.vintage === '2023').length,
     modeCountry: modeOf('country'),
     modeStyle: modeOf('style'),
+    drinkSoon,
+    pastPeak,
   };
 }
 
@@ -217,7 +258,7 @@ export default function GrapeExpectations() {
   /* ─── UI ─────────────────────────────────────────────────────── */
   const [tab, setTab]       = useState<'cellar' | 'analytics'>('cellar');
   const [filter, setFilter] = useState('All');
-  const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('name');
+  const [sort, setSort]     = useState<'name' | 'vintage' | 'price' | 'type' | 'window'>('window');
   const [search, setSearch] = useState('');
 
   /* ─── Theme ──────────────────────────────────────────────────── */
@@ -787,9 +828,13 @@ When recommending wines from the cellar, prioritise by drinking window status in
     return <span className="tbadge" style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>{type}</span>;
   };
 
-  const StatCard = ({ v, l }: { v: string | number; l: string }) => (
-    <div className="ge-stat">
-      <div className="ge-stat-v" title={String(v)}>{v}</div>
+  const StatCard = ({ v, l, onClick, accentColor }: { v: string | number; l: string; onClick?: () => void; accentColor?: string }) => (
+    <div
+      className={`ge-stat${onClick ? ' ge-stat-btn' : ''}`}
+      onClick={onClick}
+      style={accentColor ? { borderColor: `${accentColor}33` } : undefined}
+    >
+      <div className="ge-stat-v" title={String(v)} style={accentColor ? { color: accentColor } : undefined}>{v}</div>
       <div className="ge-stat-l">{l}</div>
     </div>
   );
@@ -951,8 +996,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
           <StatCard v={stats.count2016 || 0} l="2016 Bottles" />
           <StatCard v={stats.count2018 || 0} l="2018 Bottles" />
           <StatCard v={stats.count2023 || 0} l="2023 Bottles" />
-          <StatCard v={stats.modeCountry} l="Top Country" />
-          <StatCard v={stats.modeStyle} l="Top Varietal" />
+          <StatCard v={stats.drinkSoon} l="Drink Soon" accentColor="#d97706" onClick={() => { setTab('cellar'); setSort('window'); }} />
+          <StatCard v={stats.pastPeak} l="Past Peak" accentColor="#dc2626" onClick={() => { setTab('cellar'); setSort('window'); }} />
         </div>
 
         {/* ── TABS ── */}
@@ -978,17 +1023,31 @@ When recommending wines from the cellar, prioritise by drinking window status in
             </div>
 
             <div className="brk-grid">
-              {/* By Type */}
-              <div className="brk-card">
-                <div className="brk-ttl">By Type</div>
-                {Object.entries(
-                  activeWines.reduce<Record<string, number>>((a, w) => { a[w.type || 'Unknown'] = (a[w.type || 'Unknown'] || 0) + w.inventory; return a; }, {})
-                ).sort((a, b) => b[1] - a[1]).map(([t, c]) => (
-                  <div className="brk-row" key={t}>
-                    <Badge type={t} />
-                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>{c} btl{c !== 1 ? 's' : ''}</span>
+              {/* By Type + By Drinking Window */}
+              <div className="brk-card" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div className="brk-ttl">By Type</div>
+                    <DonutChart data={
+                      Object.entries(
+                        activeWines.reduce<Record<string, number>>((a, w) => { a[w.type || 'Unknown'] = (a[w.type || 'Unknown'] || 0) + w.inventory; return a; }, {})
+                      ).sort((a, b) => b[1] - a[1]).map(([t, c]) => ({
+                        label: t,
+                        value: c,
+                        color: (themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE)[t]?.dot || '#888',
+                      }))
+                    } />
                   </div>
-                ))}
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div className="brk-ttl">By Drinking Window</div>
+                    <DonutChart data={[
+                      { label: 'Too Young',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'      ? s + w.inventory : s, 0), color: '#2563eb' },
+                      { label: 'In Prime',   value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'prime'           ? s + w.inventory : s, 0), color: '#16a34a' },
+                      { label: 'Drink Soon', value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0), color: '#d97706' },
+                      { label: 'Past Peak',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0), color: '#dc2626' },
+                    ].filter(d => d.value > 0)} />
+                  </div>
+                </div>
               </div>
               {/* By Country */}
               <div className="brk-card">
@@ -1027,6 +1086,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
                 ))}
               </div>
             </div>
+
+
           </div>
         )}
 
@@ -1074,6 +1135,9 @@ When recommending wines from the cellar, prioritise by drinking window status in
                       <td>
                         <div className="wn">{wine.name}</div>
                         <div className="ww">{wine.winery}</div>
+                        <div className="show-m" style={{ marginTop: 4 }}>
+                          <DrinkingWindowBadge wine={wine} />
+                        </div>
                       </td>
                       <td className="hide-m">
                         <Badge type={wine.type} />

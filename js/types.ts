@@ -37,6 +37,8 @@ export interface Stats {
   count2023: number;
   modeCountry: string;
   modeStyle: string;
+  drinkSoon: number;
+  pastPeak: number;
 }
 
 export interface ImageData {

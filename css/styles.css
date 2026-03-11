@@ -204,6 +204,10 @@ html[data-theme="light"] body {
   transform: translateY(-1px);
 }
 
+.ge-stat-btn {
+  cursor: pointer;
+}
+
 .ge-stat-v {
   font-family: 'Lato', sans-serif;
   font-size: 22px;
@@ -469,6 +473,12 @@ html[data-theme="light"] body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
+}
+
+@media (min-width: 768px) {
+  .brk-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .brk-card {
