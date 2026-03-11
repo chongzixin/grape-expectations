@@ -497,7 +497,8 @@ export default function GrapeExpectations() {
         maxTokens: 1200,
       });
       setAiSummary(txt);
-    } catch {
+    } catch (e) {
+      console.error('loadSummary error:', e);
       setAiSummary('Unable to generate summary — please check your connection.');
     }
     setSummaryLoading(false);
