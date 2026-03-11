@@ -659,7 +659,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
     if (!wine?.name) return;
     try {
       const raw = await callClaude({
-        system: SOMMELIER_SYSTEM,
+        system: `${SOMMELIER_SYSTEM}\n\n${LOCAL_CUISINE_KNOWLEDGE}`,
         messages: [{ role: 'user', content: `Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: ${LOCAL_FLAVOUR_REFS}."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
         maxTokens: 600,
       });
