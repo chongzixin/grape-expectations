@@ -1301,8 +1301,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
             <div className="cm assistant">
               <div className="cr">✦ Sommelier</div>
               <div className="cb">
-                <div className="tdots"><span /><span /><span /></div>
-                <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="tdots"><span /><span /><span /></div>
+                  <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+                </div>
               </div>
             </div>
           )}
