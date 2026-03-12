@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Toaster, toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
+import type { Wine, ChatMessage, RecommendedWine, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import { LOCAL_FLAVOUR_REFS, LOCAL_CUISINE_KNOWLEDGE } from './localCuisine';
@@ -256,6 +256,21 @@ function RichText({ text }: { text: string }) {
   );
 }
 
+/* ─── Recommended wines JSON helpers ────────────────────────────── */
+function parseRecommendedWines(content: string): RecommendedWine[] {
+  const match = content.match(/<!-- WINES_JSON\n([\s\S]*?)\n-->/);
+  if (!match) return [];
+  try {
+    return JSON.parse(match[1]) as RecommendedWine[];
+  } catch {
+    return [];
+  }
+}
+
+function stripWinesJson(content: string): string {
+  return content.replace(/\s*<!-- WINES_JSON[\s\S]*?-->/, '').trim();
+}
+
 /* ─── Witty Loader Hook ──────────────────────────────────────────── */
 function useWittyLoader(active: boolean) {
   const [msg, setMsg]       = useState(() => getRandomMessage());
@@ -313,7 +328,7 @@ export default function GrapeExpectations() {
   const [chatLoading, setChatLoading]   = useState(false);
   const [copiedIdx, setCopiedIdx]       = useState<number | null>(null);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
-  const [messageFeedback, setMessageFeedback] = useState<Record<string, 'thumbs_up' | 'thumbs_down'>>({});
+  const [wineFeedback, setWineFeedback] = useState<Record<string, 'thumbs_up' | 'thumbs_down'>>({});
   const [lastUserQuery, setLastUserQuery] = useState('');
 
   /* ─── Analytics ──────────────────────────────────────────────── */
@@ -386,7 +401,7 @@ export default function GrapeExpectations() {
         setProfile(null);
         setChatMessages([]);
         setChatSessionId(null);
-        setMessageFeedback({});
+        setWineFeedback({});
       }
     });
     return () => { cancelled = true; subscription.unsubscribe(); };
@@ -575,7 +590,7 @@ export default function GrapeExpectations() {
         const windowStr = w.drinkFrom || w.drinkBy
           ? ` | Window: ${w.drinkFrom ?? '?'}–${w.drinkBy ?? '?'} [${status}]`
           : ' | Window: unknown';
-        return `• ${w.name} | ${w.winery} | Vintage: ${w.vintage || 'NV'} | ${w.type} (${w.style}) | ${[w.subRegion, w.region, w.country].filter(Boolean).join(', ')} | ${w.inventory} bottle${w.inventory > 1 ? 's' : ''} | Price: ${w.price ? `S$${w.price}` : 'unpriced'}${windowStr}`;
+        return `• [id:${w.id}] ${w.name} | ${w.winery} | Vintage: ${w.vintage || 'NV'} | ${w.type} (${w.style}) | ${[w.subRegion, w.region, w.country].filter(Boolean).join(', ')} | ${w.inventory} bottle${w.inventory > 1 ? 's' : ''} | Price: ${w.price ? `S$${w.price}` : 'unpriced'}${windowStr}`;
       }).join('\n');
       // Strip messageId before sending to Claude
       const history = [...chatMessages, userMsg].map(({ role, content }) => ({ role, content }));
@@ -604,8 +619,13 @@ RECOMMENDATION RULES:
    Never mix cellar and non-cellar wines in the same section. Use emojis sparingly (🍷 for wine bullets, 🍜 when naming local dishes, 🌶️ for spicy dishes) — never overdo it. Always reference specific local flavour cues; never say "Asian flavours".
 8. Be conversational — ask a follow-up if helpful
 9. All prices in SGD
-10. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason)
+10. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason). List all 5 wines (3 cellar + 2 sought) in the Verdict.
 11. Keep your total response under 500 words. Be specific and sharp — cut preamble, not content.
+12. After the Verdict section, append this block exactly (used internally by the app — do NOT mention it to the user):
+<!-- WINES_JSON
+[{"name":"Wine Name","winery":"Winery","in_cellar":true,"cellar_wine_id":"uuid-from-[id:uuid]"},...]
+-->
+List all 5 recommended wines in the same order as the Verdict. For cellar wines, copy the uuid from the [id:uuid] prefix in the cellar inventory. For non-cellar wines set cellar_wine_id to null. Output valid JSON on a single line inside the block.
 
 DRINKING WINDOW PRIORITY:
 When recommending wines from the cellar, prioritise by drinking window status in this order:
@@ -614,8 +634,11 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   .map(([status], i) => `${i + 1}. ${status} — ${DRINKING_STATUS_DESCRIPTIONS[status]}`)
   .join('\n')}`,
         messages: history,
-        maxTokens: 1500,
+        maxTokens: 1800,
       });
+
+      // Parse per-wine data from the WINES_JSON block before persisting/displaying
+      const recommendedWines = parseRecommendedWines(txt);
 
       // Persist assistant message and capture its ID for feedback linkage
       let assistantMsgId: string | undefined;
@@ -626,7 +649,12 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
         assistantMsgId = msgData?.id;
       }
 
-      setChatMessages(prev => [...prev, { role: 'assistant', content: txt, messageId: assistantMsgId }]);
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: txt,
+        messageId: assistantMsgId,
+        recommendedWines: recommendedWines.length > 0 ? recommendedWines : undefined,
+      }]);
     } catch (e) {
       console.error('[sendChat error]', e);
       setChatMessages(prev => [...prev, { role: 'assistant', content: 'Apologies, I encountered an error. Please try again.' }]);
@@ -634,29 +662,32 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     setChatLoading(false);
   };
 
-  /* ─── Feedback (thumbs up/down on assistant messages) ────────── */
-  const submitFeedback = async (msg: ChatMessage, thumbs: 'thumbs_up' | 'thumbs_down') => {
+  /* ─── Feedback (per-wine thumbs on Verdict bullets) ─────────── */
+  const submitWineFeedback = async (msg: ChatMessage, wine: RecommendedWine, thumbs: 'thumbs_up' | 'thumbs_down') => {
     if (!msg.messageId || !session) return;
     const mid = msg.messageId;
+    const fbKey = `${mid}:${wine.name}`;
     // Toggle off if same vote
-    if (messageFeedback[mid] === thumbs) {
-      setMessageFeedback(prev => { const next = { ...prev }; delete next[mid]; return next; });
+    if (wineFeedback[fbKey] === thumbs) {
+      setWineFeedback(prev => { const next = { ...prev }; delete next[fbKey]; return next; });
       await supabase.from('recommendation_feedback')
         .delete()
         .eq('user_id', session.user.id)
         .eq('message_id', mid)
-        .eq('wine_name', 'response');
+        .eq('wine_name', wine.name);
       return;
     }
-    setMessageFeedback(prev => ({ ...prev, [mid]: thumbs }));
+    setWineFeedback(prev => ({ ...prev, [fbKey]: thumbs }));
     await supabase.from('recommendation_feedback').upsert({
       user_id: session.user.id,
       message_id: mid,
-      wine_name: 'response',
+      wine_name: wine.name,
+      winery: wine.winery,
       feedback: thumbs,
-      in_cellar: false,
+      in_cellar: wine.in_cellar,
+      cellar_wine_id: wine.cellar_wine_id ?? null,
       context_query: lastUserQuery,
-    });
+    }, { onConflict: 'user_id,message_id,wine_name' });
   };
 
   const copyMessage = useCallback((text: string, idx: number) => {
@@ -1233,47 +1264,85 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
               <QuickPrompts />
             </div>
           )}
-          {chatMessages.map((msg, i) => (
-            <div key={i} className={`cm ${msg.role}`}>
-              <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
-              <div className="cb">
-                {msg.role === 'assistant'
-                  ? <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        strong: ({ children }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
-                        a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
-                      }}
-                    >{msg.content}</ReactMarkdown>
-                  : msg.content}
-              </div>
-              {msg.role === 'assistant' && (
-                <div className="cm-actions">
-                  <button
-                    className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
-                    onClick={() => copyMessage(msg.content, i)}
-                    title="Copy to clipboard"
-                  >
-                    {copiedIdx === i ? 'Copied!' : '⎘'}
-                  </button>
-                  {msg.messageId && (
-                    <div className="cm-feedback">
-                      <button
-                        className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_up' ? 'active' : ''}`}
-                        onClick={() => submitFeedback(msg, 'thumbs_up')}
-                        title="Helpful"
-                      >👍</button>
-                      <button
-                        className={`cm-fb ${messageFeedback[msg.messageId] === 'thumbs_down' ? 'active' : ''}`}
-                        onClick={() => submitFeedback(msg, 'thumbs_down')}
-                        title="Not helpful"
-                      >👎</button>
-                    </div>
-                  )}
+          {chatMessages.map((msg, i) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mdComponents: any = {
+              strong: ({ children }: { children: React.ReactNode }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
+              a: ({ href, children }: { href?: string; children?: React.ReactNode }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+            };
+            const displayContent = msg.role === 'assistant' ? stripWinesJson(msg.content) : msg.content;
+
+            // Split Verdict section for per-wine thumbs
+            let beforeVerdict: string | null = null;
+            let verdictBullets: string[] = [];
+            if (msg.role === 'assistant' && msg.recommendedWines && msg.recommendedWines.length > 0 && msg.messageId) {
+              const verdictMatch = displayContent.match(/^([\s\S]*?)\n(\*\*Verdict\*\*[\s\S]*)$/);
+              if (verdictMatch) {
+                beforeVerdict = verdictMatch[1];
+                const verdictBody = verdictMatch[2];
+                verdictBullets = verdictBody
+                  .split('\n')
+                  .slice(1) // skip the "**Verdict**" header line
+                  .filter(l => /^\s*[•\-\*]\s/.test(l));
+              }
+            }
+
+            return (
+              <div key={i} className={`cm ${msg.role}`}>
+                <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
+                <div className="cb">
+                  {msg.role === 'assistant' ? (
+                    beforeVerdict !== null && verdictBullets.length > 0 ? (
+                      <>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{beforeVerdict}</ReactMarkdown>
+                        <div style={{ marginTop: 8 }}>
+                          <strong style={{ color: 'var(--gold)' }}>Verdict</strong>
+                          {verdictBullets.map((line, idx) => {
+                            const wine = msg.recommendedWines![idx];
+                            const fbKey = wine ? `${msg.messageId}:${wine.name}` : null;
+                            return (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, margin: '4px 0' }}>
+                                <div style={{ flex: 1 }}>
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{line}</ReactMarkdown>
+                                </div>
+                                {wine && fbKey && (
+                                  <div className="cm-feedback" style={{ flexShrink: 0, marginTop: 2 }}>
+                                    <button
+                                      className={`cm-fb ${wineFeedback[fbKey] === 'thumbs_up' ? 'active' : ''}`}
+                                      onClick={() => submitWineFeedback(msg, wine, 'thumbs_up')}
+                                      title="Like this recommendation"
+                                    >👍</button>
+                                    <button
+                                      className={`cm-fb ${wineFeedback[fbKey] === 'thumbs_down' ? 'active' : ''}`}
+                                      onClick={() => submitWineFeedback(msg, wine, 'thumbs_down')}
+                                      title="Dislike this recommendation"
+                                    >👎</button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{displayContent}</ReactMarkdown>
+                    )
+                  ) : displayContent}
                 </div>
-              )}
-            </div>
-          ))}
+                {msg.role === 'assistant' && (
+                  <div className="cm-actions">
+                    <button
+                      className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
+                      onClick={() => copyMessage(displayContent, i)}
+                      title="Copy to clipboard"
+                    >
+                      {copiedIdx === i ? 'Copied!' : '⎘'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {chatLoading && (
             <div className="cm assistant">
               <div className="cr">✦ Sommelier</div>
