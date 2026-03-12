@@ -1200,7 +1200,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                         {FLAGS[wine.country] || ''} {wine.subRegion || wine.region || wine.country || '—'}
                       </td>
                       <td className="hide-m" style={{ fontSize: 'var(--fs-base)', color: wine.price ? 'var(--gold)' : 'var(--dim)' }}>
-                        {wine.price ? `S$${wine.price}` : '—'}
+                        {wine.price ? `S$${Number.isInteger(wine.price) ? wine.price : wine.price.toFixed(2)}` : '—'}
                       </td>
                       <td className="hide-m window-cell">
                         <DrinkingWindowBadge wine={wine} />
