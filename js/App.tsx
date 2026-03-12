@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Toaster, toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
+import { LOCAL_FLAVOUR_REFS, LOCAL_CUISINE_KNOWLEDGE } from './localCuisine';
 import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
@@ -181,6 +183,9 @@ function mapDbWine(row: Record<string, unknown>): Wine {
     drinkBy:   (row.drink_by   as number | null) ?? null,
   };
 }
+
+/* ─── Sommelier persona (shared across all AI prompts) ──────────── */
+const SOMMELIER_SYSTEM = `You are "Grape Expectations" — an expert AI Singaporean sommelier serving a wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine. Your communication is playfully Singaporean yet professional, your suggestions have local references without overdoing it.`;
 
 /* ─── Claude API (proxied via Netlify function) ──────────────────── */
 async function callClaude({ messages, system = '', maxTokens = 1800, imageData = null }: ClaudeParams): Promise<string> {
@@ -457,7 +462,8 @@ export default function GrapeExpectations() {
       setWindowEstimationProgress({ current: i + 1, total: winesNeedingWindow.length });
       try {
         const raw = await callClaude({
-          messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
+          system: SOMMELIER_SYSTEM,
+          messages: [{ role: 'user', content: `For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
           maxTokens: 60,
         });
         const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -486,12 +492,13 @@ export default function GrapeExpectations() {
         `${w.name} (${w.winery || 'unknown producer'}, ${w.vintage || 'NV'}, ${w.style || w.type}, ${w.subRegion || w.region || w.country}, ${w.inventory} btl${w.price ? `, S$${w.price}` : ''})`
       ).join('\n');
       const txt = await callClaude({
-        system: 'You are an expert sommelier writing for a sophisticated Singaporean wine collector. Be elegant, insightful and concise.',
-        messages: [{ role: 'user', content: `Write a 3-4 sentence sommelier's assessment of this cellar collection. Note any highlights, themes, or interesting observations:\n\n${cellarList}` }],
-        maxTokens: 400,
+        system: SOMMELIER_SYSTEM,
+        messages: [{ role: 'user', content: `Write a concise sommelier's assessment of this cellar collection in 150–180 words. Note any highlights, themes, or interesting observations. Do not include a title or heading — begin directly with the assessment prose.\n\n${cellarList}` }],
+        maxTokens: 700,
       });
       setAiSummary(txt);
-    } catch {
+    } catch (e) {
+      console.error('loadSummary error:', e);
       setAiSummary('Unable to generate summary — please check your connection.');
     }
     setSummaryLoading(false);
@@ -537,47 +544,17 @@ export default function GrapeExpectations() {
       // Strip messageId before sending to Claude
       const history = [...chatMessages, userMsg].map(({ role, content }) => ({ role, content }));
       const txt = await callClaude({
-        system: `You are "Grape Expectations" — an expert AI sommelier serving a Singaporean wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine.
+        system: `${SOMMELIER_SYSTEM}
 
 CELLAR INVENTORY:
 ${cellarCtx}
 
-LOCAL CUISINE KNOWLEDGE — You have deep, dish-level knowledge of Singapore and SEA cuisine. Always name specific local dishes when explaining pairings. Never give generic "Asian food" advice.
-
-REGIONAL CUISINES & SIGNATURE DISHES:
-- Teochew: suckling pig (乳猪), chai poh kway teow (菜脯粿条), steamed fish (清蒸鱼), braised duck (卤鸭), oyster omelette (蚵仔煎), orh nee (芋泥)
-- Hokkien: bak kut teh (肉骨茶), Hokkien prawn mee, char kway teow (炒粿条), popiah, lor bak
-- Cantonese: dim sum (har gow, siu mai, char siu bao), char siu (叉烧), siu yuk (烧肉), steamed fish with ginger-scallion, wonton noodles
-- Peranakan/Nonya: laksa lemak, ayam buah keluak, beef rendang, ngoh hiang, kueh pie tee
-- Malay: nasi lemak with sambal, rendang, satay with peanut sauce, mee rebus, lontong
-- Indian: fish head curry, roti prata, banana leaf rice, biryani (chicken or mutton), butter chicken
-- Zi char: kung pao prawns, cereal butter prawns, salted egg yolk crab, sweet & sour pork, sambal kangkong, steamed tofu
-- Hawker staples: Hainanese chicken rice, wonton mee, carrot cake (chai tow kway), rojak, cai png, chilli crab, black pepper crab
-
-PAIRING PRINCIPLES FOR LOCAL DISHES:
-- Rich/fatty (rendang, siu yuk, bak kut teh, char siu): high acidity cuts fat — Burgundy Pinot Noir, Champagne, Riesling, Barbera
-- Spicy (laksa, curry, sambal nasi lemak, chilli crab): off-dry aromatic whites tame heat — Gewürztraminer, off-dry Riesling, Pinot Gris, Viognier; avoid high-tannin reds
-- Delicate seafood (Teochew steamed fish, prawn dishes): crisp mineral whites — Chablis, Muscadet, Albariño, Mosel Riesling Kabinett
-- Oyster dishes: Champagne, Chablis, Muscadet
-- Umami/braised/soy (braised duck, lor bak, XO sauce, chicken rice): earthy medium-bodied reds or oxidative whites — Pinot Noir, aged Nebbiolo, Fino Sherry
-- Wok hei/char (char kway teow, Hokkien mee, carrot cake): wines with body and smoky/toasty notes — Grenache, Syrah, oaked Chardonnay, Alsatian Pinot Gris
-- Sweet/caramelised (char siu, satay peanut sauce): ripe fruit or slight sweetness — Grenache, Pinot Noir, off-dry Riesling
-- Tangy/tamarind (assam fish, rojak, tamarind prawns): bright acidity and citrus to mirror tartness
-- Suckling pig (Teochew style): fine bubbles and high acidity cut crackling fat without masking delicate pork — Champagne, Blanc de Blancs, dry Riesling
-- Chai poh kway teow (salty preserved radish noodles): salt demands slight sweetness or firm body — off-dry Gewürztraminer, Alsatian Pinot Gris, or crisp Chablis by contrast
-
-HANDLING MULTI-DISH MEAL QUERIES:
-When the user mentions multiple dishes or a cuisine style (e.g. "Teochew spread", "zichar dinner with suckling pig and chai poh kway teow"):
-1. Identify the dominant pairing challenge across all dishes (richest, spiciest, or most assertive sauce)
-2. Find the wine that satisfies the most dishes without failing any
-3. State trade-offs explicitly: "This wine is ideal for the suckling pig; for the chai poh kway teow alone you might prefer..."
-4. If dishes are genuinely incompatible (e.g. delicate steamed fish + fiery curry), recommend two bottles by course cluster
-5. Always name each specific dish — never say "the fish dish", say "the Teochew steamed pomfret"
+${LOCAL_CUISINE_KNOWLEDGE}
 
 RECOMMENDATION RULES:
-1. Recommend up to 3 bottles FROM the cellar that best suit the request — name them specifically and say why
+1. Recommend exactly 3 bottles FROM the cellar that best suit the request — name them specifically and say why
 2. For each cellar recommendation, include its price (S$) and drinking window (e.g. "S$85 | Drink 2022–2030, currently prime")
-3. Then recommend 2 bottles NOT in the cellar (different varietals) that would excel — include SGD price estimates
+3. Then recommend exactly 2 bottles NOT in the cellar — these must be a different varietal from any of the cellar picks above — include SGD price estimates
 4. For each recommendation: share interesting winery/winemaker history
 5. Explain pairings using WSET framework (acidity, tannin, body, alcohol, flavour compounds) tied to specific local dish characteristics (fat, spice, umami, cooking method, key sauces)
 6. Consider budget, occasion, mood if mentioned
@@ -592,6 +569,7 @@ RECOMMENDATION RULES:
 8. Be conversational — ask a follow-up if helpful
 9. All prices in SGD
 10. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason)
+11. Keep your total response under 500 words. Be specific and sharp — cut preamble, not content.
 
 DRINKING WINDOW PRIORITY:
 When recommending wines from the cellar, prioritise by drinking window status in this order:
@@ -601,7 +579,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
 4. too_young — Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.
 5. past_peak — Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.`,
         messages: history,
-        maxTokens: 2000,
+        maxTokens: 1500,
       });
 
       // Persist assistant message and capture its ID for feedback linkage
@@ -614,7 +592,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
       }
 
       setChatMessages(prev => [...prev, { role: 'assistant', content: txt, messageId: assistantMsgId }]);
-    } catch {
+    } catch (e) {
+      console.error('[sendChat error]', e);
       setChatMessages(prev => [...prev, { role: 'assistant', content: 'Apologies, I encountered an error. Please try again.' }]);
     }
     setChatLoading(false);
@@ -684,7 +663,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
     if (!wine?.name) return;
     try {
       const raw = await callClaude({
-        messages: [{ role: 'user', content: `You are a Singapore sommelier. Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: lychee and starfruit not tropical fruit, red dates not dried fruit, pandan florals not floral aromatics, char siu richness not meaty, roasted barley like kopi-O not coffee notes, sharp like assam not tart acidity."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
+        system: `${SOMMELIER_SYSTEM}\n\n${LOCAL_CUISINE_KNOWLEDGE}`,
+        messages: [{ role: 'user', content: `Given this wine, return ONLY a raw JSON object (no markdown, no backticks).\n\nWine: ${[wine.vintage, wine.winery, wine.name].filter(Boolean).join(' ')} (${[wine.type, wine.region, wine.country].filter(Boolean).join(', ')})\n\n{"localPairings":["**Dish name**: one sentence referencing acidity, tannin, body or flavour synergy with the dish.","**Dish name**: ...","**Dish name**: ..."],"wineSummary":"one sentence describing the wine's character, appellation and style","winerySummary":"one sentence about the producer — founding story, philosophy or a standout fact","tastingNotes":"2–3 sentences of tasting notes. Where apt, use local flavour references: ${LOCAL_FLAVOUR_REFS}."}\n\nSuggest exactly 3 Singapore or Southeast Asian local dishes for localPairings. Return ONLY the JSON object.` }],
         maxTokens: 600,
       });
       const enriched = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -701,7 +681,10 @@ When recommending wines from the cellar, prioritise by drinking window status in
         setPairingsLoading(false);
       }
     } catch {
-      if (index === previewIndexRef.current) setPairingsLoading(false);
+      if (index === previewIndexRef.current) {
+        setPairingsLoading(false);
+        toast.error('Could not enrich wine details — please try again.');
+      }
     }
   };
 
@@ -711,7 +694,8 @@ When recommending wines from the cellar, prioritise by drinking window status in
     if (index === previewIndexRef.current) setWindowLoading(true);
     try {
       const raw = await callClaude({
-        messages: [{ role: 'user', content: `You are a sommelier. For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
+        system: SOMMELIER_SYSTEM,
+        messages: [{ role: 'user', content: `For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
         maxTokens: 60,
       });
       const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -729,7 +713,10 @@ When recommending wines from the cellar, prioritise by drinking window status in
         setWindowLoading(false);
       }
     } catch {
-      if (index === previewIndexRef.current) setWindowLoading(false);
+      if (index === previewIndexRef.current) {
+        setWindowLoading(false);
+        toast.error('Could not estimate drinking window — please enter dates manually.');
+      }
     }
   };
 
@@ -877,6 +864,7 @@ When recommending wines from the cellar, prioritise by drinking window status in
 
   return (
     <div className="ge fade">
+      <Toaster position="bottom-center" richColors />
       {/* ── HEADER ── */}
       <header className="ge-hdr">
         {/* Hamburger — mobile only, left side */}
@@ -1015,7 +1003,13 @@ When recommending wines from the cellar, prioritise by drinking window status in
                   <div className="spin" /> Analysing your cellar...
                 </div>
               ) : aiSummary ? (
-                <p style={{ color: 'var(--parch)', lineHeight: 1.75 }}>{aiSummary}</p>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    strong: ({ children }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
+                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
+                  }}
+                >{aiSummary}</ReactMarkdown>
               ) : (
                 <button className="ge-btn btn-o" onClick={loadSummary}>✦ Generate AI Assessment</button>
               )}
