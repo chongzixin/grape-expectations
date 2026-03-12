@@ -527,10 +527,33 @@ export default function GrapeExpectations() {
       const cellarList = activeWines.map(w =>
         `${w.name} (${w.winery || 'unknown producer'}, ${w.vintage || 'NV'}, ${w.style || w.type}, ${w.subRegion || w.region || w.country}, ${w.inventory} btl${w.price ? `, S$${w.price}` : ''})`
       ).join('\n');
+      const primeCt     = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'prime'           ? s + w.inventory : s, 0);
+      const drinkSoonCt = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0);
+      const pastPeakCt  = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0);
+      const tooYoungCt  = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'       ? s + w.inventory : s, 0);
       const txt = await callClaude({
         system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `Write a concise sommelier's assessment of this cellar collection in 150–180 words. Note any highlights, themes, or interesting observations. Do not include a title or heading — begin directly with the assessment prose.\n\n${cellarList}` }],
-        maxTokens: 700,
+        messages: [{ role: 'user', content: `Write a Cellar Health Snapshot for this collection in 150–180 words across 2–3 short paragraphs.
+
+Structure the paragraphs as two implicit parts — what's working and what to consider — woven into natural flowing prose without headers or bullet points. Do not use bold text. Do not include a title or heading — begin directly with the prose. Each paragraph should be 2–4 sentences.
+
+Cover:
+- The cellar's personality: dominant styles, regions, and varietals that give it identity
+- Which bottles are in their prime drinking window right now and deserve near-term attention (use the exact counts provided below)
+- Balance across styles (red/white/sparkling) and whether any are underrepresented
+- The drinking window spread — if a large cluster is too young and near-term options are limited, call it out
+- Specific gaps worth filling to round out the collection
+
+Drinking window breakdown (use these exact numbers): ${primeCt} bottles prime, ${drinkSoonCt} drink soon, ${pastPeakCt} past peak, ${tooYoungCt} too young.
+
+Where natural, weave in 1–2 references to local Singaporean food or occasions to ground the assessment in the user's context. Use the dish names below as inspiration — do not force every sentence to reference local food.
+
+LOCAL FLAVOUR REFS: ${LOCAL_FLAVOUR_REFS}
+${LOCAL_CUISINE_KNOWLEDGE}
+
+Cellar:
+${cellarList}` }],
+        maxTokens: 800,
       });
       setAiSummary(txt);
     } catch (e) {
@@ -1278,8 +1301,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
             <div className="cm assistant">
               <div className="cr">✦ Sommelier</div>
               <div className="cb">
-                <div className="tdots"><span /><span /><span /></div>
-                <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="tdots"><span /><span /><span /></div>
+                  <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+                </div>
               </div>
             </div>
           )}
