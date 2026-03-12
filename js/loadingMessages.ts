@@ -1,0 +1,61 @@
+export const LOADING_MESSAGES: string[] = [
+  // General wine wit
+  "Asking the grapes for their opinion...",
+  "Consulting the vines, please hold...",
+  "Decanting your data drop by drop...",
+  "Swirling the algorithm, checking the legs...",
+  "Aerating your query in the cellar...",
+  "Pairing your question with the perfect answer...",
+  "Nosing the bouquet of your cellar...",
+  "Tasting notes incoming, patience is a virtue...",
+  "Checking the vintage on that answer...",
+  "Pouring through the database, almost there...",
+  "Like fine Burgundy, good things take time...",
+  "Asking the terroir for its honest opinion...",
+  "The grapes are conferring amongst themselves...",
+  "Assessing the phenolic structure of your query...",
+  "Cold stabilising your question for clarity...",
+  "The best Rieslings are worth waiting for...",
+  "Running malolactic fermentation on your request...",
+  "Blending the perfect response, hold on...",
+  "Interrogating the yeast — they know things...",
+  "Checking humidity in the wine cave...",
+  "Your question ages gracefully in oak...",
+  "Cross-checking Parker with Jancis Robinson...",
+  "The blind tasting panel is deliberating...",
+  "Bottle shock is temporary, great answers aren't...",
+  "The corking machine is warming up...",
+  "Filtering the lees from your answer...",
+  "Calculating tannin structure of your request...",
+  "Rounding the finish on your response...",
+  "Like a Grand Cru, worth every second...",
+  "The flying winemaker is on the line...",
+  // Singapore / local flavour
+  "Asking the sommeliers at Praelum...",
+  "Sweating like Shiraz in Singapore humidity...",
+  "Checking duty-free stock at Changi T3...",
+  "Margaret River called, they need a moment...",
+  "Phoning the wine merchant on Orchard Road...",
+  "Calculating optimal drinking window, shiok...",
+  "Translating sommelier speak to English, lah...",
+  "Pondering rosé pairings with chicken rice...",
+  "Like char kway teow, this needs heat...",
+  "Like laksa, this needs layers of flavour...",
+  "Even hawker wine needs time to breathe...",
+  "Sniffing out the best answer, lah...",
+  "Consulting the corkage rules, one moment...",
+  "Your cellar data is fermenting nicely, lor...",
+  "The kopitiam has wine now — times change...",
+  "Hot and humid — your Riesling will love it...",
+  "Like a Singapore sunset, almost golden...",
+  "Checking the reserve list at Marina Bay...",
+  "Sourcing from the Bordeaux négociant, hold on...",
+  "Pouring patience from a very full bottle...",
+];
+
+export function getRandomMessage(exclude?: string): string {
+  const pool = exclude
+    ? LOADING_MESSAGES.filter(m => m !== exclude)
+    : LOADING_MESSAGES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
