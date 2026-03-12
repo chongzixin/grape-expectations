@@ -6,6 +6,7 @@ import type { Wine, ChatMessage, Stats, ImageData, ClaudeParams, NewWineForm, Us
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import { LOCAL_FLAVOUR_REFS, LOCAL_CUISINE_KNOWLEDGE } from './localCuisine';
+import { getRandomMessage } from './loadingMessages';
 import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
@@ -255,6 +256,30 @@ function RichText({ text }: { text: string }) {
   );
 }
 
+/* ─── Witty Loader Hook ──────────────────────────────────────────── */
+function useWittyLoader(active: boolean) {
+  const [msg, setMsg]       = useState(() => getRandomMessage());
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (!active) {
+      setMsg(getRandomMessage());
+      setVisible(true);
+      return;
+    }
+    const id = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setMsg(prev => getRandomMessage(prev));
+        setVisible(true);
+      }, 400);
+    }, 3500);
+    return () => clearInterval(id);
+  }, [active]);
+
+  return { msg, visible };
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MAIN APP
 ═══════════════════════════════════════════════════════════════════ */
@@ -300,6 +325,9 @@ export default function GrapeExpectations() {
   const [addTab, setAddTab]         = useState<'photo' | 'manual'>('photo');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [scanLoading, setScanLoading]   = useState(false);
+  const { msg: chatMsg,    visible: chatMsgVisible    } = useWittyLoader(chatLoading);
+  const { msg: summaryMsg, visible: summaryMsgVisible } = useWittyLoader(summaryLoading);
+  const { msg: scanMsg,    visible: scanMsgVisible    } = useWittyLoader(scanLoading);
   const [scannedWines, setScannedWines] = useState<Partial<Wine>[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const previewIndexRef = useRef(0);
@@ -1006,8 +1034,9 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
             <div className="ai-box">
               <div className="ai-hdr">✦ Sommelier's Assessment</div>
               {summaryLoading ? (
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13 }}>
-                  <div className="spin" /> Analysing your cellar...
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div className="spin" />
+                  <div className={`witty-msg${summaryMsgVisible ? '' : ' wm-hidden'}`}>{summaryMsg}</div>
                 </div>
               ) : aiSummary ? (
                 <ReactMarkdown
@@ -1248,7 +1277,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
           {chatLoading && (
             <div className="cm assistant">
               <div className="cr">✦ Sommelier</div>
-              <div className="cb"><div className="tdots"><span /><span /><span /></div></div>
+              <div className="cb">
+                <div className="tdots"><span /><span /><span /></div>
+                <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+              </div>
             </div>
           )}
           <div ref={chatEndRef} />
@@ -1309,8 +1341,9 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                   <div>
                     <img src={photoPreview} style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'contain', background: 'var(--card)', marginBottom: 12 }} alt="Wine" />
                     {scanLoading && (
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13, padding: '8px 0' }}>
-                        <div className="spin" /> Scanning with AI vision...
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0' }}>
+                        <div className="spin" />
+                        <div className={`witty-msg${scanMsgVisible ? '' : ' wm-hidden'}`}>{scanMsg}</div>
                       </div>
                     )}
                     {!scanLoading && scannedWines.length > 0 && (() => {
