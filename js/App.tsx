@@ -57,6 +57,14 @@ const BADGE_STYLES: Record<DrinkingStatus, { background: string; color: string; 
   unknown:         { background: '#6b7280', color: '#ffffff', label: 'Unknown' },
 };
 
+const DRINKING_STATUS_DESCRIPTIONS: Record<DrinkingStatus, string> = {
+  past_peak:       'Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.',
+  approaching_end: 'Wine is within 2 years of its window end. Recommend urgently ("drink soon").',
+  prime:           'Wine is currently at its best drinking window.',
+  too_young:       'Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.',
+  unknown:         'Window data not available; treat as potentially drinkable.',
+};
+
 function getDrinkingStatus(wine: Wine): DrinkingStatus {
   const { drinkFrom, drinkBy } = wine;
   if (drinkFrom == null && drinkBy == null) return 'unknown';
@@ -573,11 +581,10 @@ RECOMMENDATION RULES:
 
 DRINKING WINDOW PRIORITY:
 When recommending wines from the cellar, prioritise by drinking window status in this order:
-1. prime — Wine is currently at its best drinking window. Recommend these first.
-2. approaching_end — Wine is within 2 years of its window end. Recommend urgently ("drink soon").
-3. unknown — Window data not available; treat as potentially drinkable.
-4. too_young — Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.
-5. past_peak — Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.`,
+${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
+  .sort(([, a], [, b]) => a - b)
+  .map(([status], i) => `${i + 1}. ${status} — ${DRINKING_STATUS_DESCRIPTIONS[status]}`)
+  .join('\n')}`,
         messages: history,
         maxTokens: 1500,
       });
