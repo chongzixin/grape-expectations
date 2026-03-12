@@ -38,10 +38,10 @@ export default function AuthPage() {
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>🍷</div>
-        <h1 style={{ color: 'var(--gold)', fontSize: 28, fontWeight: 700, margin: 0 }}>
+        <h1 style={{ color: 'var(--gold)', fontSize: 'var(--fs-2xl)', fontWeight: 700, margin: 0 }}>
           Grape Expectations
         </h1>
-        <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 11, letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 300 }}>
+        <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 'var(--fs-xs)', letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 300 }}>
           Your Singaporean Sommelier
         </p>
       </div>
@@ -73,7 +73,7 @@ export default function AuthPage() {
                 border: '1px solid #ddd',
                 borderRadius: 8,
                 padding: '11px 16px',
-                fontSize: 14,
+                fontSize: 'var(--fs-base)',
                 fontWeight: 600,
                 cursor: 'pointer',
                 width: '100%',
@@ -91,13 +91,13 @@ export default function AuthPage() {
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              <span style={{ color: 'var(--muted)', fontSize: 12 }}>or</span>
+              <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>or</span>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
 
             {/* Magic Link */}
             <form onSubmit={handleMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <label style={{ color: 'var(--parch)', fontSize: 13, fontWeight: 500 }}>
+              <label style={{ color: 'var(--parch)', fontSize: 'var(--fs-base)', fontWeight: 500 }}>
                 Email
               </label>
               <input
@@ -111,7 +111,7 @@ export default function AuthPage() {
                   border: '1px solid var(--border)',
                   borderRadius: 8,
                   color: 'var(--parch)',
-                  fontSize: 14,
+                  fontSize: 'var(--fs-base)',
                   padding: '10px 12px',
                   outline: 'none',
                   width: '100%',
@@ -129,7 +129,7 @@ export default function AuthPage() {
             </form>
 
             {error && (
-              <p style={{ color: '#f87171', fontSize: 13, margin: 0, textAlign: 'center' }}>
+              <p style={{ color: '#f87171', fontSize: 'var(--fs-base)', margin: 0, textAlign: 'center' }}>
                 {error}
               </p>
             )}
@@ -138,7 +138,7 @@ export default function AuthPage() {
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 16 }}>✉️</div>
             <h3 style={{ color: 'var(--gold)', margin: '0 0 8px' }}>Check your email</h3>
-            <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
+            <p style={{ color: 'var(--muted)', fontSize: 'var(--fs-base)', lineHeight: 1.6 }}>
               We sent a magic link to <strong style={{ color: 'var(--parch)' }}>{email}</strong>.
               Click the link to sign in — no password needed.
             </p>
@@ -149,7 +149,7 @@ export default function AuthPage() {
                 background: 'none',
                 border: 'none',
                 color: 'var(--muted)',
-                fontSize: 13,
+                fontSize: 'var(--fs-base)',
                 cursor: 'pointer',
                 textDecoration: 'underline',
               }}

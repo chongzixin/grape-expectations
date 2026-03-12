@@ -16,6 +16,15 @@
   --parch: #ede4d2;
   --muted: #8a7a6a;
   --dim: #4a3a2a;
+
+  /* Font size scale */
+  --fs-xs:   12px;  /* badges, timestamps, micro labels */
+  --fs-sm:   13px;  /* secondary text, captions */
+  --fs-base: 15px;  /* body, chat messages, inputs */
+  --fs-md:   16px;  /* buttons, tabs, controls */
+  --fs-lg:   18px;  /* subheadings, drawer titles */
+  --fs-xl:   22px;  /* modal titles, loading screen */
+  --fs-2xl:  28px;  /* auth page heading */
 }
 
 /* ─── Light Theme (Cellar Stone) ────────────────────────────────── */
@@ -146,7 +155,7 @@ html[data-theme="light"] body {
 }
 .hbg-item {
   width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 11px 16px; font-size: 14px; font-family: 'Lato', sans-serif;
+  padding: 11px 16px; font-size: var(--fs-base); font-family: 'Lato', sans-serif;
   background: none; border: none; cursor: pointer;
   color: var(--parch); text-align: left;
   transition: background 0.15s;
@@ -166,7 +175,7 @@ html[data-theme="light"] body {
 }
 
 .ge-logo small {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--muted);
@@ -210,7 +219,7 @@ html[data-theme="light"] body {
 
 .ge-stat-v {
   font-family: 'Lato', sans-serif;
-  font-size: 22px;
+  font-size: var(--fs-xl);
   font-weight: 700;
   color: var(--gold);
   line-height: 1;
@@ -220,7 +229,7 @@ html[data-theme="light"] body {
 }
 
 .ge-stat-l {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--muted);
   margin-top: 4px;
   letter-spacing: 0.8px;
@@ -237,7 +246,7 @@ html[data-theme="light"] body {
 .ge-tab {
   padding: 8px 22px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   letter-spacing: 0.4px;
   cursor: pointer;
   border: 1px solid transparent;
@@ -267,7 +276,7 @@ html[data-theme="light"] body {
 .ge-fbtn {
   padding: 5px 14px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   cursor: pointer;
   border: 1px solid var(--border);
   background: none;
@@ -292,7 +301,7 @@ html[data-theme="light"] body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--parch);
   outline: none;
   font-family: 'Lato', sans-serif;
@@ -308,7 +317,7 @@ html[data-theme="light"] body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--parch);
   outline: none;
   font-family: 'Lato', sans-serif;
@@ -324,7 +333,7 @@ html[data-theme="light"] body {
 .ge-tbl th {
   text-align: left;
   padding: 10px 14px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--muted);
@@ -351,14 +360,14 @@ html[data-theme="light"] body {
 
 .wn {
   font-family: 'Lato', sans-serif;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 700;
   color: var(--parch);
   line-height: 1.2;
 }
 
 .ww {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--muted);
   margin-top: 2px;
 }
@@ -367,7 +376,7 @@ html[data-theme="light"] body {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 20px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.5px;
 }
 
@@ -385,7 +394,7 @@ html[data-theme="light"] body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--fs-base);
   transition: all 0.15s;
   flex-shrink: 0;
   line-height: 1;
@@ -398,7 +407,7 @@ html[data-theme="light"] body {
 }
 
 .ivc {
-  font-size: 14px;
+  font-size: var(--fs-base);
   color: var(--parch);
   min-width: 22px;
   text-align: center;
@@ -413,7 +422,7 @@ html[data-theme="light"] body {
   border-radius: 8px;
   cursor: pointer;
   font-family: 'Lato', sans-serif;
-  font-size: 13px;
+  font-size: var(--fs-base);
   border: 1px solid;
   transition: all 0.2s;
   letter-spacing: 0.3px;
@@ -457,12 +466,12 @@ html[data-theme="light"] body {
   padding: 22px;
   margin-bottom: 22px;
   line-height: 1.7;
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .ai-hdr {
   font-family: 'Lato', sans-serif;
-  font-size: 16px;
+  font-size: var(--fs-md);
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--gold);
@@ -490,7 +499,7 @@ html[data-theme="light"] body {
 
 .brk-ttl {
   font-family: 'Lato', sans-serif;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -502,7 +511,7 @@ html[data-theme="light"] body {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   align-items: center;
 }
 
@@ -515,7 +524,7 @@ html[data-theme="light"] body {
   color: #fff;
   padding: 13px 20px;
   border-radius: 32px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -580,19 +589,19 @@ html[data-theme="light"] body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: var(--fs-md);
   flex-shrink: 0;
 }
 
 .ge-chat-drawer-title {
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
   color: var(--parch);
   line-height: 1.2;
 }
 
 .ge-chat-drawer-sub {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--muted);
   margin-top: 1px;
 }
@@ -642,7 +651,7 @@ html[data-theme="light"] body {
   border: 1px solid var(--border);
   border-radius: 24px;
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   color: var(--parch);
   outline: none;
   font-family: 'Lato', sans-serif;
@@ -666,7 +675,7 @@ html[data-theme="light"] body {
   color: #080504;
   transition: all 0.2s;
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: var(--fs-md);
   font-weight: bold;
 }
 
@@ -678,7 +687,7 @@ html[data-theme="light"] body {
 .cm.user { text-align: right; }
 
 .cm .cr {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--muted);
   margin-bottom: 4px;
   text-transform: uppercase;
@@ -692,7 +701,7 @@ html[data-theme="light"] body {
   padding: 10px 16px;
   display: inline-block;
   max-width: 80%;
-  font-size: 14px;
+  font-size: var(--fs-base);
   line-height: 1.5;
   text-align: left;
 }
@@ -702,7 +711,7 @@ html[data-theme="light"] body {
   border: 1px solid var(--border);
   border-radius: 16px 16px 16px 4px;
   padding: 12px 16px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   line-height: 1.65;
   max-width: 92%;
   display: block;
@@ -713,7 +722,7 @@ html[data-theme="light"] body {
 .cb ul, .cb ol { margin: 0.3em 0 0.6em 1.2em; padding: 0; }
 .cb li { margin-bottom: 0.25em; }
 .cb h1, .cb h2, .cb h3 { font-size: 1em; font-weight: 700; margin: 0.8em 0 0.3em; color: var(--gold, #c9a84c); }
-.cb table { border-collapse: collapse; font-size: 13px; margin: 0.5em 0; }
+.cb table { border-collapse: collapse; font-size: var(--fs-sm); margin: 0.5em 0; }
 .cb th, .cb td { border: 1px solid var(--border); padding: 4px 8px; }
 .cb th { background: var(--card); }
 .cb code { font-family: monospace; font-size: 0.9em; background: rgba(255,255,255,0.07); padding: 1px 4px; border-radius: 3px; }
@@ -726,7 +735,7 @@ html[data-theme="light"] body {
   background: none;
   border: 1px solid transparent;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--muted);
   cursor: pointer;
   font-family: 'Lato', sans-serif;
@@ -761,7 +770,7 @@ html[data-theme="light"] body {
   background: none;
   border: 1px solid transparent;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 2px 6px;
   cursor: pointer;
   opacity: 0.45;
@@ -797,7 +806,7 @@ html[data-theme="light"] body {
 
 .ge-modal-ttl {
   font-family: 'Lato', sans-serif;
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--gold);
@@ -812,7 +821,7 @@ html[data-theme="light"] body {
 
 .mtab {
   padding: 8px 18px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   cursor: pointer;
   border: none;
   border-bottom: 2px solid transparent;
@@ -834,7 +843,7 @@ html[data-theme="light"] body {
 .ff.full { grid-column: 1 / -1; }
 
 .fl {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--muted);
@@ -845,7 +854,7 @@ html[data-theme="light"] body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   color: var(--parch);
   outline: none;
   font-family: 'Lato', sans-serif;
@@ -865,7 +874,7 @@ html[data-theme="light"] body {
   cursor: pointer;
   transition: border-color 0.2s;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .photo-drop:hover {
@@ -896,7 +905,7 @@ html[data-theme="light"] body {
 }
 
 .wpc-scan-banner {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--gold);
   margin-bottom: 12px;
   padding-bottom: 10px;
@@ -940,7 +949,7 @@ html[data-theme="light"] body {
 }
 
 .scan-pagination-label {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   color: var(--gold);
   letter-spacing: 0.3px;
@@ -953,7 +962,7 @@ html[data-theme="light"] body {
   border-radius: 6px;
   padding: 0;
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--fs-md);
   width: 44px;
   height: 44px;
   display: flex;
@@ -998,7 +1007,7 @@ html[data-theme="light"] body {
 
 /* ─── Witty Loading Message ──────────────────────────────────────── */
 .witty-msg {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--muted);
   font-style: italic;
   opacity: 1;
@@ -1009,7 +1018,7 @@ html[data-theme="light"] body {
 
 /* ─── Misc ───────────────────────────────────────────────────────── */
 .demo-tag {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--muted);
   background: rgba(139, 26, 46, 0.2);
   border: 1px solid rgba(139, 26, 46, 0.35);
@@ -1026,7 +1035,7 @@ html[data-theme="light"] body {
 
 .divider { width: 1px; background: var(--border); height: 16px; }
 
-.ornament { color: var(--gold); opacity: 0.5; font-size: 12px; letter-spacing: 2px; }
+.ornament { color: var(--gold); opacity: 0.5; font-size: var(--fs-sm); letter-spacing: 2px; }
 
 /* ─── Loading Screen ─────────────────────────────────────────────── */
 .loading-screen {
@@ -1067,7 +1076,7 @@ html[data-theme="light"] body {
 
 .loading-title {
   font-family: 'Lato', sans-serif;
-  font-size: 22px;
+  font-size: var(--fs-xl);
   font-weight: 700;
   color: var(--gold);
   letter-spacing: 2px;
@@ -1075,7 +1084,7 @@ html[data-theme="light"] body {
 
 .loading-text {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-base);
   letter-spacing: 0.8px;
 }
 
@@ -1087,12 +1096,12 @@ html[data-theme="light"] body {
   .loading-gif { width: 100%; }
   .hide-m  { display: none !important; }
   .ge-logo small { display: none; }
-  .ge-logo { font-size: 17px; }
+  .ge-logo { font-size: var(--fs-lg); }
   .ge-chat-bar { padding: 10px 14px; }
   .ge-chat-msgs { padding: 12px 14px; }
   .ge-chat-drawer { max-height: 72vh; }
-  .sommelier-fab { bottom: 20px; right: 18px; padding: 11px 16px; font-size: 13px; }
-  .ge-stat-v { font-size: 20px; }
+  .sommelier-fab { bottom: 20px; right: 18px; padding: 11px 16px; font-size: var(--fs-base); }
+  .ge-stat-v { font-size: var(--fs-lg); }
   .fg { grid-template-columns: 1fr; }
   .ff.full { grid-column: unset; }
 
