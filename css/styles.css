@@ -687,6 +687,7 @@ html[data-theme="light"] body {
 
 .cm.user .cb {
   background: var(--wine);
+  color: #ede4d2;
   border-radius: 16px 16px 4px 16px;
   padding: 10px 16px;
   display: inline-block;
