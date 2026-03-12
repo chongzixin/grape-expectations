@@ -533,9 +533,9 @@ export default function GrapeExpectations() {
       const tooYoungCt  = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'       ? s + w.inventory : s, 0);
       const txt = await callClaude({
         system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `Write a Cellar Health Snapshot for this collection in 150–180 words of single continuous prose.
+        messages: [{ role: 'user', content: `Write a Cellar Health Snapshot for this collection in 150–180 words across 2–3 short paragraphs.
 
-Structure your response as two implicit parts — what's working and what to consider — woven into natural flowing prose without headers or bullet points. Do not use bold text. Do not include a title or heading — begin directly with the prose.
+Structure the paragraphs as two implicit parts — what's working and what to consider — woven into natural flowing prose without headers or bullet points. Do not use bold text. Do not include a title or heading — begin directly with the prose. Each paragraph should be 2–4 sentences.
 
 Cover:
 - The cellar's personality: dominant styles, regions, and varietals that give it identity
