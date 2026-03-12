@@ -1002,7 +1002,7 @@ html[data-theme="light"] body {
   color: var(--muted);
   font-style: italic;
   opacity: 1;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.25s ease;
   line-height: 1.4;
 }
 .witty-msg.wm-hidden { opacity: 0; }
