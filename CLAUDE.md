@@ -12,6 +12,62 @@ Target users: wine collectors in Singapore. The app launched in its current form
 
 ---
 
+## Product Goals
+
+What problem does this solve, for whom, and what does success look like?
+
+_TODO: fill in — e.g. target user persona, core job-to-be-done, success metrics_
+
+---
+
+## Feature Roadmap / Backlog
+
+What features are planned, what has been intentionally cut, and what has been tried and abandoned?
+
+_TODO: fill in — e.g. upcoming features, deprioritised ideas, past experiments and why they were dropped_
+
+---
+
+## User Research & Feedback
+
+Known pain points, observed usage patterns, and recurring user requests.
+
+_TODO: fill in — e.g. feedback collected, support themes, things users consistently ask for_
+
+---
+
+## Business Constraints
+
+Pricing model, partnerships, regulatory considerations, or non-negotiable product requirements.
+
+_TODO: fill in — e.g. free vs. paid tiers, third-party dependencies, any hard constraints on the product_
+
+---
+
+## Metrics
+
+What is being measured and what numbers actually matter for the product?
+
+_TODO: fill in — e.g. key KPIs, events tracked, what "healthy growth" looks like_
+
+---
+
+## Design Decisions & Rationale
+
+Key product trade-offs and the reasoning behind them.
+
+_TODO: fill in — e.g. why Singapore cuisine focus, why no social/sharing features, why conversational UI over search_
+
+---
+
+## Competitive Context
+
+How Grape Expectations differentiates from alternatives like Vivino, CellarTracker, and others.
+
+_TODO: fill in — e.g. positioning, key differentiators, what competitors do that this app deliberately does not_
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
