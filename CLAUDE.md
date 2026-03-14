@@ -225,6 +225,7 @@ Every recommendation response includes a hidden comment block appended after the
 ```
 This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine metadata for the feedback system, then stripped from displayed text by `stripWinesJson()`. The Verdict section is split into individual bullet lines so 👍/👎 buttons render inline per wine. Do not remove or reformat this block in the system prompt.
 
+
 ---
 
 ## Styling

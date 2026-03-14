@@ -111,7 +111,7 @@ interface DonutSegment { label: string; value: number; color: string; }
 
 function DonutChart({ data }: { data: DonutSegment[] }) {
   const total = data.reduce((s, d) => s + d.value, 0);
-  if (!total) return <div style={{ color: 'var(--muted)', fontSize: 13 }}>No data</div>;
+  if (!total) return <div style={{ color: 'var(--muted)', fontSize: 'var(--fs-base)' }}>No data</div>;
   const cx = 55, cy = 55, R = 42, r = 26;
   let angle = -Math.PI / 2;
   const segments = data.filter(d => d.value > 0).map(d => {
@@ -132,7 +132,7 @@ function DonutChart({ data }: { data: DonutSegment[] }) {
       </svg>
       <div style={{ flex: 1 }}>
         {data.filter(d => d.value > 0).map(d => (
-          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, fontSize: 12 }}>
+          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, fontSize: 'var(--fs-sm)' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
             <span style={{ color: 'var(--parch)', flex: 1 }}>{d.label}</span>
             <span style={{ color: 'var(--muted)' }}>{d.value}</span>
@@ -542,10 +542,33 @@ export default function GrapeExpectations() {
       const cellarList = activeWines.map(w =>
         `${w.name} (${w.winery || 'unknown producer'}, ${w.vintage || 'NV'}, ${w.style || w.type}, ${w.subRegion || w.region || w.country}, ${w.inventory} btl${w.price ? `, S$${w.price}` : ''})`
       ).join('\n');
+      const primeCt     = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'prime'           ? s + w.inventory : s, 0);
+      const drinkSoonCt = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0);
+      const pastPeakCt  = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0);
+      const tooYoungCt  = activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'       ? s + w.inventory : s, 0);
       const txt = await callClaude({
         system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `Write a concise sommelier's assessment of this cellar collection in 150–180 words. Note any highlights, themes, or interesting observations. Do not include a title or heading — begin directly with the assessment prose.\n\n${cellarList}` }],
-        maxTokens: 700,
+        messages: [{ role: 'user', content: `Write a Cellar Health Snapshot for this collection in 150–180 words across 2–3 short paragraphs.
+
+Structure the paragraphs as two implicit parts — what's working and what to consider — woven into natural flowing prose without headers or bullet points. Do not use bold text. Do not include a title or heading — begin directly with the prose. Each paragraph should be 2–4 sentences.
+
+Cover:
+- The cellar's personality: dominant styles, regions, and varietals that give it identity
+- Which bottles are in their prime drinking window right now and deserve near-term attention (use the exact counts provided below)
+- Balance across styles (red/white/sparkling) and whether any are underrepresented
+- The drinking window spread — if a large cluster is too young and near-term options are limited, call it out
+- Specific gaps worth filling to round out the collection
+
+Drinking window breakdown (use these exact numbers): ${primeCt} bottles prime, ${drinkSoonCt} drink soon, ${pastPeakCt} past peak, ${tooYoungCt} too young.
+
+Where natural, weave in 1–2 references to local Singaporean food or occasions to ground the assessment in the user's context. Use the dish names below as inspiration — do not force every sentence to reference local food.
+
+LOCAL FLAVOUR REFS: ${LOCAL_FLAVOUR_REFS}
+${LOCAL_CUISINE_KNOWLEDGE}
+
+Cellar:
+${cellarList}` }],
+        maxTokens: 800,
       });
       setAiSummary(txt);
     } catch (e) {
@@ -901,7 +924,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
         {prompts.map(p => (
-          <button key={p} className="ge-fbtn" style={{ fontSize: 11 }}
+          <button key={p} className="ge-fbtn" style={{ fontSize: 'var(--fs-xs)' }}
             onClick={() => { setChatInput(p); sendChat(p); }}>
             {p}
           </button>
@@ -959,7 +982,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
               className="ge-btn btn-o hide-m"
               onClick={estimateDrinkingWindows}
               disabled={isEstimatingWindows}
-              style={{ fontSize: 12, padding: '6px 14px', opacity: isEstimatingWindows ? 0.6 : 1, cursor: isEstimatingWindows ? 'not-allowed' : 'pointer' }}
+              style={{ fontSize: 'var(--fs-sm)', padding: '6px 14px', opacity: isEstimatingWindows ? 0.6 : 1, cursor: isEstimatingWindows ? 'not-allowed' : 'pointer' }}
             >
               {isEstimatingWindows && windowEstimationProgress
                 ? `Estimating… ${windowEstimationProgress.current}/${windowEstimationProgress.total}`
@@ -1001,7 +1024,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
               }}
             />
           ) : (
-            <button className="ge-btn btn-o hide-m" onClick={handleSignOut} style={{ fontSize: 12, padding: '6px 14px' }}>
+            <button className="ge-btn btn-o hide-m" onClick={handleSignOut} style={{ fontSize: 'var(--fs-sm)', padding: '6px 14px' }}>
               Sign out
             </button>
           )}
@@ -1117,7 +1140,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                 ).sort((a, b) => b[1] - a[1]).map(([c, n]) => (
                   <div className="brk-row" key={c} style={{ color: 'var(--parch)' }}>
                     <span>{FLAGS[c] || '🌍'} {c}</span>
-                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>{n}</span>
+                    <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>{n}</span>
                   </div>
                 ))}
               </div>
@@ -1129,7 +1152,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                 ).sort((a, b) => b[1] - a[1]).map(([s, n]) => (
                   <div className="brk-row" key={s} style={{ color: 'var(--parch)' }}>
                     <span>{s}</span>
-                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>{n}</span>
+                    <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>{n}</span>
                   </div>
                 ))}
               </div>
@@ -1141,7 +1164,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                 ).sort((a, b) => b[0] > a[0] ? 1 : -1).map(([v, n]) => (
                   <div className="brk-row" key={v} style={{ color: 'var(--parch)' }}>
                     <span>{v}</span>
-                    <span style={{ color: 'var(--muted)', fontSize: 12 }}>{n}</span>
+                    <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>{n}</span>
                   </div>
                 ))}
               </div>
@@ -1174,7 +1197,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>🍾</div>
                 <div style={{ fontSize: 18, fontWeight: 700 }}>No wines found</div>
-                <div style={{ fontSize: 13, marginTop: 6 }}>Adjust filters or add wines to your cellar.</div>
+                <div style={{ fontSize: 'var(--fs-base)', marginTop: 6 }}>Adjust filters or add wines to your cellar.</div>
               </div>
             ) : (
               <table className="ge-tbl">
@@ -1201,14 +1224,14 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                       </td>
                       <td className="hide-m">
                         <Badge type={wine.type} />
-                        {wine.style && <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3 }}>{wine.style}</div>}
+                        {wine.style && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 3 }}>{wine.style}</div>}
                       </td>
-                      <td style={{ color: 'var(--parch)', fontSize: 14 }}>{wine.vintage || '—'}</td>
-                      <td className="hide-m" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      <td style={{ color: 'var(--parch)', fontSize: 'var(--fs-base)' }}>{wine.vintage || '—'}</td>
+                      <td className="hide-m" style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
                         {FLAGS[wine.country] || ''} {wine.subRegion || wine.region || wine.country || '—'}
                       </td>
-                      <td className="hide-m" style={{ fontSize: 13, color: wine.price ? 'var(--gold)' : 'var(--dim)' }}>
-                        {wine.price ? `S$${wine.price}` : '—'}
+                      <td className="hide-m" style={{ fontSize: 'var(--fs-base)', color: wine.price ? 'var(--gold)' : 'var(--dim)' }}>
+                        {wine.price ? `S$${Number.isInteger(wine.price) ? wine.price : wine.price.toFixed(2)}` : '—'}
                       </td>
                       <td className="hide-m window-cell">
                         <DrinkingWindowBadge wine={wine} />
@@ -1258,7 +1281,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
         <div className="ge-chat-msgs">
           {chatMessages.length === 0 && (
             <div style={{ paddingBottom: 8 }}>
-              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 15, fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--fs-md)', fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
                 ✦ What shall we open tonight? ✦
               </div>
               <QuickPrompts />
@@ -1347,8 +1370,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
             <div className="cm assistant">
               <div className="cr">✦ Sommelier</div>
               <div className="cb">
-                <div className="tdots"><span /><span /><span /></div>
-                <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="tdots"><span /><span /><span /></div>
+                  <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
+                </div>
               </div>
             </div>
           )}
@@ -1394,13 +1419,13 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                 {!photoPreview ? (
                   <div className="photo-drop">
                     <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Scan Wine Label or Bottles</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>Snap a single label, multiple bottles, or an invoice — we'll detect all wines</div>
+                    <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700, marginBottom: 4 }}>Scan Wine Label or Bottles</div>
+                    <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 16 }}>Snap a single label, multiple bottles, or an invoice — we'll detect all wines</div>
                     <div className="scan-upload-btns">
                       <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
                       <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>
                     </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12, color: 'var(--muted)', cursor: 'pointer', justifyContent: 'center', userSelect: 'none' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 'var(--fs-sm)', color: 'var(--muted)', cursor: 'pointer', justifyContent: 'center', userSelect: 'none' }}>
                       <input type="checkbox" checked={wantSommelierNotes} onChange={e => setWantSommelierNotes(e.target.checked)} style={{ accentColor: 'var(--gold)', width: 14, height: 14, cursor: 'pointer' }} />
                       Include sommelier notes &amp; pairings
                       <span style={{ fontStyle: 'italic' }}>(takes a bit longer)</span>
@@ -1493,30 +1518,30 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
                               </div>
                             </div>
                             {windowLoading && !newWine.drinkFrom && !newWine.drinkBy && (
-                              <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>
+                              <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--muted)', fontSize: 'var(--fs-sm)', marginTop: 6 }}>
                                 <div className="spin" /> Estimating drinking window…
                               </div>
                             )}
                             {pairingsLoading && !scanNotes && localPairings.length === 0 && (
-                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 13, marginTop: 12 }}>
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 'var(--fs-base)', marginTop: 12 }}>
                                 <div className="spin" /> Preparing sommelier notes…
                               </div>
                             )}
                             {(scanNotes || localPairings.length > 0) && (
                               <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
                                 {scanNotes && (scanNotes.wine || scanNotes.winery || scanNotes.tasting) && (<>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍷 SOMMELIER NOTES</div>
-                                  {scanNotes.wine    && <div style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Wine:** ${scanNotes.wine}`} /></div>}
-                                  {scanNotes.winery  && <div style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Producer:** ${scanNotes.winery}`} /></div>}
-                                  {scanNotes.tasting && <div style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Tasting:** ${scanNotes.tasting}`} /></div>}
+                                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍷 SOMMELIER NOTES</div>
+                                  {scanNotes.wine    && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Wine:** ${scanNotes.wine}`} /></div>}
+                                  {scanNotes.winery  && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Producer:** ${scanNotes.winery}`} /></div>}
+                                  {scanNotes.tasting && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Tasting:** ${scanNotes.tasting}`} /></div>}
                                 </>)}
                                 {scanNotes && localPairings.length > 0 && (
                                   <div style={{ borderTop: '1px solid rgba(201,168,76,0.25)', margin: '4px 0' }} />
                                 )}
                                 {localPairings.length > 0 && (<>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍜 LOCAL DISH PAIRINGS</div>
+                                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍜 LOCAL DISH PAIRINGS</div>
                                   {localPairings.map((p, i) => (
-                                    <div key={i} style={{ fontSize: 12, color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={p} /></div>
+                                    <div key={i} style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={p} /></div>
                                   ))}
                                 </>)}
                               </div>
@@ -1546,7 +1571,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
             {addTab === 'manual' && (
               <div>
                 {scannedWine && (
-                  <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--gold)', marginBottom: 16 }}>
+                  <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: 'var(--fs-sm)', color: 'var(--gold)', marginBottom: 16 }}>
                     {scannedWines.length > 1
                       ? `✦ Wine ${previewIndex + 1} of ${scannedWines.length} — verify and add to cellar`
                       : '✦ Pre-filled from label scan — please verify details'}
