@@ -1276,14 +1276,14 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
             let beforeVerdict: string | null = null;
             let verdictBullets: string[] = [];
             if (msg.role === 'assistant' && msg.recommendedWines && msg.recommendedWines.length > 0 && msg.messageId) {
-              const verdictMatch = displayContent.match(/^([\s\S]*?)\n(\*\*Verdict\*\*[\s\S]*)$/);
+              const verdictMatch = displayContent.match(/^([\s\S]*?)\n(\*{0,2}Verdict\*{0,2}[\s\S]*)$/);
               if (verdictMatch) {
                 beforeVerdict = verdictMatch[1];
                 const verdictBody = verdictMatch[2];
                 verdictBullets = verdictBody
                   .split('\n')
                   .slice(1) // skip the "**Verdict**" header line
-                  .filter(l => /^\s*[•\-\*]\s/.test(l));
+                  .filter(l => /^\s*([•\-\*]|\d+\.)\s/.test(l));
               }
             }
 
