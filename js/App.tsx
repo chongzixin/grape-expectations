@@ -640,13 +640,13 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       // Parse per-wine data from the WINES_JSON block before persisting/displaying
       const recommendedWines = parseRecommendedWines(txt);
 
-      // Persist assistant message and capture its ID for feedback linkage
-      let assistantMsgId: string | undefined;
+      // Generate messageId client-side so thumbs always render regardless of DB success
+      const assistantMsgId = crypto.randomUUID();
       if (sid && session) {
-        const { data: msgData } = await supabase.from('recommendation_messages').insert({
+        await supabase.from('recommendation_messages').insert({
+          id: assistantMsgId,
           session_id: sid, user_id: session.user.id, role: 'assistant', content: txt,
-        }).select('id').single();
-        assistantMsgId = msgData?.id;
+        });
       }
 
       setChatMessages(prev => [...prev, {
