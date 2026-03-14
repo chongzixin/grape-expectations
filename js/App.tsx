@@ -1,299 +1,21 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Toaster, toast } from 'sonner';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import type { Wine, ChatMessage, RecommendedWine, Stats, ImageData, ClaudeParams, NewWineForm, UserProfile, DrinkingStatus } from './types';
+import type { Wine, ChatMessage, RecommendedWine, Stats, NewWineForm, UserProfile, DrinkingStatus } from './types';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import { LOCAL_FLAVOUR_REFS, LOCAL_CUISINE_KNOWLEDGE } from './localCuisine';
-import { getRandomMessage } from './loadingMessages';
 import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
-/* ═══════════════════════════════════════════════════════════════════
-   GRAPE EXPECTATIONS — Singaporean Cellar Sommelier
-═══════════════════════════════════════════════════════════════════ */
+import { SOMMELIER_SYSTEM, DRINKING_STATUS_PRIORITY, DRINKING_STATUS_DESCRIPTIONS } from './constants';
+import { getDrinkingStatus, computeStats, mapDbWine, callClaude, compressImage, parseRecommendedWines, useWittyLoader } from './utils';
 
-const FLAGS: Record<string, string> = {
-  France: '🇫🇷', Australia: '🇦🇺', Spain: '🇪🇸', Italy: '🇮🇹',
-  'United States': '🇺🇸', Germany: '🇩🇪', 'New Zealand': '🇳🇿',
-  Portugal: '🇵🇹', Argentina: '🇦🇷', Chile: '🇨🇱',
-  'South Africa': '🇿🇦', Austria: '🇦🇹', Greece: '🇬🇷', Japan: '🇯🇵',
-};
-
-interface TypeStyle { dot: string; bg: string; border: string; text: string; }
-const TYPE_STYLE: Record<string, TypeStyle> = {
-  Red:       { dot: '#e05c6b', bg: 'rgba(139,26,46,0.2)',   border: 'rgba(180,50,70,0.4)',   text: '#f9b4bf' },
-  White:     { dot: '#d4c44a', bg: 'rgba(139,130,26,0.2)',  border: 'rgba(180,170,50,0.4)',  text: '#f5f0a8' },
-  Sparkling: { dot: '#5bbad5', bg: 'rgba(26,106,139,0.2)',  border: 'rgba(50,140,180,0.4)',  text: '#aadff5' },
-  'Rosé':    { dot: '#d45aa0', bg: 'rgba(139,26,106,0.2)',  border: 'rgba(180,50,140,0.4)',  text: '#f5aae0' },
-  Dessert:   { dot: '#d4a45a', bg: 'rgba(139,90,26,0.2)',   border: 'rgba(180,120,50,0.4)',  text: '#f5d4aa' },
-  Fortified: { dot: '#8a5ad4', bg: 'rgba(90,26,139,0.2)',   border: 'rgba(120,50,180,0.4)', text: '#c4aaf5' },
-};
-const TYPE_STYLE_LIGHT: Record<string, TypeStyle> = {
-  Red:       { dot: '#e05c6b', bg: 'rgba(180,50,70,0.12)',   border: 'rgba(180,50,70,0.30)',   text: '#8B1A2A' },
-  White:     { dot: '#d4c44a', bg: 'rgba(160,155,30,0.10)',  border: 'rgba(160,155,30,0.28)',  text: '#6B6512' },
-  Sparkling: { dot: '#5bbad5', bg: 'rgba(30,110,150,0.10)',  border: 'rgba(30,110,150,0.28)',  text: '#1A5A7A' },
-  'Rosé':    { dot: '#d45aa0', bg: 'rgba(180,50,140,0.10)',  border: 'rgba(180,50,140,0.28)',  text: '#8B1A6A' },
-  Dessert:   { dot: '#d4a45a', bg: 'rgba(160,100,30,0.10)',  border: 'rgba(160,100,30,0.28)',  text: '#7A4A10' },
-  Fortified: { dot: '#8a5ad4', bg: 'rgba(100,40,160,0.10)',  border: 'rgba(100,40,160,0.28)',  text: '#5A1A8A' },
-};
-
-/* ─── Drinking window ───────────────────────────────────────────── */
-const CURRENT_YEAR = new Date().getFullYear();
-
-const DRINKING_STATUS_PRIORITY: Record<DrinkingStatus, number> = {
-  past_peak: 1,
-  approaching_end: 2,
-  prime: 3,
-  too_young: 4,
-  unknown: 5,
-};
-
-const BADGE_STYLES: Record<DrinkingStatus, { background: string; color: string; label: string }> = {
-  prime:           { background: '#16a34a', color: '#ffffff', label: 'Prime' },
-  approaching_end: { background: '#d97706', color: '#ffffff', label: 'Drink Soon' },
-  past_peak:       { background: '#dc2626', color: '#ffffff', label: 'Past Peak' },
-  too_young:       { background: '#2563eb', color: '#ffffff', label: 'Too Young' },
-  unknown:         { background: '#6b7280', color: '#ffffff', label: 'Unknown' },
-};
-
-const DRINKING_STATUS_DESCRIPTIONS: Record<DrinkingStatus, string> = {
-  past_peak:       'Wine is past its peak window. Mention this clearly if recommending; it may still be enjoyable.',
-  approaching_end: 'Wine is within 2 years of its window end. Recommend urgently ("drink soon").',
-  prime:           'Wine is currently at its best drinking window.',
-  too_young:       'Wine has not yet reached its window. Only recommend if the user specifically asks about aging potential.',
-  unknown:         'Window data not available; treat as potentially drinkable.',
-};
-
-function getDrinkingStatus(wine: Wine): DrinkingStatus {
-  const { drinkFrom, drinkBy } = wine;
-  if (drinkFrom == null && drinkBy == null) return 'unknown';
-  const from = drinkFrom ?? -Infinity;
-  const by   = drinkBy   ??  Infinity;
-  if (CURRENT_YEAR < from) return 'too_young';
-  if (CURRENT_YEAR > by)   return 'past_peak';
-  if (drinkBy != null && drinkBy - CURRENT_YEAR <= 2) return 'approaching_end';
-  return 'prime';
-}
-
-function DrinkingWindowBadge({ wine }: { wine: Wine }) {
-  const status = getDrinkingStatus(wine);
-  const { background, color, label } = BADGE_STYLES[status];
-  const windowText = wine.drinkFrom || wine.drinkBy
-    ? `${wine.drinkFrom ?? '?'}–${wine.drinkBy ?? '?'}`
-    : null;
-  return (
-    <span
-      title={windowText ?? 'No window data'}
-      style={{
-        display: 'inline-block',
-        padding: '2px 8px',
-        borderRadius: '9999px',
-        fontSize: '0.7rem',
-        fontWeight: 600,
-        background,
-        color,
-        whiteSpace: 'nowrap',
-        letterSpacing: '0.02em',
-      }}
-    >
-      {label}
-      {windowText && (
-        <span style={{ fontWeight: 400, marginLeft: 4, opacity: 0.85 }}>{windowText}</span>
-      )}
-    </span>
-  );
-}
-
-/* ─── Donut Chart ────────────────────────────────────────────────── */
-interface DonutSegment { label: string; value: number; color: string; }
-
-function DonutChart({ data }: { data: DonutSegment[] }) {
-  const total = data.reduce((s, d) => s + d.value, 0);
-  if (!total) return <div style={{ color: 'var(--muted)', fontSize: 'var(--fs-base)' }}>No data</div>;
-  const cx = 55, cy = 55, R = 42, r = 26;
-  let angle = -Math.PI / 2;
-  const segments = data.filter(d => d.value > 0).map(d => {
-    const sweep = (d.value / total) * 2 * Math.PI;
-    const sa = angle, ea = angle + sweep;
-    angle = ea;
-    const largeArc = sweep > Math.PI ? 1 : 0;
-    const ox1 = cx + R * Math.cos(sa), oy1 = cy + R * Math.sin(sa);
-    const ox2 = cx + R * Math.cos(ea), oy2 = cy + R * Math.sin(ea);
-    const ix1 = cx + r * Math.cos(sa), iy1 = cy + r * Math.sin(sa);
-    const ix2 = cx + r * Math.cos(ea), iy2 = cy + r * Math.sin(ea);
-    return { ...d, path: `M${ox1},${oy1} A${R},${R} 0 ${largeArc} 1 ${ox2},${oy2} L${ix2},${iy2} A${r},${r} 0 ${largeArc} 0 ${ix1},${iy1}Z` };
-  });
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-      <svg width="110" height="110" viewBox="0 0 110 110" style={{ flexShrink: 0 }}>
-        {segments.map(s => <path key={s.label} d={s.path} fill={s.color} />)}
-      </svg>
-      <div style={{ flex: 1 }}>
-        {data.filter(d => d.value > 0).map(d => (
-          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, fontSize: 'var(--fs-sm)' }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-            <span style={{ color: 'var(--parch)', flex: 1 }}>{d.label}</span>
-            <span style={{ color: 'var(--muted)' }}>{d.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Analytics ─────────────────────────────────────────────────── */
-function computeStats(wines: Wine[]): Stats {
-  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, count2016: 0, count2018: 0, count2023: 0, modeCountry: '—', modeStyle: '—', drinkSoon: 0, pastPeak: 0 };
-  const bottles = wines.flatMap(w => Array(Math.max(0, w.inventory)).fill(w) as Wine[]);
-  const modeOf = (field: keyof Wine): string => {
-    const freq: Record<string, number> = {};
-    bottles.forEach(w => {
-      const v = String(w[field] || '');
-      if (v && v !== 'NV') freq[v] = (freq[v] || 0) + 1;
-    });
-    const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-    return sorted[0]?.[0] || '—';
-  };
-  const priced = wines.filter(w => w.price);
-  const drinkSoon = wines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0);
-  const pastPeak  = wines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0);
-  return {
-    totalBottles: bottles.length,
-    uniqueWines: wines.length,
-    avgPrice: priced.length ? Math.round(priced.reduce((s, w) => s + (w.price || 0), 0) / priced.length) : null,
-    count2016: bottles.filter(w => w.vintage === '2016').length,
-    count2018: bottles.filter(w => w.vintage === '2018').length,
-    count2023: bottles.filter(w => w.vintage === '2023').length,
-    modeCountry: modeOf('country'),
-    modeStyle: modeOf('style'),
-    drinkSoon,
-    pastPeak,
-  };
-}
-
-/* ─── DB → App model ────────────────────────────────────────────── */
-function mapDbWine(row: Record<string, unknown>): Wine {
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    winery: (row.winery as string) || '',
-    vintage: (row.vintage as string) || '',
-    price: (row.price as number | null) ?? null,
-    inventory: row.inventory as number,
-    style: (row.style as string) || '',
-    country: (row.country as string) || '',
-    region: (row.region as string) || '',
-    subRegion: (row.sub_region as string) || '',
-    type: (row.type as string) || 'Red',
-    source: (row.source as string) || 'manual',
-    drinkFrom: (row.drink_from as number | null) ?? null,
-    drinkBy:   (row.drink_by   as number | null) ?? null,
-  };
-}
-
-/* ─── Sommelier persona (shared across all AI prompts) ──────────── */
-const SOMMELIER_SYSTEM = `You are "Grape Expectations" — an expert AI Singaporean sommelier serving a wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine. Your communication is playfully Singaporean yet professional, your suggestions have local references without overdoing it.`;
-
-/* ─── Claude API (proxied via Netlify function) ──────────────────── */
-async function callClaude({ messages, system = '', maxTokens = 1800, imageData = null }: ClaudeParams): Promise<string> {
-  const res = await fetch('/.netlify/functions/claude', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, system, maxTokens, imageData }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data.content || '';
-}
-
-async function compressImage(file: File, maxPx = 1600, quality = 0.85): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let { width, height } = img;
-      if (Math.max(width, height) > maxPx) {
-        const scale = maxPx / Math.max(width, height);
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(blob => {
-        if (!blob) { reject(new Error('Compression failed')); return; }
-        const reader2 = new FileReader();
-        reader2.onload = () => {
-          const result = reader2.result as string;
-          resolve({ data: result.split(',')[1], mimeType: 'image/jpeg' });
-        };
-        reader2.onerror = reject;
-        reader2.readAsDataURL(blob);
-      }, 'image/jpeg', quality);
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
-
-/* ─── Markdown renderer (simple) ────────────────────────────────── */
-function RichText({ text }: { text: string }) {
-  const lines = text.split('\n');
-  return (
-    <span>
-      {lines.map((line, li) => {
-        const parts = line.split(/\*\*(.+?)\*\*/g);
-        const rendered = parts.map((p, pi) =>
-          pi % 2 === 1 ? <strong key={pi} style={{ color: '#c9a84c' }}>{p}</strong> : p
-        );
-        return <span key={li}>{rendered}{li < lines.length - 1 && <br />}</span>;
-      })}
-    </span>
-  );
-}
-
-/* ─── Recommended wines JSON helpers ────────────────────────────── */
-function parseRecommendedWines(content: string): RecommendedWine[] {
-  const match = content.match(/<!-- WINES_JSON\n([\s\S]*?)\n-->/);
-  if (!match) return [];
-  try {
-    return JSON.parse(match[1]) as RecommendedWine[];
-  } catch {
-    return [];
-  }
-}
-
-function stripWinesJson(content: string): string {
-  return content.replace(/\s*<!-- WINES_JSON[\s\S]*?-->/, '').trim();
-}
-
-/* ─── Witty Loader Hook ──────────────────────────────────────────── */
-function useWittyLoader(active: boolean) {
-  const [msg, setMsg]       = useState(() => getRandomMessage());
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    if (!active) {
-      setMsg(getRandomMessage());
-      setVisible(true);
-      return;
-    }
-    const id = setInterval(() => {
-      setVisible(false);
-      setTimeout(() => {
-        setMsg(prev => getRandomMessage(prev));
-        setVisible(true);
-      }, 400);
-    }, 3500);
-    return () => clearInterval(id);
-  }, [active]);
-
-  return { msg, visible };
-}
+import { Header } from './components/Header';
+import { StatsBar } from './components/StatsBar';
+import { AnalyticsView } from './components/AnalyticsView';
+import { CellarView } from './components/CellarView';
+import { ChatDrawer } from './components/ChatDrawer';
+import { AddWineModal } from './components/AddWineModal';
 
 /* ═══════════════════════════════════════════════════════════════════
    MAIN APP
@@ -353,7 +75,6 @@ export default function GrapeExpectations() {
   });
   const [isEstimatingWindows, setIsEstimatingWindows] = useState(false);
   const [windowEstimationProgress, setWindowEstimationProgress] = useState<{ current: number; total: number } | null>(null);
-  const scannedWine = scannedWines[previewIndex] ?? null;
 
   const [localPairings, setLocalPairings] = useState<string[]>([]);
   const [pairingsLoading, setPairingsLoading] = useState(false);
@@ -430,45 +151,19 @@ export default function GrapeExpectations() {
     setThemeMode(m => m === 'dark' ? 'light' : 'dark');
   };
 
-
   /* ─── Derived wine lists ─────────────────────────────────────── */
   const activeWines = useMemo(() =>
     wines.filter(w => w.inventory > 0),
     [wines]
   );
-  const stats = useMemo(() => computeStats(activeWines), [activeWines]);
-  const types = useMemo(() => ['All', ...Array.from(new Set(activeWines.map(w => w.type).filter(Boolean)))], [activeWines]);
-  const filteredWines = useMemo(() => {
-    let ws = [...activeWines];
-    if (filter !== 'All') ws = ws.filter(w => w.type === filter);
-    if (search) {
-      const q = search.toLowerCase();
-      ws = ws.filter(w =>
-        [w.name, w.winery, w.region, w.country, w.style, w.subRegion].some(v => v?.toLowerCase().includes(q))
-      );
-    }
-    ws.sort((a, b) => {
-      if (sort === 'vintage') return (b.vintage || '') > (a.vintage || '') ? 1 : -1;
-      if (sort === 'price') return (b.price || 0) - (a.price || 0);
-      if (sort === 'type') return (a.type || '').localeCompare(b.type || '');
-      if (sort === 'window') {
-        const diff = DRINKING_STATUS_PRIORITY[getDrinkingStatus(a)] - DRINKING_STATUS_PRIORITY[getDrinkingStatus(b)];
-        if (diff !== 0) return diff;
-        return (a.drinkBy ?? 9999) - (b.drinkBy ?? 9999);
-      }
-      return (a.name || '').localeCompare(b.name || '');
-    });
-    return ws;
-  }, [activeWines, filter, search, sort]);
+  const stats: Stats = useMemo(() => computeStats(activeWines), [activeWines]);
 
   /* ─── Inventory ──────────────────────────────────────────────── */
   const updateInventory = useCallback(async (id: string, delta: number) => {
     const wine = wines.find(w => w.id === id);
     if (!wine) return;
     const next = Math.max(0, wine.inventory + delta);
-    // Optimistic update
     setWines(prev => prev.map(w => w.id === id ? { ...w, inventory: next } : w));
-    // Persist
     await supabase.from('wines')
       .update({ inventory: next, updated_at: new Date().toISOString() })
       .eq('id', id);
@@ -589,7 +284,6 @@ ${cellarList}` }],
     setChatLoading(true);
     setChatOpen(true);
     try {
-      // Ensure a chat session exists (fire-and-forget if fails)
       let sid = chatSessionId;
       if (!sid && session) {
         const { data: sessionData } = await supabase
@@ -601,7 +295,6 @@ ${cellarList}` }],
         if (sid) setChatSessionId(sid);
       }
 
-      // Persist user message
       if (sid && session) {
         supabase.from('recommendation_messages').insert({
           session_id: sid, user_id: session.user.id, role: 'user', content: msg,
@@ -615,7 +308,6 @@ ${cellarList}` }],
           : ' | Window: unknown';
         return `• [id:${w.id}] ${w.name} | ${w.winery} | Vintage: ${w.vintage || 'NV'} | ${w.type} (${w.style}) | ${[w.subRegion, w.region, w.country].filter(Boolean).join(', ')} | ${w.inventory} bottle${w.inventory > 1 ? 's' : ''} | Price: ${w.price ? `S$${w.price}` : 'unpriced'}${windowStr}`;
       }).join('\n');
-      // Strip messageId before sending to Claude
       const history = [...chatMessages, userMsg].map(({ role, content }) => ({ role, content }));
       const txt = await callClaude({
         system: `${SOMMELIER_SYSTEM}
@@ -660,10 +352,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
         maxTokens: 1800,
       });
 
-      // Parse per-wine data from the WINES_JSON block before persisting/displaying
       const recommendedWines = parseRecommendedWines(txt);
-
-      // Generate messageId client-side so thumbs always render regardless of DB success
       const assistantMsgId = crypto.randomUUID();
       if (sid && session) {
         await supabase.from('recommendation_messages').insert({
@@ -690,7 +379,6 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     if (!msg.messageId || !session) return;
     const mid = msg.messageId;
     const fbKey = `${mid}:${wine.name}`;
-    // Toggle off if same vote
     if (wineFeedback[fbKey] === thumbs) {
       setWineFeedback(prev => { const next = { ...prev }; delete next[fbKey]; return next; });
       await supabase.from('recommendation_feedback')
@@ -726,7 +414,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   /* ─── Photo Scan ─────────────────────────────────────────────── */
   const populateFormFromWine = (wine: Partial<Wine>) => {
     setNewWine({
-      name: '', winery: '', vintage: '', price: '', inventory: '1',
+      name: '', winery: '', vintage: '', price: '',
       style: '', country: '', region: '', subRegion: '', type: 'Red',
       drinkFrom: '', drinkBy: '',
       ...(Object.fromEntries(
@@ -792,7 +480,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       const drinkBy   = parsed.drinkBy   != null ? parseInt(String(parsed.drinkBy),   10) : null;
       setScannedWines(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], drinkFrom, drinkBy, _windowFetched: true } as any;
+        updated[index] = { ...updated[index], drinkFrom, drinkBy, _windowFetched: true } as Partial<Wine> & { _windowFetched: boolean };
         return updated;
       });
       if (index === previewIndexRef.current) {
@@ -852,7 +540,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       previewIndexRef.current = nextIdx;
       setWindowLoading(false);
       populateFormFromWine(scannedWines[nextIdx]);
-      const wn = scannedWines[nextIdx] as any;
+      const wn = scannedWines[nextIdx] as Partial<Wine> & { _enriched?: boolean; localPairings?: string[]; wineSummary?: string; winerySummary?: string; tastingNotes?: string; _windowFetched?: boolean };
       if (wn?._enriched) {
         setLocalPairings(wn.localPairings || []);
         setScanNotes(wn?.wineSummary || wn?.winerySummary || wn?.tastingNotes
@@ -862,8 +550,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       } else {
         setLocalPairings([]);
         setScanNotes(null);
-        const wnNext = scannedWines[nextIdx] as any;
-        if (!wnNext?._windowFetched) fetchDrinkingWindow(scannedWines[nextIdx], nextIdx);
+        if (!wn?._windowFetched) fetchDrinkingWindow(scannedWines[nextIdx], nextIdx);
         if (wantSommelierNotes) {
           setPairingsLoading(true);
           enrichWine(scannedWines[nextIdx], nextIdx);
@@ -896,43 +583,6 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     }
   };
 
-  /* ─── Render Helpers ─────────────────────────────────────────── */
-  const Badge = ({ type }: { type: string }) => {
-    const palette = themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE;
-    const s = palette[type] || palette.Red;
-    return <span className="tbadge" style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>{type}</span>;
-  };
-
-  const StatCard = ({ v, l, onClick, accentColor }: { v: string | number; l: string; onClick?: () => void; accentColor?: string }) => (
-    <div
-      className={`ge-stat${onClick ? ' ge-stat-btn' : ''}`}
-      onClick={onClick}
-      style={accentColor ? { borderColor: `${accentColor}33` } : undefined}
-    >
-      <div className="ge-stat-v" title={String(v)} style={accentColor ? { color: accentColor } : undefined}>{v}</div>
-      <div className="ge-stat-l">{l}</div>
-    </div>
-  );
-
-  const QuickPrompts = () => {
-    const prompts = [
-      'White for Teochew suckling pig and chai poh kway teow',
-      'Light red for zichar tonight',
-      'Red to pair with rendang and nasi lemak',
-      'Sparkling for dim sum brunch',
-    ];
-    return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-        {prompts.map(p => (
-          <button key={p} className="ge-fbtn" style={{ fontSize: 'var(--fs-xs)' }}
-            onClick={() => { setChatInput(p); sendChat(p); }}>
-            {p}
-          </button>
-        ))}
-      </div>
-    );
-  };
-
   /* ─── Auth guards ────────────────────────────────────────────── */
   if (!sessionReady) return (
     <div className="loading-screen">
@@ -954,693 +604,107 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   return (
     <div className="ge fade">
       <Toaster position="bottom-center" richColors />
-      {/* ── HEADER ── */}
-      <header className="ge-hdr">
-        {/* Hamburger — mobile only, left side */}
-        <button
-          className="hbg-btn show-m"
-          onClick={() => setMenuOpen(o => !o)}
-          aria-label="Menu"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <line x1="2" y1="4.5"  x2="16" y2="4.5"/>
-            <line x1="2" y1="9"    x2="16" y2="9"/>
-            <line x1="2" y1="13.5" x2="16" y2="13.5"/>
-          </svg>
-        </button>
-        <div className="ge-logo">
-          <span>🍷</span>
-          <div>
-            Grape Expectations
-            <small>Your Singaporean Sommelier</small>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="ornament hide-m">✦ ✦ ✦</span>
-          {wines.some(w => w.drinkFrom == null && w.drinkBy == null) && (
-            <button
-              className="ge-btn btn-o hide-m"
-              onClick={estimateDrinkingWindows}
-              disabled={isEstimatingWindows}
-              style={{ fontSize: 'var(--fs-sm)', padding: '6px 14px', opacity: isEstimatingWindows ? 0.6 : 1, cursor: isEstimatingWindows ? 'not-allowed' : 'pointer' }}
-            >
-              {isEstimatingWindows && windowEstimationProgress
-                ? `Estimating… ${windowEstimationProgress.current}/${windowEstimationProgress.total}`
-                : 'Estimate Windows'}
-            </button>
-          )}
-          <button className="theme-toggle hide-m" onClick={toggleTheme} title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {themeMode === 'dark' ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/>
-                <line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </button>
-          <button className="ge-btn btn-g" onClick={() => setShowAdd(true)}>Add Wine</button>
-          {profile?.avatar_url ? (
-            <img
-              className="hide-m"
-              src={profile.avatar_url}
-              alt={profile.display_name || 'Profile'}
-              title={`${profile.display_name || session.user.email} · Sign out`}
-              onClick={handleSignOut}
-              style={{
-                width: 32, height: 32, borderRadius: '50%',
-                border: '1px solid var(--border)',
-                cursor: 'pointer', flexShrink: 0,
-                transition: 'border-color 0.2s',
-              }}
-            />
-          ) : (
-            <button className="ge-btn btn-o hide-m" onClick={handleSignOut} style={{ fontSize: 'var(--fs-sm)', padding: '6px 14px' }}>
-              Sign out
-            </button>
-          )}
-        </div>
-      </header>
-      {/* Mobile dropdown menu */}
-      {menuOpen && (
-        <div className="hbg-menu show-m">
-          <button className="hbg-item" onClick={() => { toggleTheme(); setMenuOpen(false); }}>
-            {themeMode === 'dark' ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/>
-                <line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-            {themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
-          </button>
-          <div className="hbg-divider"/>
-          <button className="hbg-item" onClick={() => { handleSignOut(); setMenuOpen(false); }}>
-            {profile?.avatar_url && (
-              <img src={profile.avatar_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%' }}/>
-            )}
-            Sign out
-          </button>
-        </div>
-      )}
+
+      <Header
+        wines={wines}
+        session={session}
+        profile={profile}
+        isEstimatingWindows={isEstimatingWindows}
+        windowEstimationProgress={windowEstimationProgress}
+        themeMode={themeMode}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        estimateDrinkingWindows={estimateDrinkingWindows}
+        toggleTheme={toggleTheme}
+        handleSignOut={handleSignOut}
+        setShowAdd={setShowAdd}
+      />
 
       <main className="ge-main">
-        {/* ── STATS ── */}
-        <div className="ge-stats">
-          <StatCard v={stats.totalBottles} l="Total Bottles" />
-          <StatCard v={stats.uniqueWines} l="Unique Wines" />
-          <StatCard v={stats.avgPrice ? `S$${stats.avgPrice}` : '—'} l="Avg Price" />
-          <StatCard v={stats.count2016 || 0} l="2016 Bottles" />
-          <StatCard v={stats.count2018 || 0} l="2018 Bottles" />
-          <StatCard v={stats.count2023 || 0} l="2023 Bottles" />
-          <StatCard v={stats.drinkSoon} l="Drink Soon" accentColor="#d97706" onClick={() => { setTab('cellar'); setSort('window'); }} />
-          <StatCard v={stats.pastPeak} l="Past Peak" accentColor="#dc2626" onClick={() => { setTab('cellar'); setSort('window'); }} />
-        </div>
+        <StatsBar stats={stats} setTab={setTab} setSort={setSort} />
 
-        {/* ── TABS ── */}
         <div className="ge-tabs">
           <button className={`ge-tab ${tab === 'cellar' ? 'on' : ''}`} onClick={() => setTab('cellar')}>🍾 My Cellar</button>
           <button className={`ge-tab ${tab === 'analytics' ? 'on' : ''}`} onClick={() => { setTab('analytics'); loadSummary(); }}>📊 Analytics</button>
         </div>
 
-        {/* ── ANALYTICS TAB ── */}
         {tab === 'analytics' && (
-          <div className="fade">
-            <div className="ai-box">
-              <div className="ai-hdr">✦ Sommelier's Assessment</div>
-              {summaryLoading ? (
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <div className="spin" />
-                  <div className={`witty-msg${summaryMsgVisible ? '' : ' wm-hidden'}`}>{summaryMsg}</div>
-                </div>
-              ) : aiSummary ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    strong: ({ children }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
-                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
-                  }}
-                >{aiSummary}</ReactMarkdown>
-              ) : (
-                <button className="ge-btn btn-o" onClick={loadSummary}>✦ Generate AI Assessment</button>
-              )}
-            </div>
-
-            <div className="brk-grid">
-              {/* By Type + By Drinking Window */}
-              <div className="brk-card" style={{ gridColumn: '1 / -1' }}>
-                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <div className="brk-ttl">By Type</div>
-                    <DonutChart data={
-                      Object.entries(
-                        activeWines.reduce<Record<string, number>>((a, w) => { a[w.type || 'Unknown'] = (a[w.type || 'Unknown'] || 0) + w.inventory; return a; }, {})
-                      ).sort((a, b) => b[1] - a[1]).map(([t, c]) => ({
-                        label: t,
-                        value: c,
-                        color: (themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE)[t]?.dot || '#888',
-                      }))
-                    } />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <div className="brk-ttl">By Drinking Window</div>
-                    <DonutChart data={[
-                      { label: 'Too Young',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'too_young'      ? s + w.inventory : s, 0), color: '#2563eb' },
-                      { label: 'In Prime',   value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'prime'           ? s + w.inventory : s, 0), color: '#16a34a' },
-                      { label: 'Drink Soon', value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'approaching_end' ? s + w.inventory : s, 0), color: '#d97706' },
-                      { label: 'Past Peak',  value: activeWines.reduce((s, w) => getDrinkingStatus(w) === 'past_peak'       ? s + w.inventory : s, 0), color: '#dc2626' },
-                    ].filter(d => d.value > 0)} />
-                  </div>
-                </div>
-              </div>
-              {/* By Country */}
-              <div className="brk-card">
-                <div className="brk-ttl">By Country</div>
-                {Object.entries(
-                  activeWines.reduce<Record<string, number>>((a, w) => { a[w.country || 'Unknown'] = (a[w.country || 'Unknown'] || 0) + w.inventory; return a; }, {})
-                ).sort((a, b) => b[1] - a[1]).map(([c, n]) => (
-                  <div className="brk-row" key={c} style={{ color: 'var(--parch)' }}>
-                    <span>{FLAGS[c] || '🌍'} {c}</span>
-                    <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>{n}</span>
-                  </div>
-                ))}
-              </div>
-              {/* By Varietal */}
-              <div className="brk-card">
-                <div className="brk-ttl">By Varietal</div>
-                {Object.entries(
-                  activeWines.reduce<Record<string, number>>((a, w) => { a[w.style || 'Unknown'] = (a[w.style || 'Unknown'] || 0) + w.inventory; return a; }, {})
-                ).sort((a, b) => b[1] - a[1]).map(([s, n]) => (
-                  <div className="brk-row" key={s} style={{ color: 'var(--parch)' }}>
-                    <span>{s}</span>
-                    <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>{n}</span>
-                  </div>
-                ))}
-              </div>
-              {/* By Vintage */}
-              <div className="brk-card">
-                <div className="brk-ttl">By Vintage</div>
-                {Object.entries(
-                  activeWines.reduce<Record<string, number>>((a, w) => { const v = w.vintage || 'NV'; a[v] = (a[v] || 0) + w.inventory; return a; }, {})
-                ).sort((a, b) => b[0] > a[0] ? 1 : -1).map(([v, n]) => (
-                  <div className="brk-row" key={v} style={{ color: 'var(--parch)' }}>
-                    <span>{v}</span>
-                    <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>{n}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-
-          </div>
+          <AnalyticsView
+            activeWines={activeWines}
+            aiSummary={aiSummary}
+            summaryLoading={summaryLoading}
+            summaryMsg={summaryMsg}
+            summaryMsgVisible={summaryMsgVisible}
+            loadSummary={loadSummary}
+            themeMode={themeMode}
+            stats={stats}
+          />
         )}
 
-        {/* ── CELLAR TAB ── */}
         {tab === 'cellar' && (
-          <div className="fade">
-            <div className="ge-filters">
-              {types.map(t => (
-                <button key={t} className={`ge-fbtn ${filter === t ? 'on' : ''}`} onClick={() => setFilter(t)}>{t}</button>
-              ))}
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                <input className="ge-srch" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-                <select className="ge-sel" value={sort} onChange={e => setSort(e.target.value as typeof sort)}>
-                  <option value="name">Name</option>
-                  <option value="vintage">Vintage</option>
-                  <option value="price">Price</option>
-                  <option value="type">Type</option>
-                  <option value="window">Drinking Window</option>
-                </select>
-              </div>
-            </div>
-
-            {filteredWines.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>🍾</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>No wines found</div>
-                <div style={{ fontSize: 'var(--fs-base)', marginTop: 6 }}>Adjust filters or add wines to your cellar.</div>
-              </div>
-            ) : (
-              <table className="ge-tbl">
-                <thead>
-                  <tr>
-                    <th onClick={() => setSort('name')}>Wine {sort === 'name' && '↑'}</th>
-                    <th onClick={() => setSort('type')} className="hide-m">Type {sort === 'type' && '↑'}</th>
-                    <th onClick={() => setSort('vintage')}>Vintage {sort === 'vintage' && '↑'}</th>
-                    <th className="hide-m">Region</th>
-                    <th onClick={() => setSort('price')} className="hide-m">Price {sort === 'price' && '↑'}</th>
-                    <th onClick={() => setSort('window')} className="hide-m" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>Window {sort === 'window' && '↑'}</th>
-                    <th>Bottles</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredWines.map(wine => (
-                    <tr key={wine.id} className="wr">
-                      <td>
-                        <div className="wn">{wine.name}</div>
-                        <div className="ww">{wine.winery}</div>
-                        <div className="show-m" style={{ marginTop: 4 }}>
-                          <DrinkingWindowBadge wine={wine} />
-                        </div>
-                      </td>
-                      <td className="hide-m">
-                        <Badge type={wine.type} />
-                        {wine.style && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 3 }}>{wine.style}</div>}
-                      </td>
-                      <td style={{ color: 'var(--parch)', fontSize: 'var(--fs-base)' }}>{wine.vintage || '—'}</td>
-                      <td className="hide-m" style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                        {FLAGS[wine.country] || ''} {wine.subRegion || wine.region || wine.country || '—'}
-                      </td>
-                      <td className="hide-m" style={{ fontSize: 'var(--fs-base)', color: wine.price ? 'var(--gold)' : 'var(--dim)' }}>
-                        {wine.price ? `S$${Number.isInteger(wine.price) ? wine.price : wine.price.toFixed(2)}` : '—'}
-                      </td>
-                      <td className="hide-m window-cell">
-                        <DrinkingWindowBadge wine={wine} />
-                      </td>
-                      <td>
-                        <div className="inv">
-                          <button className="ivb" onClick={() => updateInventory(wine.id, -1)}>−</button>
-                          <span className="ivc">{wine.inventory}</span>
-                          <button className="ivb" onClick={() => updateInventory(wine.id, +1)}>+</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <CellarView
+            wines={activeWines}
+            filter={filter}
+            setFilter={setFilter}
+            search={search}
+            setSearch={setSearch}
+            sort={sort}
+            setSort={setSort}
+            updateInventory={updateInventory}
+            themeMode={themeMode}
+          />
         )}
       </main>
 
-      {/* ── ASK SOMMELIER FAB ── */}
-      {!chatOpen && (
-        <button className="sommelier-fab" onClick={() => setChatOpen(true)}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 2h8l2 6H6L8 2z"/>
-            <path d="M6 8v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/>
-            <line x1="12" y1="12" x2="12" y2="18"/>
-          </svg>
-          Ask Sommelier
-        </button>
-      )}
+      <ChatDrawer
+        chatOpen={chatOpen}
+        setChatOpen={setChatOpen}
+        chatMessages={chatMessages}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+        chatLoading={chatLoading}
+        chatMsg={chatMsg}
+        chatMsgVisible={chatMsgVisible}
+        copiedIdx={copiedIdx}
+        wineFeedback={wineFeedback}
+        sendChat={sendChat}
+        submitWineFeedback={submitWineFeedback}
+        copyMessage={copyMessage}
+        chatEndRef={chatEndRef}
+        chatInputRef={chatInputRef}
+      />
 
-      {/* ── CHAT DRAWER ── */}
-      <div className={`ge-chat-drawer${chatOpen ? ' open' : ''}`}>
-        <div className="ge-chat-drawer-drag" />
-        <div className="ge-chat-drawer-hdr">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div className="ge-chat-drawer-icon">🤵</div>
-            <div>
-              <div className="ge-chat-drawer-title">Your Sommelier</div>
-              <div className="ge-chat-drawer-sub">Pairing advice · Cellar insights · Wine discovery</div>
-            </div>
-          </div>
-          <button className="ge-chat-drawer-close" onClick={() => setChatOpen(false)}>×</button>
-        </div>
-
-        <div className="ge-chat-msgs">
-          {chatMessages.length === 0 && (
-            <div style={{ paddingBottom: 8 }}>
-              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 'var(--fs-md)', fontWeight: 700, letterSpacing: 0.5, padding: '12px 0 6px' }}>
-                ✦ What shall we open tonight? ✦
-              </div>
-              <QuickPrompts />
-            </div>
-          )}
-          {chatMessages.map((msg, i) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const mdComponents: any = {
-              strong: ({ children }: { children: React.ReactNode }) => <strong style={{ color: 'var(--gold)' }}>{children}</strong>,
-              a: ({ href, children }: { href?: string; children?: React.ReactNode }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
-            };
-            const displayContent = msg.role === 'assistant' ? stripWinesJson(msg.content) : msg.content;
-
-            // Split Verdict section for per-wine thumbs
-            let beforeVerdict: string | null = null;
-            let verdictBullets: string[] = [];
-            if (msg.role === 'assistant' && msg.recommendedWines && msg.recommendedWines.length > 0 && msg.messageId) {
-              const verdictMatch = displayContent.match(/^([\s\S]*?)\n(\*{0,2}Verdict\*{0,2}[\s\S]*)$/);
-              if (verdictMatch) {
-                beforeVerdict = verdictMatch[1];
-                const verdictBody = verdictMatch[2];
-                verdictBullets = verdictBody
-                  .split('\n')
-                  .slice(1) // skip the "**Verdict**" header line
-                  .filter(l => /^\s*([•\-\*]|\d+\.)\s/.test(l));
-              }
-            }
-
-            return (
-              <div key={i} className={`cm ${msg.role}`}>
-                <div className="cr">{msg.role === 'user' ? 'You' : '✦ Sommelier'}</div>
-                <div className="cb">
-                  {msg.role === 'assistant' ? (
-                    beforeVerdict !== null && verdictBullets.length > 0 ? (
-                      <>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{beforeVerdict}</ReactMarkdown>
-                        <div style={{ marginTop: 8 }}>
-                          <strong style={{ color: 'var(--gold)' }}>Verdict</strong>
-                          {verdictBullets.map((line, idx) => {
-                            const wine = msg.recommendedWines![idx];
-                            const fbKey = wine ? `${msg.messageId}:${wine.name}` : null;
-                            return (
-                              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, margin: '4px 0' }}>
-                                <div style={{ flex: 1 }}>
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{line}</ReactMarkdown>
-                                </div>
-                                {wine && fbKey && (
-                                  <div className="cm-feedback" style={{ flexShrink: 0, marginTop: 2 }}>
-                                    <button
-                                      className={`cm-fb ${wineFeedback[fbKey] === 'thumbs_up' ? 'active' : ''}`}
-                                      onClick={() => submitWineFeedback(msg, wine, 'thumbs_up')}
-                                      title="Like this recommendation"
-                                    >👍</button>
-                                    <button
-                                      className={`cm-fb ${wineFeedback[fbKey] === 'thumbs_down' ? 'active' : ''}`}
-                                      onClick={() => submitWineFeedback(msg, wine, 'thumbs_down')}
-                                      title="Dislike this recommendation"
-                                    >👎</button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    ) : (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>{displayContent}</ReactMarkdown>
-                    )
-                  ) : displayContent}
-                </div>
-                {msg.role === 'assistant' && (
-                  <div className="cm-actions">
-                    <button
-                      className={`cm-copy ${copiedIdx === i ? 'copied' : ''}`}
-                      onClick={() => copyMessage(displayContent, i)}
-                      title="Copy to clipboard"
-                    >
-                      {copiedIdx === i ? 'Copied!' : '⎘'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {chatLoading && (
-            <div className="cm assistant">
-              <div className="cr">✦ Sommelier</div>
-              <div className="cb">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div className="tdots"><span /><span /><span /></div>
-                  <div className={`witty-msg${chatMsgVisible ? '' : ' wm-hidden'}`}>{chatMsg}</div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-
-        <div className="ge-chat-bar">
-          <input
-            ref={chatInputRef}
-            className="ge-ci"
-            placeholder="Ask your sommelier..."
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
-          />
-          <button className="ge-cs" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()}>
-            {chatLoading ? <div className="spin" /> : '→'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── ADD WINE MODAL ── */}
-      {showAdd && (
-        <div className="ge-modal-bg" onClick={e => e.target === e.currentTarget && closeModal()}>
-          <div className="ge-modal">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div className="ge-modal-ttl">✦ Add to Cellar</div>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}>×</button>
-            </div>
-
-            <div className="mtabs">
-              {([['photo', '📷 Scan Photo'], ['manual', '✍️ Manual Entry']] as [string, string][]).map(([t, l]) => (
-                <button key={t} className={`mtab ${addTab === t ? 'on' : ''}`} onClick={() => setAddTab(t as 'photo' | 'manual')}>{l}</button>
-              ))}
-            </div>
-
-            {addTab === 'photo' && (
-              <div>
-                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
-                  onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
-                <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-                  onChange={e => { if (e.target.files?.[0]) { handlePhoto(e.target.files[0]); e.target.value = ''; } }} />
-                {!photoPreview ? (
-                  <div className="photo-drop">
-                    <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                    <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700, marginBottom: 4 }}>Scan Wine Label or Bottles</div>
-                    <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 16 }}>Snap a single label, multiple bottles, or an invoice — we'll detect all wines</div>
-                    <div className="scan-upload-btns">
-                      <button className="ge-btn btn-g" onClick={() => fileInputRef.current?.click()}>📷 Take Photo</button>
-                      <button className="ge-btn btn-o" onClick={() => galleryInputRef.current?.click()}>🖼️ Upload from Gallery</button>
-                    </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 'var(--fs-sm)', color: 'var(--muted)', cursor: 'pointer', justifyContent: 'center', userSelect: 'none' }}>
-                      <input type="checkbox" checked={wantSommelierNotes} onChange={e => setWantSommelierNotes(e.target.checked)} style={{ accentColor: 'var(--gold)', width: 14, height: 14, cursor: 'pointer' }} />
-                      Include sommelier notes &amp; pairings
-                      <span style={{ fontStyle: 'italic' }}>(takes a bit longer)</span>
-                    </label>
-                  </div>
-                ) : (
-                  <div>
-                    <img src={photoPreview} style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'contain', background: 'var(--card)', marginBottom: 12 }} alt="Wine" />
-                    {scanLoading && (
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0' }}>
-                        <div className="spin" />
-                        <div className={`witty-msg${scanMsgVisible ? '' : ' wm-hidden'}`}>{scanMsg}</div>
-                      </div>
-                    )}
-                    {!scanLoading && scannedWines.length > 0 && (() => {
-                      const isMulti = scannedWines.length > 1;
-                      return (
-                        <>
-                          {isMulti && (
-                            <div className="scan-pagination">
-                              <button
-                                className="scan-page-btn"
-                                disabled={previewIndex === 0}
-                                onClick={() => { const i = previewIndex - 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); const wp = scannedWines[i] as any; setScanNotes(wp?.wineSummary || wp?.winerySummary || wp?.tastingNotes ? { wine: wp.wineSummary || '', winery: wp.winerySummary || '', tasting: wp.tastingNotes || '' } : null); }}
-                              >←</button>
-                              <span className="scan-pagination-label">Wine {previewIndex + 1} of {scannedWines.length}</span>
-                              <button
-                                className="scan-page-btn"
-                                disabled={previewIndex === scannedWines.length - 1}
-                                onClick={() => { const i = previewIndex + 1; setPreviewIndex(i); populateFormFromWine(scannedWines[i]); setLocalPairings((scannedWines[i] as any).localPairings || []); const wp = scannedWines[i] as any; setScanNotes(wp?.wineSummary || wp?.winerySummary || wp?.tastingNotes ? { wine: wp.wineSummary || '', winery: wp.winerySummary || '', tasting: wp.tastingNotes || '' } : null); }}
-                              >→</button>
-                            </div>
-                          )}
-                          <div className="wine-preview-card">
-                            <div className="wpc-scan-banner">✦ AI detected — review and edit if needed</div>
-                            <div className="wpc-fields">
-                              <div className="wpc-field wpc-full">
-                                <label className="fl">Wine Name *</label>
-                                <input className="fi" value={newWine.name} onChange={e => setNewWine(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Chambolle-Musigny" />
-                              </div>
-                              <div className="wpc-field wpc-full">
-                                <label className="fl">Winery / Producer</label>
-                                <input className="fi" value={newWine.winery} onChange={e => setNewWine(p => ({ ...p, winery: e.target.value }))} placeholder="e.g. Domaine Mugnier" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Vintage</label>
-                                <input className="fi" value={newWine.vintage} onChange={e => setNewWine(p => ({ ...p, vintage: e.target.value }))} placeholder="e.g. 2019 or NV" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Type</label>
-                                <select className="fi" style={{ cursor: 'pointer' }} value={newWine.type} onChange={e => setNewWine(p => ({ ...p, type: e.target.value }))}>
-                                  {['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'].map(t => <option key={t}>{t}</option>)}
-                                </select>
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Price (S$)</label>
-                                <input className="fi" type="number" value={newWine.price} onChange={e => setNewWine(p => ({ ...p, price: e.target.value }))} placeholder="—" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Varietal / Style</label>
-                                <input className="fi" value={newWine.style} onChange={e => setNewWine(p => ({ ...p, style: e.target.value }))} placeholder="e.g. Pinot Noir" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Country</label>
-                                <input className="fi" value={newWine.country} onChange={e => setNewWine(p => ({ ...p, country: e.target.value }))} placeholder="e.g. France" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Region</label>
-                                <input className="fi" value={newWine.region} onChange={e => setNewWine(p => ({ ...p, region: e.target.value }))} placeholder="e.g. Burgundy" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Sub-Region</label>
-                                <input className="fi" value={newWine.subRegion} onChange={e => setNewWine(p => ({ ...p, subRegion: e.target.value }))} placeholder="e.g. Gevrey-Chambertin" />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Bottles</label>
-                                <div className="inv">
-                                  <button className="ivb" onClick={() => setNewWine(p => ({ ...p, inventory: String(Math.max(1, parseInt(p.inventory) - 1)) }))}>−</button>
-                                  <span className="ivc">{newWine.inventory}</span>
-                                  <button className="ivb" onClick={() => setNewWine(p => ({ ...p, inventory: String(parseInt(p.inventory) + 1) }))}>+</button>
-                                </div>
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Drink From</label>
-                                <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2024" value={newWine.drinkFrom} onChange={e => setNewWine(p => ({ ...p, drinkFrom: e.target.value }))} />
-                              </div>
-                              <div className="wpc-field">
-                                <label className="fl">Drink To</label>
-                                <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2032" value={newWine.drinkBy} onChange={e => setNewWine(p => ({ ...p, drinkBy: e.target.value }))} />
-                              </div>
-                            </div>
-                            {windowLoading && !newWine.drinkFrom && !newWine.drinkBy && (
-                              <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--muted)', fontSize: 'var(--fs-sm)', marginTop: 6 }}>
-                                <div className="spin" /> Estimating drinking window…
-                              </div>
-                            )}
-                            {pairingsLoading && !scanNotes && localPairings.length === 0 && (
-                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--muted)', fontSize: 'var(--fs-base)', marginTop: 12 }}>
-                                <div className="spin" /> Preparing sommelier notes…
-                              </div>
-                            )}
-                            {(scanNotes || localPairings.length > 0) && (
-                              <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                                {scanNotes && (scanNotes.wine || scanNotes.winery || scanNotes.tasting) && (<>
-                                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍷 SOMMELIER NOTES</div>
-                                  {scanNotes.wine    && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Wine:** ${scanNotes.wine}`} /></div>}
-                                  {scanNotes.winery  && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Producer:** ${scanNotes.winery}`} /></div>}
-                                  {scanNotes.tasting && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={`**Tasting:** ${scanNotes.tasting}`} /></div>}
-                                </>)}
-                                {scanNotes && localPairings.length > 0 && (
-                                  <div style={{ borderTop: '1px solid rgba(201,168,76,0.25)', margin: '4px 0' }} />
-                                )}
-                                {localPairings.length > 0 && (<>
-                                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--gold)', letterSpacing: 0.5 }}>🍜 LOCAL DISH PAIRINGS</div>
-                                  {localPairings.map((p, i) => (
-                                    <div key={i} style={{ fontSize: 'var(--fs-sm)', color: 'var(--parch)', lineHeight: 1.65 }}><RichText text={p} /></div>
-                                  ))}
-                                </>)}
-                              </div>
-                            )}
-                          </div>
-                          <div className="wpc-actions">
-                            <button className="ge-btn btn-o" onClick={() => { setPhotoPreview(null); setScannedWines([]); setPreviewIndex(0); }}>
-                              Try another
-                            </button>
-                            {isMulti && (
-                              <button className="ge-btn btn-o" onClick={() => advancePreview(previewIndex + 1)}>
-                                ✗ Skip
-                              </button>
-                            )}
-                            <button className="ge-btn btn-g" onClick={confirmCurrentWine}>
-                              ✓ {isMulti ? 'Add Wine' : 'Add to Cellar'}
-                            </button>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {addTab === 'manual' && (
-              <div>
-                {scannedWine && (
-                  <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: 'var(--fs-sm)', color: 'var(--gold)', marginBottom: 16 }}>
-                    {scannedWines.length > 1
-                      ? `✦ Wine ${previewIndex + 1} of ${scannedWines.length} — verify and add to cellar`
-                      : '✦ Pre-filled from label scan — please verify details'}
-                  </div>
-                )}
-                <div className="fg">
-                  <div className="ff full">
-                    <label className="fl">Wine Name *</label>
-                    <input className="fi" value={newWine.name} onChange={e => setNewWine(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Chambolle-Musigny" />
-                  </div>
-                  <div className="ff full">
-                    <label className="fl">Winery / Producer</label>
-                    <input className="fi" value={newWine.winery} onChange={e => setNewWine(p => ({ ...p, winery: e.target.value }))} placeholder="e.g. Domaine Mugnier" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Vintage</label>
-                    <input className="fi" value={newWine.vintage} onChange={e => setNewWine(p => ({ ...p, vintage: e.target.value }))} placeholder="e.g. 2019 or NV" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Price (S$)</label>
-                    <input className="fi" type="number" value={newWine.price} onChange={e => setNewWine(p => ({ ...p, price: e.target.value }))} placeholder="e.g. 180" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Type *</label>
-                    <select className="fi" style={{ cursor: 'pointer' }} value={newWine.type} onChange={e => setNewWine(p => ({ ...p, type: e.target.value }))}>
-                      {['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'].map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Varietal / Style</label>
-                    <input className="fi" value={newWine.style} onChange={e => setNewWine(p => ({ ...p, style: e.target.value }))} placeholder="e.g. Pinot Noir" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Country</label>
-                    <input className="fi" value={newWine.country} onChange={e => setNewWine(p => ({ ...p, country: e.target.value }))} placeholder="e.g. France" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Region</label>
-                    <input className="fi" value={newWine.region} onChange={e => setNewWine(p => ({ ...p, region: e.target.value }))} placeholder="e.g. Burgundy" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Sub-Region</label>
-                    <input className="fi" value={newWine.subRegion} onChange={e => setNewWine(p => ({ ...p, subRegion: e.target.value }))} placeholder="e.g. Gevrey-Chambertin" />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Number of Bottles</label>
-                    <input className="fi" type="number" min="1" value={newWine.inventory} onChange={e => setNewWine(p => ({ ...p, inventory: e.target.value }))} />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Drink From</label>
-                    <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2024" value={newWine.drinkFrom} onChange={e => setNewWine(p => ({ ...p, drinkFrom: e.target.value }))} />
-                  </div>
-                  <div className="ff">
-                    <label className="fl">Drink To</label>
-                    <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2032" value={newWine.drinkBy} onChange={e => setNewWine(p => ({ ...p, drinkBy: e.target.value }))} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-                  {scannedWines.length > 0
-                    ? <button className="ge-btn btn-o" onClick={() => setAddTab('photo')}>← Back to Preview</button>
-                    : <button className="ge-btn btn-o" onClick={closeModal}>Cancel</button>
-                  }
-                  <button className="ge-btn btn-g" onClick={addWine}>✦ Add to Cellar</button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <AddWineModal
+        showAdd={showAdd}
+        addTab={addTab}
+        setAddTab={setAddTab}
+        photoPreview={photoPreview}
+        setPhotoPreview={setPhotoPreview}
+        scanLoading={scanLoading}
+        scanMsg={scanMsg}
+        scanMsgVisible={scanMsgVisible}
+        scannedWines={scannedWines}
+        setScannedWines={setScannedWines}
+        previewIndex={previewIndex}
+        setPreviewIndex={setPreviewIndex}
+        newWine={newWine}
+        setNewWine={setNewWine}
+        localPairings={localPairings}
+        setLocalPairings={setLocalPairings}
+        pairingsLoading={pairingsLoading}
+        windowLoading={windowLoading}
+        scanNotes={scanNotes}
+        setScanNotes={setScanNotes}
+        wantSommelierNotes={wantSommelierNotes}
+        setWantSommelierNotes={setWantSommelierNotes}
+        handlePhoto={handlePhoto}
+        closeModal={closeModal}
+        advancePreview={advancePreview}
+        confirmCurrentWine={confirmCurrentWine}
+        addWine={addWine}
+        fileInputRef={fileInputRef}
+        galleryInputRef={galleryInputRef}
+      />
     </div>
   );
 }
