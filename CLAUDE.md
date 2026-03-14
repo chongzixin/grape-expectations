@@ -186,7 +186,7 @@ All tables have **Row Level Security (RLS)** enabled — users can only access t
 | `wines` | Cellar inventory. Key fields: `name`, `winery`, `vintage`, `type`, `style`, `country`, `region`, `sub_region`, `price`, `inventory`, `drink_from`, `drink_by`, `source` |
 | `recommendation_sessions` | One row per chat conversation |
 | `recommendation_messages` | Individual messages in a session (role: `user` \| `assistant`) |
-| `recommendation_feedback` | Thumbs up/down on AI-recommended wines (for future personalization) |
+| `recommendation_feedback` | Per-wine thumbs up/down on Verdict bullets. Key fields: `wine_name`, `winery`, `feedback` (`thumbs_up` \| `thumbs_down`), `in_cellar`, `cellar_wine_id`, `context_query`, `message_id`. One row per (user, message, wine). |
 
 `wines.source` values: `'manual'` | `'photo_scan'` | `'import'`
 
@@ -216,6 +216,16 @@ All Claude calls go through a serverless proxy at `/.netlify/functions/claude` (
 - **Cellar analytics**: AI generates a 150–180 word cellar health summary
 - **Model**: `claude-sonnet-4-6`
 
+**WINES_JSON block (sommelier responses only):**
+Every recommendation response includes a hidden comment block appended after the Verdict:
+```
+<!-- WINES_JSON
+[{"name":"Wine Name","winery":"Winery","in_cellar":true,"cellar_wine_id":"uuid-or-null"},...]
+-->
+```
+This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine metadata for the feedback system, then stripped from displayed text by `stripWinesJson()`. The Verdict section is split into individual bullet lines so 👍/👎 buttons render inline per wine. Do not remove or reformat this block in the system prompt.
+
+
 ---
 
 ## Styling
@@ -235,6 +245,7 @@ All Claude calls go through a serverless proxy at `/.netlify/functions/claude` (
 - **No test suite.** Validate changes manually; use PR branch deploys on Netlify to smoke-test before merging.
 - **RLS is enforced at the DB level.** Don't bypass it client-side — queries automatically filter by the authenticated user.
 - **App.tsx is very large.** Until the refactor happens, add new UI/logic there and follow existing patterns. Don't split prematurely without a plan.
+- **`recommendation_messages.id` is generated client-side** via `crypto.randomUUID()` before the Supabase insert, and passed explicitly as the `id` field. This ensures `msg.messageId` is always set so per-wine feedback thumbs always render, even if the DB insert fails. Do not change this back to reading the ID from the insert response.
 
 ---
 

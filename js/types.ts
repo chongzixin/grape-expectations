@@ -21,11 +21,20 @@ export interface Wine {
   drinkBy: number | null;
 }
 
+export interface RecommendedWine {
+  name: string;
+  winery: string;
+  in_cellar: boolean;
+  cellar_wine_id: string | null;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   /** Set on assistant messages after they are persisted to Supabase */
   messageId?: string;
+  /** Parsed from the WINES_JSON block in recommendation responses */
+  recommendedWines?: RecommendedWine[];
 }
 
 export interface Stats {
