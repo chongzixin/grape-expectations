@@ -240,7 +240,6 @@ This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine met
 
 ## Gotchas & Things to Avoid
 
-- **`googleapis` and `apify-client`** are legacy unused dependencies from earlier scraper/sheets integrations (see Current Priorities).
 - **`npm run dev` alone breaks AI features.** Always use `npm start` for local development.
 - **No test suite.** Validate changes manually; use PR branch deploys on Netlify to smoke-test before merging.
 - **RLS is enforced at the DB level.** Don't bypass it client-side — queries automatically filter by the authenticated user.
@@ -252,4 +251,3 @@ This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine met
 ## Current Priorities
 
 1. **Refactor `js/App.tsx` into smaller components.** The file is ~2000 lines. Break it into feature-scoped components (e.g., `CellarView`, `AnalyticsView`, `SommelierChat`, `WineCard`, `AddWineModal`) while keeping the top-level state in `App.tsx` or moving to a lightweight context if needed.
-2. **Remove unused legacy dependencies.** `googleapis` and `apify-client` are remnants of earlier scraper/Google Sheets integrations and are not used anywhere in the current codebase. Remove them from `package.json` and run `npm install`.
