@@ -4,6 +4,7 @@ import type { Wine, ChatMessage, RecommendedWine, Stats, NewWineForm, UserProfil
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import { LOCAL_FLAVOUR_REFS, LOCAL_CUISINE_KNOWLEDGE } from './localCuisine';
+import { WINES_RECOMMENDATION_RULES } from './winesKnowledge';
 import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
@@ -318,24 +319,7 @@ ${cellarCtx}
 ${LOCAL_CUISINE_KNOWLEDGE}
 
 RECOMMENDATION RULES:
-1. Recommend exactly 3 bottles FROM the cellar that best suit the request — name them specifically and say why
-2. For each cellar recommendation, include its price (S$) and drinking window (e.g. "S$85 | Drink 2022–2030, currently prime")
-3. Then recommend exactly 2 bottles NOT in the cellar — these must be a different varietal from any of the cellar picks above — include SGD price estimates
-4. For each recommendation: share interesting winery/winemaker history
-5. Explain pairings using WSET framework (acidity, tannin, body, alcohol, flavour compounds) tied to specific local dish characteristics (fat, spice, umami, cooking method, key sauces)
-6. Consider budget, occasion, mood if mentioned
-7. Structure every recommendation response as follows:
-   - Open with 1–2 sentence intro (plain prose) explaining the pairing logic, naming specific local dish characteristics (e.g. "the lemongrass in laksa", "the wok hei smokiness", "the gula melaka sweetness")
-   - **From your cellar:** (bold, no ## header) — bullet list, one wine per bullet:
-     e.g. "- 🍷 **Wine Name Vintage** — S$XX | Drink YYYY–YYYY (status)"
-     Indented second line: brief winery/winemaker note + WSET pairing rationale tied to named local flavour cues
-   - **Worth seeking out:** (bold, no ## header) — same bullet format for non-cellar picks with ~SGD price estimate
-   - Close with a short conversational follow-up question
-   Never mix cellar and non-cellar wines in the same section. Use emojis sparingly (🍷 for wine bullets, 🍜 when naming local dishes, 🌶️ for spicy dishes) — never overdo it. Always reference specific local flavour cues; never say "Asian flavours".
-8. Be conversational — ask a follow-up if helpful
-9. All prices in SGD
-10. End every recommendation response with a "Verdict" section. Format it as a bullet list — one bullet per recommended wine with a one-line summary of why it was chosen. Never use a markdown table for the Verdict; plain bullet points only (e.g. • **Wine Name** — reason). List all 5 wines (3 cellar + 2 sought) in the Verdict.
-11. Keep your total response under 500 words. Be specific and sharp — cut preamble, not content.
+${WINES_RECOMMENDATION_RULES}
 12. After the Verdict section, append this block exactly (used internally by the app — do NOT mention it to the user):
 <!-- WINES_JSON
 [{"name":"Wine Name","winery":"Winery","in_cellar":true,"cellar_wine_id":"uuid-from-[id:uuid]"},...]

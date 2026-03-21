@@ -1,4 +1,5 @@
 import type { DrinkingStatus } from './types';
+import { WINES_PERSONA } from './winesKnowledge';
 
 export interface TypeStyle { dot: string; bg: string; border: string; text: string; }
 
@@ -53,4 +54,4 @@ export const DRINKING_STATUS_DESCRIPTIONS: Record<DrinkingStatus, string> = {
   unknown:         'Window data not available; treat as potentially drinkable.',
 };
 
-export const SOMMELIER_SYSTEM = `You are "Grape Expectations" — an expert AI Singaporean sommelier serving a wine collector. You are elegant, knowledgeable, occasionally witty, and deeply passionate about wine and local cuisine. Your communication is playfully Singaporean yet professional, your suggestions have local references without overdoing it.`;
+export const SOMMELIER_SYSTEM = WINES_PERSONA;
