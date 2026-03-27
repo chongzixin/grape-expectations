@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import type { Wine } from '../types';
-import { FLAGS, TYPE_STYLE, TYPE_STYLE_LIGHT, DRINKING_STATUS_PRIORITY } from '../constants';
+import { FLAGS, TYPE_STYLE, TYPE_STYLE_LIGHT, DRINKING_STATUS_PRIORITY, BADGE_STYLES } from '../constants';
 import { getDrinkingStatus } from '../utils';
 import { DrinkingWindowBadge } from './DrinkingWindowBadge';
 
@@ -16,6 +16,54 @@ interface CellarViewProps {
   themeMode: 'light' | 'dark';
 }
 
+const SHARE_LIMIT = 150;
+const TYPE_ORDER = ['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'];
+
+function formatCellarText(wines: Wine[]): string {
+  const totalBottles = wines.reduce((sum, w) => sum + w.inventory, 0);
+  const header = `My wine cellar 🍷 (${wines.length} wine${wines.length !== 1 ? 's' : ''}, ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''})`;
+
+  // Group by type
+  const groups = new Map<string, Wine[]>();
+  for (const wine of wines) {
+    const t = wine.type || 'Other';
+    if (!groups.has(t)) groups.set(t, []);
+    groups.get(t)!.push(wine);
+  }
+
+  // Sort types by canonical order; unknown types go alphabetically at end
+  const sortedTypes = [...groups.keys()].sort((a, b) => {
+    const ai = TYPE_ORDER.indexOf(a);
+    const bi = TYPE_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  // Within each type, sort by drinking window urgency then drink-by year
+  for (const type of sortedTypes) {
+    groups.get(type)!.sort((a, b) => {
+      const diff = DRINKING_STATUS_PRIORITY[getDrinkingStatus(a)] - DRINKING_STATUS_PRIORITY[getDrinkingStatus(b)];
+      if (diff !== 0) return diff;
+      return (a.drinkBy ?? 9999) - (b.drinkBy ?? 9999);
+    });
+  }
+
+  let counter = 1;
+  const sections: string[] = [];
+  for (const type of sortedTypes) {
+    const group = groups.get(type)!;
+    const lines = group.map(w => {
+      const status = BADGE_STYLES[getDrinkingStatus(w)].label;
+      return `${counter++}. ${w.name} — ${w.winery} (${w.vintage || 'NV'}) · ${status}`;
+    });
+    sections.push(`${type} (${group.length})\n${lines.join('\n')}`);
+  }
+
+  return [header, '', sections.join('\n\n')].join('\n');
+}
+
 function Badge({ type, themeMode }: { type: string; themeMode: 'light' | 'dark' }) {
   const palette = themeMode === 'light' ? TYPE_STYLE_LIGHT : TYPE_STYLE;
   const s = palette[type] || palette.Red;
@@ -26,6 +74,9 @@ export function CellarView({
   wines, filter, setFilter, search, setSearch, sort, setSort,
   updateInventory, themeMode,
 }: CellarViewProps) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const types = useMemo(() =>
     ['All', ...Array.from(new Set(wines.map(w => w.type).filter(Boolean)))],
     [wines]
@@ -54,6 +105,23 @@ export function CellarView({
     return ws;
   }, [wines, filter, search, sort]);
 
+  const shareText = useMemo(() => formatCellarText(filteredWines), [filteredWines]);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(shareText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [shareText]);
+
+  const handleWhatsApp = useCallback(() => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+  }, [shareText]);
+
+  const handleTelegram = useCallback(() => {
+    window.open(`https://t.me/share/url?text=${encodeURIComponent(shareText)}`, '_blank');
+  }, [shareText]);
+
   return (
     <div className="fade">
       <div className="ge-filters">
@@ -69,6 +137,14 @@ export function CellarView({
             <option value="type">Type</option>
             <option value="window">Drinking Window</option>
           </select>
+          <button
+            className="ge-btn btn-o"
+            onClick={() => setShareOpen(true)}
+            disabled={filteredWines.length === 0}
+            style={{ padding: '5px 14px', fontSize: 'var(--fs-sm)' }}
+          >
+            Share
+          </button>
         </div>
       </div>
 
@@ -126,6 +202,35 @@ export function CellarView({
             ))}
           </tbody>
         </table>
+      )}
+
+      {shareOpen && (
+        <div className="ge-modal-bg" onClick={() => setShareOpen(false)}>
+          <div className="ge-modal ge-share-modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div className="ge-modal-ttl" style={{ marginBottom: 0 }}>Share Cellar</div>
+              <button className="ge-btn btn-o" onClick={() => setShareOpen(false)} style={{ padding: '4px 10px', fontSize: 'var(--fs-sm)' }}>✕</button>
+            </div>
+            {filteredWines.length > SHARE_LIMIT && (
+              <div className="ge-share-warn">
+                ⚠ Large list ({filteredWines.length} wines) — WhatsApp/Telegram links may be truncated on some devices. Use <strong>Copy</strong> for a reliable transfer.
+              </div>
+            )}
+            <textarea
+              className="ge-share-preview"
+              readOnly
+              rows={8}
+              value={shareText}
+            />
+            <div className="ge-share-btns">
+              <button className="ge-btn btn-o" onClick={handleCopy}>
+                {copied ? '✓ Copied!' : 'Copy'}
+              </button>
+              <button className="ge-btn btn-wa" onClick={handleWhatsApp}>WhatsApp</button>
+              <button className="ge-btn btn-tg" onClick={handleTelegram}>Telegram</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

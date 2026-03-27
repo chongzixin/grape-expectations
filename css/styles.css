@@ -1123,3 +1123,68 @@ td.window-cell {
   vertical-align: middle;
   white-space: nowrap;
 }
+
+/* ─── Share Cellar Modal ─────────────────────────────────────────── */
+.ge-share-modal {
+  max-width: 480px;
+}
+
+.ge-share-preview {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--parch);
+  font-family: 'Courier New', monospace;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  padding: 12px;
+  resize: none;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.ge-share-warn {
+  background: rgba(214, 160, 48, 0.12);
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  color: var(--gold);
+  font-size: var(--fs-sm);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.ge-share-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ge-share-btns .ge-btn {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.btn-wa {
+  background: #25D366;
+  border-color: #25D366;
+  color: #fff;
+  font-weight: 700;
+}
+
+.btn-wa:hover { background: #1ebe5a; border-color: #1ebe5a; }
+
+.btn-tg {
+  background: #229ED9;
+  border-color: #229ED9;
+  color: #fff;
+  font-weight: 700;
+}
+
+.btn-tg:hover { background: #1a8ec3; border-color: #1a8ec3; }
+
+@media (max-width: 480px) {
+  .ge-share-btns { flex-direction: column; }
+  .ge-share-btns .ge-btn { width: 100%; }
+}
