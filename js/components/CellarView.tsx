@@ -17,15 +17,48 @@ interface CellarViewProps {
 }
 
 const SHARE_LIMIT = 150;
+const TYPE_ORDER = ['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'];
 
 function formatCellarText(wines: Wine[]): string {
   const totalBottles = wines.reduce((sum, w) => sum + w.inventory, 0);
   const header = `My wine cellar 🍷 (${wines.length} wine${wines.length !== 1 ? 's' : ''}, ${totalBottles} bottle${totalBottles !== 1 ? 's' : ''})`;
-  const lines = wines.map((w, i) => {
-    const vintage = w.vintage || 'NV';
-    return `${i + 1}. ${w.name} — ${w.winery} (${vintage})`;
+
+  // Group by type
+  const groups = new Map<string, Wine[]>();
+  for (const wine of wines) {
+    const t = wine.type || 'Other';
+    if (!groups.has(t)) groups.set(t, []);
+    groups.get(t)!.push(wine);
+  }
+
+  // Sort types by canonical order; unknown types go alphabetically at end
+  const sortedTypes = [...groups.keys()].sort((a, b) => {
+    const ai = TYPE_ORDER.indexOf(a);
+    const bi = TYPE_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
   });
-  return [header, '', ...lines].join('\n');
+
+  // Within each type, sort by drinking window urgency then drink-by year
+  for (const type of sortedTypes) {
+    groups.get(type)!.sort((a, b) => {
+      const diff = DRINKING_STATUS_PRIORITY[getDrinkingStatus(a)] - DRINKING_STATUS_PRIORITY[getDrinkingStatus(b)];
+      if (diff !== 0) return diff;
+      return (a.drinkBy ?? 9999) - (b.drinkBy ?? 9999);
+    });
+  }
+
+  let counter = 1;
+  const sections: string[] = [];
+  for (const type of sortedTypes) {
+    const group = groups.get(type)!;
+    const lines = group.map(w => `${counter++}. ${w.name} — ${w.winery} (${w.vintage || 'NV'})`);
+    sections.push(`${type} (${group.length})\n${lines.join('\n')}`);
+  }
+
+  return [header, '', sections.join('\n\n')].join('\n');
 }
 
 function Badge({ type, themeMode }: { type: string; themeMode: 'light' | 'dark' }) {
