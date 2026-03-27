@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import type { Wine } from '../types';
-import { FLAGS, TYPE_STYLE, TYPE_STYLE_LIGHT, DRINKING_STATUS_PRIORITY } from '../constants';
+import { FLAGS, TYPE_STYLE, TYPE_STYLE_LIGHT, DRINKING_STATUS_PRIORITY, BADGE_STYLES } from '../constants';
 import { getDrinkingStatus } from '../utils';
 import { DrinkingWindowBadge } from './DrinkingWindowBadge';
 
@@ -54,7 +54,10 @@ function formatCellarText(wines: Wine[]): string {
   const sections: string[] = [];
   for (const type of sortedTypes) {
     const group = groups.get(type)!;
-    const lines = group.map(w => `${counter++}. ${w.name} — ${w.winery} (${w.vintage || 'NV'})`);
+    const lines = group.map(w => {
+      const status = BADGE_STYLES[getDrinkingStatus(w)].label;
+      return `${counter++}. ${w.name} — ${w.winery} (${w.vintage || 'NV'}) · ${status}`;
+    });
     sections.push(`${type} (${group.length})\n${lines.join('\n')}`);
   }
 
