@@ -1175,14 +1175,6 @@ td.window-cell {
 
 .btn-wa:hover { background: #1ebe5a; border-color: #1ebe5a; }
 
-.btn-tg {
-  background: #229ED9;
-  border-color: #229ED9;
-  color: #fff;
-  font-weight: 700;
-}
-
-.btn-tg:hover { background: #1a8ec3; border-color: #1a8ec3; }
 
 @media (max-width: 480px) {
   .ge-share-btns { flex-direction: column; }

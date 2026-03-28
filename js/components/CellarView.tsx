@@ -16,7 +16,6 @@ interface CellarViewProps {
   themeMode: 'light' | 'dark';
 }
 
-const SHARE_LIMIT = 150;
 const TYPE_ORDER = ['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'];
 
 function formatCellarText(wines: Wine[]): string {
@@ -118,8 +117,10 @@ export function CellarView({
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
   }, [shareText]);
 
-  const handleTelegram = useCallback(() => {
-    window.open(`https://t.me/share/url?text=${encodeURIComponent(shareText)}`, '_blank');
+  const canNativeShare = typeof navigator.share === 'function';
+
+  const handleNativeShare = useCallback(() => {
+    navigator.share({ text: shareText }).catch(() => {/* user cancelled or error */});
   }, [shareText]);
 
   return (
@@ -211,9 +212,9 @@ export function CellarView({
               <div className="ge-modal-ttl" style={{ marginBottom: 0 }}>Share Cellar</div>
               <button className="ge-btn btn-o" onClick={() => setShareOpen(false)} style={{ padding: '4px 10px', fontSize: 'var(--fs-sm)' }}>✕</button>
             </div>
-            {filteredWines.length > SHARE_LIMIT && (
+            {!canNativeShare && (
               <div className="ge-share-warn">
-                ⚠ Large list ({filteredWines.length} wines) — WhatsApp/Telegram links may be truncated on some devices. Use <strong>Copy</strong> for a reliable transfer.
+                Native sharing not available in this browser — use <strong>Copy</strong> to paste into any app.
               </div>
             )}
             <textarea
@@ -227,7 +228,9 @@ export function CellarView({
                 {copied ? '✓ Copied!' : 'Copy'}
               </button>
               <button className="ge-btn btn-wa" onClick={handleWhatsApp}>WhatsApp</button>
-              <button className="ge-btn btn-tg" onClick={handleTelegram}>Telegram</button>
+              {canNativeShare && (
+                <button className="ge-btn btn-o" onClick={handleNativeShare}>Share...</button>
+              )}
             </div>
           </div>
         </div>
