@@ -140,7 +140,7 @@ export function CellarView({
           </select>
           <button
             className="ge-btn btn-o"
-            onClick={() => setShareOpen(true)}
+            onClick={canNativeShare ? handleNativeShare : () => setShareOpen(true)}
             disabled={filteredWines.length === 0}
             style={{ padding: '5px 14px', fontSize: 'var(--fs-sm)' }}
           >
@@ -228,9 +228,6 @@ export function CellarView({
                 {copied ? '✓ Copied!' : 'Copy'}
               </button>
               <button className="ge-btn btn-wa" onClick={handleWhatsApp}>WhatsApp</button>
-              {canNativeShare && (
-                <button className="ge-btn btn-o" onClick={handleNativeShare}>Share...</button>
-              )}
             </div>
           </div>
         </div>
