@@ -108,22 +108,24 @@ export function GuestPage({ onSignIn }: GuestPageProps) {
           </button>
         </form>
 
-        <div className="ge-guest-chips">
-          {QUICK_DISHES.map(d => (
-            <button
-              key={d}
-              className="ge-btn btn-o ge-guest-chip"
-              onClick={() => { setDish(d); handleSubmit(d); }}
-              disabled={loading}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
+        {!loading && (
+          <div className="ge-guest-chips">
+            {QUICK_DISHES.map(d => (
+              <button
+                key={d}
+                className="ge-btn btn-o ge-guest-chip"
+                onClick={() => { setDish(d); handleSubmit(d); }}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {loading && (
         <div className="ge-guest-loading">
+          <div className="ge-guest-spinner" />
           <div className={`ge-guest-loading-msg${loadVisible ? ' visible' : ''}`}>
             {loadMsg}
           </div>
