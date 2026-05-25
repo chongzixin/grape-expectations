@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Wine, Stats, ClaudeParams, ImageData, RecommendedWine, DrinkingStatus } from './types';
+import type { Wine, Stats, ClaudeParams, ImageData, RecommendedWine, DrinkingStatus, NewWineForm } from './types';
 import { CURRENT_YEAR, DRINKING_STATUS_PRIORITY, BADGE_STYLES } from './constants';
 import { getRandomMessage } from './loadingMessages';
 
@@ -144,3 +144,46 @@ export function useWittyLoader(active: boolean) {
 
 // Re-export BADGE_STYLES and DRINKING_STATUS_PRIORITY for components that need them
 export { BADGE_STYLES, DRINKING_STATUS_PRIORITY };
+
+export function normalizeWineName(s: string): string {
+  if (!s) return '';
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function levenshteinDistance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 0; i < a.length; i++) {
+    const curr: number[] = [i + 1];
+    for (let j = 0; j < b.length; j++) {
+      const cost = a[i] === b[j] ? 0 : 1;
+      curr[j + 1] = Math.min(curr[j] + 1, prev[j + 1] + 1, prev[j] + cost);
+    }
+    prev = curr;
+  }
+  return prev[b.length];
+}
+
+export function winesAreDuplicates(existing: Wine, form: NewWineForm): boolean {
+  const normV1 = normalizeWineName(existing.vintage);
+  const normV2 = normalizeWineName(form.vintage);
+  if (normV1 !== normV2) return false;
+
+  const normN1 = normalizeWineName(existing.name);
+  const normN2 = normalizeWineName(form.name);
+  if (!normN1 || !normN2) return false;
+  const nameMatch = normN1 === normN2 || levenshteinDistance(normN1, normN2) <= 2;
+  if (!nameMatch) return false;
+
+  const normW1 = normalizeWineName(existing.winery);
+  const normW2 = normalizeWineName(form.winery);
+  const wineryMatch = normW1 === normW2
+    || levenshteinDistance(normW1, normW2) <= 2
+    || (normW1 === '' && normW2 === '');
+  return wineryMatch;
+}

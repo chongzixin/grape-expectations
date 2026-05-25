@@ -8,7 +8,7 @@ import AuthPage from './AuthPage';
 import champagneGif from '../images/champagne-loading.gif';
 
 import { SOMMELIER_SYSTEM, DRINKING_STATUS_PRIORITY, DRINKING_STATUS_DESCRIPTIONS } from './constants';
-import { getDrinkingStatus, computeStats, mapDbWine, callClaude, compressImage, parseRecommendedWines, useWittyLoader } from './utils';
+import { getDrinkingStatus, computeStats, mapDbWine, callClaude, compressImage, parseRecommendedWines, useWittyLoader, winesAreDuplicates } from './utils';
 
 import { Header } from './components/Header';
 import { StatsBar } from './components/StatsBar';
@@ -16,6 +16,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { CellarView } from './components/CellarView';
 import { ChatDrawer } from './components/ChatDrawer';
 import { AddWineModal } from './components/AddWineModal';
+import { DuplicateWineModal } from './components/DuplicateWineModal';
 
 /* ═══════════════════════════════════════════════════════════════════
    MAIN APP
@@ -81,6 +82,9 @@ export default function GrapeExpectations() {
   const [windowLoading, setWindowLoading] = useState(false);
   const [scanNotes, setScanNotes] = useState<{ wine: string; winery: string; tasting: string } | null>(null);
   const [wantSommelierNotes, setWantSommelierNotes] = useState(false);
+  const [duplicatePending, setDuplicatePending] = useState<{
+    form: NewWineForm; source: string; match: Wine;
+  } | null>(null);
 
   const chatEndRef      = useRef<HTMLDivElement>(null);
   const chatInputRef    = useRef<HTMLInputElement>(null);
@@ -195,6 +199,25 @@ export default function GrapeExpectations() {
     }).select().single();
     if (error || !data) { console.error('Failed to add wine:', error); return null; }
     return mapDbWine(data as Record<string, unknown>);
+  };
+
+  /* ─── Merge Duplicate Wine ───────────────────────────────────── */
+  const mergeWithExisting = async (match: Wine, form: NewWineForm): Promise<void> => {
+    const addQty   = parseInt(form.inventory) || 1;
+    const addPrice = form.price ? parseFloat(form.price) : null;
+    const newInventory = match.inventory + addQty;
+
+    let newPrice: number | null;
+    if (match.price != null && addPrice != null) {
+      newPrice = Math.round(((match.price * match.inventory + addPrice * addQty) / newInventory) * 100) / 100;
+    } else {
+      newPrice = match.price ?? addPrice;
+    }
+
+    setWines(prev => prev.map(w => w.id === match.id ? { ...w, inventory: newInventory, price: newPrice } : w));
+    await supabase.from('wines')
+      .update({ inventory: newInventory, price: newPrice, updated_at: new Date().toISOString() })
+      .eq('id', match.id);
   };
 
   /* ─── Batch Drinking Window Estimation ───────────────────────── */
@@ -434,6 +457,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     setLocalPairings([]);
     setPairingsLoading(false);
     setScanNotes(null);
+    setDuplicatePending(null);
   };
 
   const enrichWine = async (wine: Partial<Wine>, index: number) => {
@@ -561,6 +585,8 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
 
   const confirmCurrentWine = async () => {
     if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
+    const match = wines.find(w => winesAreDuplicates(w, newWine));
+    if (match) { setDuplicatePending({ form: newWine, source: 'photo_scan', match }); return; }
     const wine = await addWineToDb(newWine, 'photo_scan');
     if (wine) {
       setWines(prev => [...prev, wine]);
@@ -571,6 +597,8 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   /* ─── Add Wine (manual entry form) ──────────────────────────── */
   const addWine = async () => {
     if (!newWine.name.trim()) { alert('Please enter the wine name.'); return; }
+    const match = wines.find(w => winesAreDuplicates(w, newWine));
+    if (match) { setDuplicatePending({ form: newWine, source: 'manual', match }); return; }
     const wine = await addWineToDb(newWine, 'manual');
     if (wine) {
       setWines(prev => [...prev, wine]);
@@ -582,6 +610,40 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       }
     }
   };
+
+  /* ─── Duplicate Resolution Handlers ─────────────────────────── */
+  const resumeAfterAdd = (source: string) => {
+    if (source === 'photo_scan') {
+      advancePreview(previewIndex + 1);
+    } else if (scannedWines.length > 0 && previewIndex < scannedWines.length - 1) {
+      setAddTab('photo');
+      advancePreview(previewIndex + 1);
+    } else {
+      closeModal();
+    }
+  };
+
+  const handleDuplicateMerge = async () => {
+    if (!duplicatePending) return;
+    const { form, source, match } = duplicatePending;
+    setDuplicatePending(null);
+    await mergeWithExisting(match, form);
+    toast.success('Cellar updated — inventory and price merged.');
+    resumeAfterAdd(source);
+  };
+
+  const handleDuplicateAddAsNew = async () => {
+    if (!duplicatePending) return;
+    const { form, source } = duplicatePending;
+    setDuplicatePending(null);
+    const wine = await addWineToDb(form, source);
+    if (wine) {
+      setWines(prev => [...prev, wine]);
+      resumeAfterAdd(source);
+    }
+  };
+
+  const handleDuplicateCancel = () => setDuplicatePending(null);
 
   /* ─── Auth guards ────────────────────────────────────────────── */
   if (!sessionReady) return (
@@ -705,6 +767,15 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
         fileInputRef={fileInputRef}
         galleryInputRef={galleryInputRef}
       />
+      {duplicatePending && (
+        <DuplicateWineModal
+          match={duplicatePending.match}
+          form={duplicatePending.form}
+          onMerge={handleDuplicateMerge}
+          onAddAsNew={handleDuplicateAddAsNew}
+          onCancel={handleDuplicateCancel}
+        />
+      )}
     </div>
   );
 }
