@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
 
-export default function AuthPage() {
+interface AuthPageProps {
+  onGuestMode?: () => void;
+}
+
+export default function AuthPage({ onGuestMode }: AuthPageProps) {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -159,6 +163,24 @@ export default function AuthPage() {
           </div>
         )}
       </div>
+
+      {onGuestMode && (
+        <button
+          onClick={onGuestMode}
+          style={{
+            marginTop: 20,
+            background: 'none',
+            border: 'none',
+            color: 'var(--muted)',
+            fontSize: 'var(--fs-sm)',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            letterSpacing: '0.3px',
+          }}
+        >
+          Try a recommendation without signing up →
+        </button>
+      )}
     </div>
   );
 }

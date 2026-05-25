@@ -17,6 +17,7 @@ import { CellarView } from './components/CellarView';
 import { ChatDrawer } from './components/ChatDrawer';
 import { AddWineModal } from './components/AddWineModal';
 import { DuplicateWineModal } from './components/DuplicateWineModal';
+import { GuestPage } from './components/GuestPage';
 
 /* ═══════════════════════════════════════════════════════════════════
    MAIN APP
@@ -26,6 +27,7 @@ export default function GrapeExpectations() {
   const [session, setSession]           = useState<Session | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [profile, setProfile]           = useState<UserProfile | null>(null);
+  const [guestMode, setGuestMode]       = useState(false);
 
   /* ─── Cellar ─────────────────────────────────────────────────── */
   const [wines, setWines]   = useState<Wine[]>([]);
@@ -653,7 +655,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     </div>
   );
 
-  if (!session) return <AuthPage />;
+  if (!session) {
+    if (guestMode) return <GuestPage onSignIn={() => setGuestMode(false)} />;
+    return <AuthPage onGuestMode={() => setGuestMode(true)} />;
+  }
 
   if (loading) return (
     <div className="loading-screen">
