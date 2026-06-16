@@ -43,9 +43,9 @@
   --dim:      #B8A478;
 }
 
-[data-theme="light"] .ge-bottle {
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.35));
-}
+.ge-bottle-light { display: none; }
+[data-theme="light"] .ge-bottle-dark { display: none; }
+[data-theme="light"] .ge-bottle-light { display: block; }
 
 /* ─── Base ───────────────────────────────────────────────────────── */
 *, *::before, *::after {
