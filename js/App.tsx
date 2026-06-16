@@ -650,7 +650,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   /* ─── Auth guards ────────────────────────────────────────────── */
   if (!sessionReady) return (
     <div className="loading-screen">
-      <div className="loading-title">🍷 Grape Expectations</div>
+      <div className="loading-title">Grape Expectations</div>
       <img src={champagneGif} alt="Loading..." className="loading-gif" />
     </div>
   );
@@ -662,7 +662,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
 
   if (loading) return (
     <div className="loading-screen">
-      <div className="loading-title">🍷 Grape Expectations</div>
+      <div className="loading-title">Grape Expectations</div>
       <img src={champagneGif} alt="Loading..." className="loading-gif" />
       <div className="loading-text">Decanting your cellar...</div>
     </div>
