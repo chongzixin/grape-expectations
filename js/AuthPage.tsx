@@ -41,7 +41,7 @@ export default function AuthPage({ onGuestMode }: AuthPageProps) {
     <div className="auth-page">
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <img src="/favicon.png" alt="" style={{ width: 48, height: 48, display: 'block', margin: '0 auto 12px' }} />
+        <img src="/favicon.png" alt="" className="ge-bottle" style={{ width: 140, height: 140, display: 'block', margin: '0 auto 16px' }} />
         <h1 style={{ color: 'var(--gold)', fontSize: 'var(--fs-2xl)', fontWeight: 700, margin: 0 }}>
           Grape Expectations
         </h1>

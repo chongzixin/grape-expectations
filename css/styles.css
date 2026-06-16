@@ -43,6 +43,10 @@
   --dim:      #B8A478;
 }
 
+[data-theme="light"] .ge-bottle {
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.35));
+}
+
 /* ─── Base ───────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
