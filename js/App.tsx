@@ -650,7 +650,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   /* ─── Auth guards ────────────────────────────────────────────── */
   if (!sessionReady) return (
     <div className="loading-screen">
-      <div className="loading-title">🍷 Grape Expectations</div>
+      <div className="loading-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/favicon.png" alt="" style={{ width: 28, height: 28 }} />
+        Grape Expectations
+      </div>
       <img src={champagneGif} alt="Loading..." className="loading-gif" />
     </div>
   );
@@ -662,7 +665,10 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
 
   if (loading) return (
     <div className="loading-screen">
-      <div className="loading-title">🍷 Grape Expectations</div>
+      <div className="loading-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/favicon.png" alt="" style={{ width: 28, height: 28 }} />
+        Grape Expectations
+      </div>
       <img src={champagneGif} alt="Loading..." className="loading-gif" />
       <div className="loading-text">Decanting your cellar...</div>
     </div>

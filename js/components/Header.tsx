@@ -55,7 +55,7 @@ export function Header({
           </svg>
         </button>
         <div className="ge-logo">
-          <span>🍷</span>
+          <img src="/favicon.png" alt="" style={{ width: 28, height: 28 }} />
           <div>
             Grape Expectations
             <small>Your Singaporean Sommelier</small>
