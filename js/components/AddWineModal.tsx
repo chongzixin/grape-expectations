@@ -17,6 +17,8 @@ interface AddWineModalProps {
   setPreviewIndex: (i: number) => void;
   newWine: NewWineForm;
   setNewWine: React.Dispatch<React.SetStateAction<NewWineForm>>;
+  handleVintageChange: (value: string) => void;
+  modalScrollRef: React.RefObject<HTMLDivElement>;
   localPairings: string[];
   setLocalPairings: (p: string[]) => void;
   pairingsLoading: boolean;
@@ -39,7 +41,8 @@ const WINE_TYPES = ['Red', 'White', 'Sparkling', 'Rosé', 'Dessert', 'Fortified'
 export function AddWineModal({
   showAdd, addTab, setAddTab, photoPreview, setPhotoPreview,
   scanLoading, scanMsg, scanMsgVisible, scannedWines, setScannedWines,
-  previewIndex, setPreviewIndex, newWine, setNewWine, localPairings,
+  previewIndex, setPreviewIndex, newWine, setNewWine, handleVintageChange,
+  modalScrollRef, localPairings,
   setLocalPairings, pairingsLoading, windowLoading, scanNotes, setScanNotes,
   wantSommelierNotes, setWantSommelierNotes, handlePhoto, closeModal,
   advancePreview, confirmCurrentWine, addWine, fileInputRef, galleryInputRef,
@@ -51,7 +54,7 @@ export function AddWineModal({
 
   return (
     <div className="ge-modal-bg" onClick={e => e.target === e.currentTarget && closeModal()}>
-      <div className="ge-modal">
+      <div className="ge-modal" ref={modalScrollRef}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div className="ge-modal-ttl">✦ Add to Cellar</div>
           <button onClick={closeModal} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 22, lineHeight: 1 }}>×</button>
@@ -157,7 +160,7 @@ export function AddWineModal({
                         </div>
                         <div className="wpc-field">
                           <label className="fl">Vintage</label>
-                          <input className="fi" value={newWine.vintage} onChange={e => setNewWine(p => ({ ...p, vintage: e.target.value }))} placeholder="e.g. 2019 or NV" />
+                          <input className="fi" value={newWine.vintage} onChange={e => handleVintageChange(e.target.value)} placeholder="e.g. 2019 or NV" />
                         </div>
                         <div className="wpc-field">
                           <label className="fl">Type</label>
@@ -272,7 +275,7 @@ export function AddWineModal({
               </div>
               <div className="ff">
                 <label className="fl">Vintage</label>
-                <input className="fi" value={newWine.vintage} onChange={e => setNewWine(p => ({ ...p, vintage: e.target.value }))} placeholder="e.g. 2019 or NV" />
+                <input className="fi" value={newWine.vintage} onChange={e => handleVintageChange(e.target.value)} placeholder="e.g. 2019 or NV" />
               </div>
               <div className="ff">
                 <label className="fl">Price (S$)</label>
@@ -313,6 +316,11 @@ export function AddWineModal({
                 <input className="fi" type="number" min="1900" max="2100" placeholder="e.g. 2032" value={newWine.drinkBy} onChange={e => setNewWine(p => ({ ...p, drinkBy: e.target.value }))} />
               </div>
             </div>
+            {windowLoading && !newWine.drinkFrom && !newWine.drinkBy && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--muted)', fontSize: 'var(--fs-sm)', marginTop: 6 }}>
+                <div className="spin" /> Estimating drinking window…
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
               {scannedWines.length > 0
                 ? <button className="ge-btn btn-o" onClick={() => setAddTab('photo')}>← Back to Preview</button>
