@@ -76,6 +76,12 @@ export default function GrapeExpectations() {
     style: '', country: '', region: '', subRegion: '', type: 'Red',
     drinkFrom: '', drinkBy: '',
   });
+  const newWineRef = useRef(newWine);
+  useEffect(() => { newWineRef.current = newWine; }, [newWine]);
+  const vintageDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const windowReqRef = useRef(0);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => () => { if (vintageDebounceRef.current) clearTimeout(vintageDebounceRef.current); }, []);
   const [isEstimatingWindows, setIsEstimatingWindows] = useState(false);
   const [windowEstimationProgress, setWindowEstimationProgress] = useState<{ current: number; total: number } | null>(null);
 
@@ -450,6 +456,9 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
   };
 
   const closeModal = () => {
+    if (vintageDebounceRef.current) clearTimeout(vintageDebounceRef.current);
+    windowReqRef.current++;
+    setWindowLoading(false);
     setShowAdd(false);
     setNewWine({ name: '', winery: '', vintage: '', price: '', inventory: '1', style: '', country: '', region: '', subRegion: '', type: 'Red', drinkFrom: '', drinkBy: '' });
     setPhotoPreview(null);
@@ -491,19 +500,35 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
     }
   };
 
+  const estimateDrinkingWindow = async (
+    w: { name?: string; winery?: string; vintage?: string; type?: string; style?: string; region?: string; country?: string }
+  ): Promise<{ drinkFrom: number | null; drinkBy: number | null } | null> => {
+    const v = w?.vintage?.trim();
+    if (!w?.name || !v || v === 'NV' || v.toLowerCase() === 'null') return null;
+    try {
+      const raw = await callClaude({
+        system: SOMMELIER_SYSTEM,
+        messages: [{ role: 'user', content: `For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${w.name} | ${w.winery} | Vintage: ${w.vintage} | ${w.type} (${w.style}) | ${w.region}, ${w.country}` }],
+        maxTokens: 60,
+      });
+      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      return {
+        drinkFrom: parsed.drinkFrom != null ? parseInt(String(parsed.drinkFrom), 10) : null,
+        drinkBy:   parsed.drinkBy   != null ? parseInt(String(parsed.drinkBy),   10) : null,
+      };
+    } catch {
+      return null;
+    }
+  };
+
   const fetchDrinkingWindow = async (wine: Partial<Wine>, index: number) => {
     const v = wine?.vintage?.trim();
     if (!wine?.name || !v || v === 'NV' || v.toLowerCase() === 'null') return;
     if (index === previewIndexRef.current) setWindowLoading(true);
     try {
-      const raw = await callClaude({
-        system: SOMMELIER_SYSTEM,
-        messages: [{ role: 'user', content: `For the wine below, return ONLY a JSON object with "drinkFrom" (integer year) and "drinkBy" (integer year), or null for each if unknown. No markdown, no explanation.\n\nWine: ${wine.name} | ${wine.winery} | Vintage: ${wine.vintage} | ${wine.type} (${wine.style}) | ${wine.region}, ${wine.country}` }],
-        maxTokens: 60,
-      });
-      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      const drinkFrom = parsed.drinkFrom != null ? parseInt(String(parsed.drinkFrom), 10) : null;
-      const drinkBy   = parsed.drinkBy   != null ? parseInt(String(parsed.drinkBy),   10) : null;
+      const res = await estimateDrinkingWindow(wine);
+      if (!res) throw new Error('No drinking window');
+      const { drinkFrom, drinkBy } = res;
       setScannedWines(prev => {
         const updated = [...prev];
         updated[index] = { ...updated[index], drinkFrom, drinkBy, _windowFetched: true } as Partial<Wine> & { _windowFetched: boolean };
@@ -521,6 +546,33 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
         toast.error('Could not estimate drinking window — please enter dates manually.');
       }
     }
+  };
+
+  const handleVintageChange = (value: string) => {
+    setNewWine(p => ({ ...p, vintage: value, drinkFrom: '', drinkBy: '' })); // clear stale window
+    if (vintageDebounceRef.current) clearTimeout(vintageDebounceRef.current);
+    const v = value.trim();
+    // only estimate for a plausible 4-digit year; skip empty / NV / partial input
+    if (!/^\d{4}$/.test(v)) { setWindowLoading(false); return; }
+    setWindowLoading(true);
+    const reqId = ++windowReqRef.current;
+    vintageDebounceRef.current = setTimeout(async () => {
+      const f = newWineRef.current;
+      if (!f.name.trim()) { setWindowLoading(false); return; }
+      const res = await estimateDrinkingWindow({
+        name: f.name, winery: f.winery, vintage: f.vintage,
+        type: f.type, style: f.style, region: f.region, country: f.country,
+      });
+      if (reqId !== windowReqRef.current) return; // superseded by a newer change
+      setWindowLoading(false);
+      if (res && (res.drinkFrom != null || res.drinkBy != null)) {
+        setNewWine(p => ({
+          ...p,
+          drinkFrom: res.drinkFrom != null ? String(res.drinkFrom) : '',
+          drinkBy:   res.drinkBy   != null ? String(res.drinkBy)   : '',
+        }));
+      }
+    }, 700);
   };
 
   const handlePhoto = async (file: File) => {
@@ -565,6 +617,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       setPreviewIndex(nextIdx);
       previewIndexRef.current = nextIdx;
       setWindowLoading(false);
+      modalScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       populateFormFromWine(scannedWines[nextIdx]);
       const wn = scannedWines[nextIdx] as Partial<Wine> & { _enriched?: boolean; localPairings?: string[]; wineSummary?: string; winerySummary?: string; tastingNotes?: string; _windowFetched?: boolean };
       if (wn?._enriched) {
@@ -756,6 +809,8 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
         setPreviewIndex={setPreviewIndex}
         newWine={newWine}
         setNewWine={setNewWine}
+        handleVintageChange={handleVintageChange}
+        modalScrollRef={modalScrollRef}
         localPairings={localPairings}
         setLocalPairings={setLocalPairings}
         pairingsLoading={pairingsLoading}
