@@ -138,6 +138,28 @@ ANTHROPIC_API_KEY=...         # Anthropic API key (used server-side only)
 
 ---
 
+## Spec-Driven Development (SpecKit)
+
+This repo uses [GitHub Spec Kit](https://github.com/github/spec-kit) for Spec-Driven Development on non-trivial features. It's installed for the Claude Code integration only (`.claude/skills/speckit-*`), with bash scripts (`.specify/scripts/bash/`).
+
+- **`.specify/memory/constitution.md`** — the project's non-negotiable principles (derived from this file). Every spec/plan is checked against it.
+- **`.specify/templates/`** — templates for specs, plans, tasks, and checklists.
+- Feature work happens on a numbered branch (e.g. `001-add-tasting-notes`) with its own `specs/<NNN-feature>/` directory holding `spec.md`, `plan.md`, `tasks.md`.
+
+Workflow, in order:
+1. `/speckit-specify` — describe the feature; generates `spec.md` (the *what* and *why*, no implementation detail).
+2. `/speckit-clarify` *(optional but recommended)* — resolves ambiguous areas in the spec before planning.
+3. `/speckit-plan` — generates `plan.md` (the *how*: architecture, data model, contracts), checked against the constitution.
+4. `/speckit-tasks` — breaks the plan into an ordered, dependency-aware `tasks.md`.
+5. `/speckit-analyze` *(optional)* — cross-checks spec/plan/tasks for consistency before implementing.
+6. `/speckit-implement` — executes the tasks.
+
+Use `/speckit-constitution` to amend the constitution itself (never hand-edit `.specify/memory/constitution.md` directly — it must go through that command so the version/Sync Impact Report stay correct).
+
+For small, obvious changes (a copy tweak, a one-line bug fix), skip the ceremony and just make the change — SpecKit is for features substantial enough to need a spec.
+
+---
+
 ## Deployment & CI/CD
 
 - **Production**: Netlify, auto-deploys on push to `main`.
