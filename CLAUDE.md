@@ -88,13 +88,27 @@ _TODO: fill in — e.g. positioning, key differentiators, what competitors do th
 ```
 grape-expectations/
 ├── js/                        # React/TypeScript source
-│   ├── App.tsx                # Main component — all feature logic (~2000 lines)
+│   ├── App.tsx                # Top-level state + handlers (~840 lines); composes the components below
 │   ├── AuthPage.tsx           # Google OAuth + Magic Link auth UI
 │   ├── types.ts               # TypeScript interfaces (Wine, ChatMessage, Stats…)
+│   ├── constants.ts           # Shared lookup tables (TYPE_STYLE, BADGE_STYLES, SOMMELIER_SYSTEM…)
+│   ├── utils.ts                # Pure helpers (getDrinkingStatus, computeStats, mapDbWine, callClaude…)
 │   ├── supabaseClient.ts      # Supabase singleton (initialized once, imported everywhere)
 │   ├── localCuisine.ts        # Singapore cuisine ↔ wine pairing knowledge base
 │   ├── loadingMessages.ts     # Witty loading messages shown during AI calls
-│   └── main.tsx               # React entry point
+│   ├── main.tsx               # React entry point
+│   └── components/            # Feature-scoped presentational components
+│       ├── Header.tsx           # Desktop header + mobile hamburger menu
+│       ├── StatsBar.tsx          # Always-visible cellar summary stats
+│       ├── CellarView.tsx        # Filter/search/sort table + share
+│       ├── AnalyticsView.tsx      # Breakdown charts + AI cellar health summary
+│       ├── AddWineModal.tsx       # Photo-scan + manual-entry add flow
+│       ├── DuplicateWineModal.tsx  # Merge/add-as-new/cancel prompt
+│       ├── ChatDrawer.tsx          # Sommelier chat UI
+│       ├── GuestPage.tsx           # Unauthenticated single-dish pairing
+│       ├── DrinkingWindowBadge.tsx  # Status badge
+│       ├── DonutChart.tsx           # Reusable inline-SVG donut chart
+│       └── RichText.tsx              # Small markdown-ish inline renderer
 ├── css/
 │   └── styles.css             # All styles; CSS variables; ge-* class prefix
 ├── netlify/
@@ -172,7 +186,7 @@ For small, obvious changes (a copy tweak, a one-line bug fix), skip the ceremony
 ## Architecture & Conventions
 
 ### Component Structure
-`js/App.tsx` is intentionally monolithic. All state, all feature logic, all UI live here. **The first priority task is to refactor this into smaller components** (see [Current Priorities](#current-priorities) below).
+Feature-scoped UI lives in `js/components/*.tsx` (see [Project Structure](#project-structure) above) as presentational components that receive state and callbacks as props. Top-level state and the handlers that mutate it (Supabase calls, `callClaude()` calls, duplicate detection, etc.) stay in `js/App.tsx`, which composes the components together. When adding a new feature, prefer this same split — a new component under `js/components/` driven by state/handlers in `App.tsx` — over growing an existing component or adding a second state-management pattern.
 
 ### State Management
 Plain React hooks only — no Redux, no Context API, no Zustand.
@@ -245,7 +259,7 @@ Every recommendation response includes a hidden comment block appended after the
 [{"name":"Wine Name","winery":"Winery","in_cellar":true,"cellar_wine_id":"uuid-or-null"},...]
 -->
 ```
-This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine metadata for the feedback system, then stripped from displayed text by `stripWinesJson()`. The Verdict section is split into individual bullet lines so 👍/👎 buttons render inline per wine. Do not remove or reformat this block in the system prompt.
+This is parsed by `parseRecommendedWines()` (`js/utils.ts`, called from `App.tsx`) to extract per-wine metadata for the feedback system, then stripped from displayed text by `stripWinesJson()`. The Verdict section is split into individual bullet lines in `ChatDrawer.tsx` so 👍/👎 buttons render inline per wine. Do not remove or reformat this block in the system prompt.
 
 
 ---
@@ -256,7 +270,7 @@ This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine met
 - **Theming**: CSS variables on `:root` (dark) and `[data-theme="light"]` (light). Dark is the default.
 - **Auto-switching**: Theme toggles automatically by time of day — dark 7:30pm–6:30am, light otherwise.
 - **Class naming**: `ge-` prefix for all app-specific classes. Modifiers: `btn-o` (outline), `btn-g` (gold/green), `on` (active tab), `show-m` / `hide-m` (mobile visibility).
-- **Wine type colors**: Each wine type (Red, White, Sparkling, Rosé, Dessert, Fortified) has a distinct accent color in both themes, defined in `TYPE_STYLE` in `App.tsx`.
+- **Wine type colors**: Each wine type (Red, White, Sparkling, Rosé, Dessert, Fortified) has a distinct accent color in both themes, defined in `TYPE_STYLE` / `TYPE_STYLE_LIGHT` in `js/constants.ts`.
 
 ---
 
@@ -265,11 +279,11 @@ This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine met
 - **`npm run dev` alone breaks AI features.** Always use `npm start` for local development.
 - **No test suite.** Validate changes manually; use PR branch deploys on Netlify to smoke-test before merging.
 - **RLS is enforced at the DB level.** Don't bypass it client-side — queries automatically filter by the authenticated user.
-- **App.tsx is very large.** Until the refactor happens, add new UI/logic there and follow existing patterns. Don't split prematurely without a plan.
+- **App.tsx holds all top-level state and handlers.** Feature UI itself is already split into `js/components/*.tsx`; new features should follow the same pattern (a new component driven by state/handlers added to `App.tsx`) rather than growing an existing component or introducing a second state-management approach.
 - **`recommendation_messages.id` is generated client-side** via `crypto.randomUUID()` before the Supabase insert, and passed explicitly as the `id` field. This ensures `msg.messageId` is always set so per-wine feedback thumbs always render, even if the DB insert fails. Do not change this back to reading the ID from the insert response.
 
 ---
 
 ## Current Priorities
 
-1. **Refactor `js/App.tsx` into smaller components.** The file is ~2000 lines. Break it into feature-scoped components (e.g., `CellarView`, `AnalyticsView`, `SommelierChat`, `WineCard`, `AddWineModal`) while keeping the top-level state in `App.tsx` or moving to a lightweight context if needed.
+The `App.tsx` component-extraction refactor is complete — `CellarView`, `AnalyticsView`, `ChatDrawer`, `AddWineModal`, `DuplicateWineModal`, `GuestPage`, `Header`, `StatsBar`, `DrinkingWindowBadge`, `DonutChart`, and `RichText` are all extracted into `js/components/`, with `App.tsx` down to ~840 lines of top-level state and handlers. No other priorities are currently tracked here — see the TODO sections above (Product Goals, Feature Roadmap, etc.) for what's still unfilled.
