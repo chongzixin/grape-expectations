@@ -17,7 +17,11 @@ Signed-in users SHALL be able to choose which three vintage years the stats head
 
 #### Scenario: Invalid year input is rejected
 - **WHEN** a user enters a value that isn't a plausible 4-digit vintage year (or leaves it blank)
-- **THEN** the edit is rejected and the card keeps its previous year, with no partial or invalid state saved
+- **THEN** the edit is rejected, the card shows a visible error state and keeps its previous year, with no partial or invalid state saved
+
+#### Scenario: Duplicate year is rejected
+- **WHEN** a user enters a year that matches the current year already shown on one of the other two cards
+- **THEN** the edit is rejected, the card shows a visible error state and keeps its previous year, so the three cards never track the same year twice
 
 #### Scenario: Feature is only available to signed-in users
 - **WHEN** an unauthenticated visitor uses guest mode

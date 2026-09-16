@@ -33,13 +33,12 @@ If `profile.tracked_vintage_years` is null (e.g. a profile row created before th
 
 ### Decision 4: Edit interaction and persistence
 Each card gets a small edit affordance. Clicking it swaps the label for a bounded numeric input (4-digit year). On confirm (blur or Enter):
-1. Validate the value is a plausible 4-digit year; if not, discard the edit and keep the previous year (no error dialog — silently revert, consistent with how `estimateDrinkingWindow` in the app already just ignores implausible year input in the add-wine flow).
-2. Update local state optimistically (card re-renders with the new year and recomputed count immediately, since `computeStats` re-runs from already-loaded wines).
+1. Validate the value is a plausible 4-digit year AND does not match either of the other two cards' current years. If either check fails, show a visible inline error state on the card (e.g. red border plus a brief message) and keep the previous year — do not save. The error clears when the user next edits the field.
+2. If valid, update local state optimistically (card re-renders with the new year and recomputed count immediately, since `computeStats` re-runs from already-loaded wines).
 3. Persist the full 3-year array to `profiles.tracked_vintage_years` via a single Supabase `update`, following the existing optimistic-update-then-persist pattern used for wine inventory changes.
 
 ## Risks / Trade-offs
 
-- **[Risk]** A user could set all three cards to the same year, making two cards redundant. → **Mitigation**: none enforced; this is a low-stakes personal display preference, not worth the added validation complexity for a first version.
 - **[Risk]** Existing profile rows won't have `tracked_vintage_years` populated until the migration's `DEFAULT` applies (new rows only, not retroactively, unless the migration backfills existing rows). → **Mitigation**: migration explicitly backfills existing NULL rows to `{2016,2018,2023}` in addition to setting the column default, so behavior is identical to today until a user actively changes it.
 
 ## Migration Plan

@@ -13,7 +13,7 @@
 - [ ] 3.1 Update `js/App.tsx`'s `computeStats` call site to pass the user's `tracked_vintage_years` (falling back to `[2016, 2018, 2023]` if the profile value is missing).
 - [ ] 3.2 Update `js/components/StatsBar.tsx` so the three vintage cards render from `trackedYears`/`trackedYearCounts` (zipped by index) instead of the three hardcoded `StatCard` calls.
 - [ ] 3.3 Add an edit affordance to each of the three vintage cards; clicking it swaps the label for a numeric year input.
-- [ ] 3.4 On confirming an edit (blur or Enter): validate the value is a plausible 4-digit year — if not, discard the edit and keep the previous year; otherwise update local state immediately so the card's label and count reflect the new year right away — verify: entering a non-numeric or non-4-digit value leaves the card unchanged.
+- [ ] 3.4 On confirming an edit (blur or Enter): validate the value is a plausible 4-digit year and does not match either of the other two cards' current years — if either check fails, show a visible inline error state (e.g. red border plus a brief message) and keep the previous year, clearing the error on the next edit; otherwise update local state immediately so the card's label and count reflect the new year right away — verify: entering a non-numeric/non-4-digit value, or a year already used by another card, leaves the card unchanged and shows the error state.
 - [ ] 3.5 Persist the full updated 3-year array to `profiles.tracked_vintage_years` via Supabase after a valid edit, following the existing optimistic-update-then-persist pattern — verify: reloading the app (or signing in on another session) shows the previously edited years, not the defaults.
 
 ## 4. Integration verification
