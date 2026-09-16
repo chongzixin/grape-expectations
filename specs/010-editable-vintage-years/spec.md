@@ -8,6 +8,12 @@
 
 **Input**: User description: "create a new feature to allow the user to change the meaningful years they want to track on the header bar. It is currently 2016, 2018, 2023 on the current version because these are meaningful years for me. Allow the user to change the year directly by clicking on an edit button on the card itself, thereafter the number below should change accordingly to count the number of bottles in that year"
 
+## Clarifications
+
+### Session 2026-09-16
+
+- Q: When the user confirms a new year on a card, should the count update right away, or only after the save to the server succeeds? → A: Optimistic — card shows the new year/count immediately on confirm; if the save fails, it reverts and an error toast appears (matches the existing inventory +/− and add-wine behavior).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Change which vintage a stat card tracks (Priority: P1)
@@ -61,7 +67,7 @@ A collector opens edit mode on a card, changes their mind, and backs out without
 
 - What happens when the user types a non-numeric value, a partial year, or a year outside a plausible range (e.g. "abc", "202", "1500", "3000")? The system MUST reject it, keep the card's previous value, and show a brief inline validation message rather than saving garbage or crashing.
 - What happens if two cards are set to the same year? Both are allowed to show the same year and the same count independently — no uniqueness is enforced across the three cards.
-- What happens if the user is offline or the save request fails? The card's edit MUST NOT appear to succeed (revert to the last known-persisted year) and the user MUST see an indication the change didn't save, consistent with how other save failures in the app are surfaced (e.g. a toast).
+- What happens if the user is offline or the save request fails? The optimistic update is rolled back — the card reverts to its last known-persisted year and count — and the user sees an indication the change didn't save (see FR-007).
 - What happens to a custom year if the collector later removes every wine of that vintage from their cellar? The card keeps tracking that year and simply shows a count of 0 — the tracked year itself is a user preference, not derived from what's currently in the cellar.
 
 ## Requirements *(mandatory)*
@@ -70,12 +76,13 @@ A collector opens edit mode on a card, changes their mind, and backs out without
 
 - **FR-001**: The system MUST let a signed-in user edit the year tracked by each of the three vintage-count stat cards, triggered by an edit affordance on the card itself, with the year editable in place (no navigation away from the stats bar).
 - **FR-002**: A user who has not customized their tracked years MUST see the current default years (2016, 2018, 2023), matching today's behavior with zero setup required.
-- **FR-003**: Changing a card's tracked year MUST immediately update that card's displayed count to the number of bottles still in the user's cellar whose vintage exactly matches the newly-chosen year, using the same matching behavior as the existing 2016/2018/2023 counts.
+- **FR-003**: Confirming a new year MUST update that card's displayed year and count optimistically — immediately, before the save to the server is confirmed — to the number of bottles still in the user's cellar whose vintage exactly matches the newly-chosen year, using the same matching behavior as the existing 2016/2018/2023 counts.
 - **FR-004**: Each user's chosen tracked years MUST be persisted so they remain in effect across page reloads and across devices/sessions for that user — not reset per session.
 - **FR-005**: The system MUST validate an entered year against a plausible range (consistent with the range already used elsewhere in the app for vintage-adjacent year fields: 1900–2100) and MUST reject out-of-range or non-numeric input with a visible message, leaving the card's previous value in place.
 - **FR-006**: The system MUST let the user cancel an in-progress edit (explicit cancel or clicking away) without persisting any change.
-- **FR-007**: The system MUST NOT require the three tracked years to be distinct from each other.
-- **FR-008**: Each user's tracked years MUST be private to that user — isolated the same way the rest of their cellar and account data already is — so no user can view or change another user's tracked years.
+- **FR-007**: If the save triggered by FR-003 fails, the card MUST revert to its last successfully-saved year and count, and the system MUST show a visible error indication (consistent with how other save failures are surfaced in the app, e.g. a toast) rather than leaving the optimistic value showing as if it had saved.
+- **FR-008**: The system MUST NOT require the three tracked years to be distinct from each other.
+- **FR-009**: Each user's tracked years MUST be private to that user — isolated the same way the rest of their cellar and account data already is — so no user can view or change another user's tracked years.
 
 ### Key Entities
 
@@ -85,10 +92,11 @@ A collector opens edit mode on a card, changes their mind, and backs out without
 
 ### Measurable Outcomes
 
-- **SC-001**: A user can change a stat card's tracked year and see the correct, updated bottle count reflected in under 5 seconds, without leaving the stats view.
+- **SC-001**: A user sees a stat card's year and count update instantly (perceived as immediate, not waiting on a network round-trip) on confirming an edit, without leaving the stats view.
 - **SC-002**: 100% of a user's customized tracked years are still in effect the next time they open the app, on the same or a different device.
 - **SC-003**: 100% of invalid year entries are rejected with a visible message, and never leave a card showing a broken, partial, or non-numeric year.
-- **SC-004**: A brand-new user sees the existing default experience (2016/2018/2023) with no required setup, preserving today's zero-configuration behavior for anyone who never touches this feature.
+- **SC-004**: 100% of failed saves are visibly surfaced to the user and leave the card showing its last successfully-saved year and count, never the failed optimistic value.
+- **SC-005**: A brand-new user sees the existing default experience (2016/2018/2023) with no required setup, preserving today's zero-configuration behavior for anyone who never touches this feature.
 
 ## Assumptions
 
