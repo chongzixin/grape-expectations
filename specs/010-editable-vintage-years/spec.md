@@ -13,6 +13,7 @@
 ### Session 2026-09-16
 
 - Q: When the user confirms a new year on a card, should the count update right away, or only after the save to the server succeeds? → A: Optimistic — card shows the new year/count immediately on confirm; if the save fails, it reverts and an error toast appears (matches the existing inventory +/− and add-wine behavior).
+- Q: Should there be a way to reset a card back to its original default year (2016/2018/2023), or is manually retyping the old year the only way back? → A: No dedicated reset control — going back to a default (or any prior year) is just retyping it, same as any other edit.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -69,6 +70,7 @@ A collector opens edit mode on a card, changes their mind, and backs out without
 - What happens if two cards are set to the same year? Both are allowed to show the same year and the same count independently — no uniqueness is enforced across the three cards.
 - What happens if the user is offline or the save request fails? The optimistic update is rolled back — the card reverts to its last known-persisted year and count — and the user sees an indication the change didn't save (see FR-007).
 - What happens to a custom year if the collector later removes every wine of that vintage from their cellar? The card keeps tracking that year and simply shows a count of 0 — the tracked year itself is a user preference, not derived from what's currently in the cellar.
+- What happens if a user wants to return a card to one of the original default years (2016/2018/2023)? There is no dedicated "reset to default" control — they retype the desired year the same way as any other edit (FR-001).
 
 ## Requirements *(mandatory)*
 
@@ -102,6 +104,7 @@ A collector opens edit mode on a card, changes their mind, and backs out without
 
 - This is a per-user, backend-persisted preference (synced across the user's devices/sessions), consistent with how the app already persists other meaningful user data (cellar, chat, feedback) — not a browser-local-only preference like the theme toggle (`specs/009-app-shell-appearance/spec.md`), since a deliberately chosen "meaningful year" is the kind of personal customization a collector would expect to follow them, not reset per browser.
 - The stats bar keeps exactly three vintage-count cards; this feature changes which year each one tracks, not how many such cards exist or their position in the stats bar. Letting users add/remove cards entirely is out of scope for this spec.
+- There is no dedicated "reset to default" control. A user who wants a card back on 2016, 2018, or 2023 retypes it like any other edit — out of scope for this spec to add a separate reset affordance.
 - Editing happens inline on the card itself (an edit icon reveals an editable year field directly in place) rather than via a separate modal or settings page, matching the request's "directly... on the card itself" framing and the app's existing preference for lightweight in-place controls (e.g. the inventory +/− steppers) over modals for small edits.
 - The valid year range (1900–2100) reuses the bound already applied to the Drink From / Drink To fields elsewhere in the app, rather than introducing a new one.
 - Vintage matching for the count reuses the same exact-year-match behavior already used by the existing fixed 2016/2018/2023 counts — a wine with vintage "NV" or left blank never matches a specific tracked year.
