@@ -12,6 +12,18 @@ Target users: wine collectors in Singapore. The app launched in its current form
 
 ---
 
+## Spec-Driven Development (OpenSpec)
+
+This repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-driven development. Before building a new feature or changing existing behavior, propose it as a change so the requirements are agreed on before code is written.
+
+- **Current capability specs** (source of truth for existing behavior): `openspec/specs/cellar-inventory/`, `openspec/specs/sommelier-chat/`, `openspec/specs/cellar-analytics/`, `openspec/specs/auth/`.
+- **In-flight proposals**: `openspec/changes/<change-name>/` (proposal, spec deltas, design, tasks).
+- **Decision history**: `openspec/changes/archive/`.
+- **Workflow** (Claude Code slash commands, configured for this repo): `/opsx:explore` (optional, think through the problem) → `/opsx:propose "<what you want to build>"` (creates proposal + spec deltas + design + tasks) → review the generated artifacts → `/opsx:apply` (implements the tasks) → `/opsx:archive` (merges the spec deltas into `openspec/specs/` and files the change under `openspec/changes/archive/`).
+- Project-wide context handed to OpenSpec when it drafts artifacts lives in `openspec/config.yaml`.
+
+---
+
 ## Product Goals
 
 What problem does this solve, for whom, and what does success look like?
