@@ -1,9 +1,4 @@
-# cellar-analytics Specification
-
-## Purpose
-Surfaces computed statistics and visual breakdowns of the active cellar, plus an on-demand AI-generated narrative summary of the collection's health.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Cellar statistics computation
 The app SHALL compute aggregate statistics over the active wines in the cellar: total bottle count, number of unique wines, average price, most common country and style, and how many bottles should be drunk soon or are past their peak.

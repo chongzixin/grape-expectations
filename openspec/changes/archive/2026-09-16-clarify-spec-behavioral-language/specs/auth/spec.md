@@ -1,9 +1,4 @@
-# auth Specification
-
-## Purpose
-Authenticates users via Supabase Auth (Google OAuth or passwordless magic link), auto-provisions their profile, allows unauthenticated guest access to a limited feature, and enforces per-user data isolation at the database level.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Google OAuth sign-in
 Users SHALL be able to sign in with their Google account.

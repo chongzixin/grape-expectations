@@ -1,9 +1,8 @@
-# sommelier-chat Specification
+## RENAMED Requirements
+- FROM: `### Requirement: Hidden WINES_JSON metadata block`
+- TO: `### Requirement: Recommendation responses carry structured per-wine metadata`
 
-## Purpose
-Provides conversational, Singapore-cuisine-aware wine pairing recommendations, for both signed-in users (using their real cellar) and unauthenticated guests (generic suggestions only), plus a feedback mechanism on individual recommended wines.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Cellar-aware recommendation chat
 Signed-in users SHALL be able to ask a free-text question and receive a response recommending exactly 3 wines from their cellar and 2 wines not in their cellar, tailored to Singapore local cuisine.

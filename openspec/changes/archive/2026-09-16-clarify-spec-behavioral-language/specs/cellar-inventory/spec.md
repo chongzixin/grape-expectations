@@ -1,9 +1,4 @@
-# cellar-inventory Specification
-
-## Purpose
-Manages a signed-in user's wine cellar inventory: adding bottles by manual entry or photo/invoice OCR, merging duplicates, adjusting bottle counts, and tracking AI-estimated drinking windows per wine.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Manual wine entry
 Users SHALL be able to add a wine to their cellar by filling in a form with name, winery, vintage, price, bottle count, style, country, region, sub-region, and type.
