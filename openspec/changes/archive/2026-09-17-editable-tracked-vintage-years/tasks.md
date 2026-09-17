@@ -18,4 +18,4 @@
 
 ## 4. Integration verification
 
-- [ ] 4.1 Verify end-to-end with `npm start`: sign in, edit one of the three vintage cards to a year present in the cellar, confirm the count updates immediately and matches the actual bottle count for that vintage; reload the page and confirm the edited year and count persist.
+- [x] 4.1 Verify end-to-end with `npm start`: sign in, edit one of the three vintage cards to a year present in the cellar, confirm the count updates immediately and matches the actual bottle count for that vintage; reload the page and confirm the edited year and count persist.
