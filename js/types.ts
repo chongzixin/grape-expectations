@@ -37,13 +37,16 @@ export interface ChatMessage {
   recommendedWines?: RecommendedWine[];
 }
 
+export interface TrackedYearCount {
+  year: number;
+  count: number;
+}
+
 export interface Stats {
   totalBottles: number;
   uniqueWines: number;
   avgPrice: number | null;
-  count2016: number;
-  count2018: number;
-  count2023: number;
+  trackedYearCounts: TrackedYearCount[];
   modeCountry: string;
   modeStyle: string;
   drinkSoon: number;
@@ -81,6 +84,9 @@ export interface UserProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  tracked_vintage_year_1: number | null;
+  tracked_vintage_year_2: number | null;
+  tracked_vintage_year_3: number | null;
 }
 
 export interface RecommendationFeedback {

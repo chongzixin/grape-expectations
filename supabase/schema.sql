@@ -6,10 +6,13 @@
 -- ── Profiles ────────────────────────────────────────────────
 -- Auto-populated on signup via trigger below
 CREATE TABLE profiles (
-  id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  display_name TEXT,
-  avatar_url   TEXT,
-  created_at   TIMESTAMPTZ DEFAULT NOW()
+  id                     UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name           TEXT,
+  avatar_url             TEXT,
+  tracked_vintage_year_1 INTEGER, -- stat-card slot 1; NULL = app default (2016)
+  tracked_vintage_year_2 INTEGER, -- stat-card slot 2; NULL = app default (2018)
+  tracked_vintage_year_3 INTEGER, -- stat-card slot 3; NULL = app default (2023)
+  created_at             TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

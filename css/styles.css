@@ -237,6 +237,81 @@ html[data-theme="light"] body {
   text-transform: uppercase;
 }
 
+/* ─── Editable Vintage Year Stat Cards ──────────────────────────── */
+.ge-stat-year {
+  position: relative;
+}
+
+.ge-stat-year-edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  padding: 2px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.ge-stat-year:hover .ge-stat-year-edit {
+  color: var(--gold);
+}
+
+.ge-stat-editing {
+  cursor: default;
+}
+
+.ge-stat-year-input {
+  background: var(--card);
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--gold);
+  outline: none;
+  font-family: 'Lato', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ge-stat-year-err {
+  font-size: var(--fs-xs);
+  color: #f87171;
+  margin-top: 3px;
+}
+
+.ge-stat-year-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ge-stat-year-btn {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 0;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.ge-stat-year-btn.confirm:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.ge-stat-year-btn.cancel:hover {
+  border-color: #f87171;
+  color: #f87171;
+}
+
 /* ─── Tabs ───────────────────────────────────────────────────────── */
 .ge-tabs {
   display: flex;
