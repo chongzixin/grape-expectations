@@ -168,7 +168,12 @@ export default function GrapeExpectations() {
     wines.filter(w => w.inventory > 0),
     [wines]
   );
-  const stats: Stats = useMemo(() => computeStats(activeWines), [activeWines]);
+  const trackedYears: [number, number, number] = useMemo(() => [
+    profile?.tracked_vintage_year_1 ?? 2016,
+    profile?.tracked_vintage_year_2 ?? 2018,
+    profile?.tracked_vintage_year_3 ?? 2023,
+  ], [profile]);
+  const stats: Stats = useMemo(() => computeStats(activeWines, trackedYears), [activeWines, trackedYears]);
 
   /* ─── Inventory ──────────────────────────────────────────────── */
   const updateInventory = useCallback(async (id: string, delta: number) => {
@@ -180,6 +185,21 @@ export default function GrapeExpectations() {
       .update({ inventory: next, updated_at: new Date().toISOString() })
       .eq('id', id);
   }, [wines]);
+
+  /* ─── Tracked Vintage Years ───────────────────────────────────── */
+  const updateTrackedYear = useCallback(async (slot: 1 | 2 | 3, newYear: number) => {
+    if (!session || !profile) return;
+    const column = `tracked_vintage_year_${slot}` as const;
+    const previousValue = profile[column];
+    setProfile(prev => prev ? { ...prev, [column]: newYear } : prev);
+    const { error } = await supabase.from('profiles')
+      .update({ [column]: newYear })
+      .eq('id', session.user.id);
+    if (error) {
+      setProfile(prev => prev ? { ...prev, [column]: previousValue } : prev);
+      toast.error('Could not save your tracked year — please try again.');
+    }
+  }, [session, profile]);
 
   /* ─── Auth: Sign Out ─────────────────────────────────────────── */
   const handleSignOut = async () => {
@@ -741,7 +761,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       />
 
       <main className="ge-main">
-        <StatsBar stats={stats} setTab={setTab} setSort={setSort} />
+        <StatsBar stats={stats} setTab={setTab} setSort={setSort} updateTrackedYear={updateTrackedYear} />
 
         <div className="ge-tabs">
           <button className={`ge-tab ${tab === 'cellar' ? 'on' : ''}`} onClick={() => setTab('cellar')}>🍾 My Cellar</button>
