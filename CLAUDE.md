@@ -21,6 +21,7 @@ This repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-drive
 - **Decision history**: `openspec/changes/archive/`.
 - **Workflow** (Claude Code slash commands, configured for this repo): `/opsx:explore` (optional, think through the problem) → `/opsx:propose "<what you want to build>"` (creates proposal + spec deltas + design + tasks) → review the generated artifacts → `/opsx:apply` (implements the tasks) → `/opsx:archive` (merges the spec deltas into `openspec/specs/` and files the change under `openspec/changes/archive/`).
 - Project-wide context handed to OpenSpec when it drafts artifacts lives in `openspec/config.yaml`.
+- **Don't forget to archive.** Archiving is what actually updates `openspec/specs/` — a change with all tasks checked off but not yet archived does NOT count as documented, even after its PR merges. This is easy to lose track of when a PR merges in a different session than the one that implemented it (e.g. verification required a live preview deploy). `.claude/hooks/session-start.sh` runs `openspec list --json` at the start of every session and prints a warning naming any change whose tasks are 100% complete but still sitting outside `openspec/changes/archive/` — don't ignore that warning; either archive it (if merged and verified) or investigate why it's stuck.
 
 ---
 
