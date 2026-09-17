@@ -6,10 +6,11 @@
 -- ── Profiles ────────────────────────────────────────────────
 -- Auto-populated on signup via trigger below
 CREATE TABLE profiles (
-  id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  display_name TEXT,
-  avatar_url   TEXT,
-  created_at   TIMESTAMPTZ DEFAULT NOW()
+  id                     UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name           TEXT,
+  avatar_url             TEXT,
+  tracked_vintage_years  INTEGER[] NOT NULL DEFAULT '{2016,2018,2023}', -- the 3 vintage years shown on the stats header, in card order
+  created_at             TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

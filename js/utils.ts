@@ -14,8 +14,8 @@ export function getDrinkingStatus(wine: Wine): DrinkingStatus {
   return 'prime';
 }
 
-export function computeStats(wines: Wine[]): Stats {
-  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, count2016: 0, count2018: 0, count2023: 0, modeCountry: '—', modeStyle: '—', drinkSoon: 0, pastPeak: 0 };
+export function computeStats(wines: Wine[], trackedYears: number[]): Stats {
+  if (!wines.length) return { totalBottles: 0, uniqueWines: 0, avgPrice: null, trackedYearCounts: trackedYears.map(() => 0), modeCountry: '—', modeStyle: '—', drinkSoon: 0, pastPeak: 0 };
   const bottles = wines.flatMap(w => Array(Math.max(0, w.inventory)).fill(w) as Wine[]);
   const modeOf = (field: keyof Wine): string => {
     const freq: Record<string, number> = {};
@@ -33,9 +33,7 @@ export function computeStats(wines: Wine[]): Stats {
     totalBottles: bottles.length,
     uniqueWines: wines.length,
     avgPrice: priced.length ? Math.round(priced.reduce((s, w) => s + (w.price || 0), 0) / priced.length) : null,
-    count2016: bottles.filter(w => w.vintage === '2016').length,
-    count2018: bottles.filter(w => w.vintage === '2018').length,
-    count2023: bottles.filter(w => w.vintage === '2023').length,
+    trackedYearCounts: trackedYears.map(year => bottles.filter(w => w.vintage === String(year)).length),
     modeCountry: modeOf('country'),
     modeStyle: modeOf('style'),
     drinkSoon,

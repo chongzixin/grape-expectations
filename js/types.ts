@@ -41,9 +41,7 @@ export interface Stats {
   totalBottles: number;
   uniqueWines: number;
   avgPrice: number | null;
-  count2016: number;
-  count2018: number;
-  count2023: number;
+  trackedYearCounts: number[];
   modeCountry: string;
   modeStyle: string;
   drinkSoon: number;
@@ -81,6 +79,7 @@ export interface UserProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  tracked_vintage_years: number[];
 }
 
 export interface RecommendationFeedback {

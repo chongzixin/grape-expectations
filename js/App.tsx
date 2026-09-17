@@ -168,7 +168,8 @@ export default function GrapeExpectations() {
     wines.filter(w => w.inventory > 0),
     [wines]
   );
-  const stats: Stats = useMemo(() => computeStats(activeWines), [activeWines]);
+  const trackedYears = useMemo(() => profile?.tracked_vintage_years ?? [2016, 2018, 2023], [profile]);
+  const stats: Stats = useMemo(() => computeStats(activeWines, trackedYears), [activeWines, trackedYears]);
 
   /* ─── Inventory ──────────────────────────────────────────────── */
   const updateInventory = useCallback(async (id: string, delta: number) => {
@@ -180,6 +181,21 @@ export default function GrapeExpectations() {
       .update({ inventory: next, updated_at: new Date().toISOString() })
       .eq('id', id);
   }, [wines]);
+
+  /* ─── Tracked vintage years (stats header) ───────────────────── */
+  const handleUpdateTrackedYear = useCallback(async (index: number, year: number) => {
+    if (!session) return;
+    const previous = trackedYears;
+    const next = previous.map((y, i) => i === index ? year : y);
+    setProfile(prev => prev ? { ...prev, tracked_vintage_years: next } : prev);
+    const { error } = await supabase.from('profiles')
+      .update({ tracked_vintage_years: next })
+      .eq('id', session.user.id);
+    if (error) {
+      setProfile(prev => prev ? { ...prev, tracked_vintage_years: previous } : prev);
+      toast.error('Could not save tracked year — please try again.');
+    }
+  }, [session, trackedYears]);
 
   /* ─── Auth: Sign Out ─────────────────────────────────────────── */
   const handleSignOut = async () => {
@@ -741,7 +757,7 @@ ${(Object.entries(DRINKING_STATUS_PRIORITY) as [DrinkingStatus, number][])
       />
 
       <main className="ge-main">
-        <StatsBar stats={stats} setTab={setTab} setSort={setSort} />
+        <StatsBar stats={stats} trackedYears={trackedYears} onUpdateTrackedYear={handleUpdateTrackedYear} setTab={setTab} setSort={setSort} />
 
         <div className="ge-tabs">
           <button className={`ge-tab ${tab === 'cellar' ? 'on' : ''}`} onClick={() => setTab('cellar')}>🍾 My Cellar</button>

@@ -1,0 +1,54 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Grape Expectations is a Singaporean wine cellar management and AI sommelier
+  web app. See CLAUDE.md at the repo root for the full picture — this is a
+  condensed pointer, not a substitute for reading it.
+
+  Tech stack: React 18 + TypeScript (Vite), Netlify Functions (serverless),
+  Supabase (Postgres + Auth), Anthropic Claude (model: claude-sonnet-4-6, via
+  the /.netlify/functions/claude proxy only — the frontend never calls
+  Anthropic directly). Plain CSS with ge-* class prefix, no Tailwind. Plain
+  React hooks only (no Redux/Context/Zustand).
+
+  Conventions: snake_case DB columns <-> camelCase TS fields via mapDbWine()
+  in js/utils.ts. handle* for event handlers, compute* for calculations,
+  get* for getters. All tables have Row Level Security scoping rows to
+  auth.uid() - never bypass RLS client-side. No test suite or linter;
+  TypeScript strict mode is the only automated safety net - validate
+  manually and use Netlify PR branch deploys to smoke-test.
+
+  Existing capabilities already captured as baseline specs: cellar-inventory,
+  sommelier-chat, cellar-analytics, auth. New features should add to or
+  modify these via delta specs rather than duplicating them.
+
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
