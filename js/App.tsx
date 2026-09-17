@@ -185,11 +185,16 @@ export default function GrapeExpectations() {
   /* ─── Tracked vintage years (stats header) ───────────────────── */
   const handleUpdateTrackedYear = useCallback(async (index: number, year: number) => {
     if (!session) return;
-    const next = trackedYears.map((y, i) => i === index ? year : y);
+    const previous = trackedYears;
+    const next = previous.map((y, i) => i === index ? year : y);
     setProfile(prev => prev ? { ...prev, tracked_vintage_years: next } : prev);
-    await supabase.from('profiles')
+    const { error } = await supabase.from('profiles')
       .update({ tracked_vintage_years: next })
       .eq('id', session.user.id);
+    if (error) {
+      setProfile(prev => prev ? { ...prev, tracked_vintage_years: previous } : prev);
+      toast.error('Could not save tracked year — please try again.');
+    }
   }, [session, trackedYears]);
 
   /* ─── Auth: Sign Out ─────────────────────────────────────────── */
