@@ -272,6 +272,7 @@ This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine met
 - **`npm run dev` alone breaks AI features.** Always use `npm start` (`vercel dev`) for local development.
 - **No UI test suite.** `npm run check:functions` covers the Claude proxy with mocked requests. Smoke-test the app on the host's PR preview before merging.
 - **Vercel function limits differ from Netlify.** `/api/claude` is capped at 120 seconds (`vercel.json`). Request bodies, including a base64 label photo, must stay under Vercel's 4.5 MB platform limit. Netlify's synchronous limit is shorter (about 10s on Free, 26s on Pro) and its payload limit is 6 MB.
+- **`package.json` has `"type": "module"`.** Vercel compiles `api/claude.ts` to `api/claude.js` and loads that file as ESM. A CommonJS package makes that `import` throw `Cannot use import statement outside a module`. New Node scripts use `import`, or `.cjs` if they need `require`.
 - **RLS is enforced at the DB level.** Don't bypass it client-side — queries automatically filter by the authenticated user.
 - **App.tsx is very large.** Until the refactor happens, add new UI/logic there and follow existing patterns. Don't split prematurely without a plan.
 - **`recommendation_messages.id` is generated client-side** via `crypto.randomUUID()` before the Supabase insert, and passed explicitly as the `id` field. This ensures `msg.messageId` is always set so per-wine feedback thumbs always render, even if the DB insert fails. Do not change this back to reading the ID from the insert response.

@@ -1,4 +1,4 @@
-const { handleClaudeEvent } = require('../../server/claudeProxy');
+import { handleClaudeEvent } from '../../server/claudeProxy.js';
 
 /**
  * Netlify adapter. Behaviour lives in server/claudeProxy.js so this stays
@@ -6,7 +6,7 @@ const { handleClaudeEvent } = require('../../server/claudeProxy');
  *
  * @param {{ httpMethod: string, body: string | null }} event
  */
-exports.handler = async function (event) {
+export async function handler(event) {
   const result = await handleClaudeEvent({
     method: event.httpMethod,
     rawBody: event.body,

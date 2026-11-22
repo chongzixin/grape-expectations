@@ -1,7 +1,4 @@
-// CJS interop: `require` returns the client class (`module.exports = Anthropic`).
-const Anthropic = /** @type {typeof import('@anthropic-ai/sdk').default} */ (
-  /** @type {unknown} */ (require('@anthropic-ai/sdk'))
-);
+import Anthropic from '@anthropic-ai/sdk';
 
 /**
  * Shared Claude proxy used by the Vercel function (`api/claude.ts`) and the
@@ -40,7 +37,7 @@ const Anthropic = /** @type {typeof import('@anthropic-ai/sdk').default} */ (
  * @param {ClaudeProxyInput} input
  * @returns {Promise<ClaudeProxyResult>}
  */
-async function handleClaudeEvent({ method, rawBody, apiKey, createMessage }) {
+export async function handleClaudeEvent({ method, rawBody, apiKey, createMessage }) {
   if (method !== 'POST') {
     return {
       statusCode: 405,
@@ -117,7 +114,7 @@ async function handleClaudeEvent({ method, rawBody, apiKey, createMessage }) {
  * @param {{ apiKey?: string, createMessage?: ClaudeProxyInput['createMessage'] }} [options]
  * @returns {Promise<Response>}
  */
-async function handleClaudeRequest(request, options = {}) {
+export async function handleClaudeRequest(request, options = {}) {
   let rawBody = null;
   if (request.method === 'POST') {
     const text = await request.text();
@@ -136,5 +133,3 @@ async function handleClaudeRequest(request, options = {}) {
     headers: { 'Content-Type': result.contentType },
   });
 }
-
-module.exports = { handleClaudeEvent, handleClaudeRequest };

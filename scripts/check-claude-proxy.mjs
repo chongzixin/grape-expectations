@@ -3,14 +3,11 @@
  * Run: npm run check:functions
  */
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
+import AnthropicSdk from '@anthropic-ai/sdk';
+import { handler as netlifyHandler } from '../netlify/functions/claude.js';
 import { handleClaudeEvent, handleClaudeRequest } from '../server/claudeProxy.js';
 
-const require = createRequire(import.meta.url);
-const { handler: netlifyHandler } = require('../netlify/functions/claude.js');
-const AnthropicSdk = require('@anthropic-ai/sdk');
-
-assert.equal(typeof AnthropicSdk, 'function', 'Anthropic SDK require() must be the client class');
+assert.equal(typeof AnthropicSdk, 'function', 'Anthropic SDK default import must be the client class');
 
 console.error = () => {};
 

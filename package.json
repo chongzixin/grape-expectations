@@ -2,6 +2,7 @@
   "name": "grape-expectations",
   "version": "2.0.0",
   "description": "Singaporean Cellar Sommelier",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "start": "npx vercel dev",
