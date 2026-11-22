@@ -4,9 +4,14 @@
   "description": "Singaporean Cellar Sommelier",
   "scripts": {
     "dev": "vite",
-    "start": "npx netlify dev",
+    "start": "npx vercel dev",
+    "start:netlify": "npx netlify dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:functions": "tsc --noEmit -p tsconfig.functions.json && node scripts/check-claude-proxy.mjs"
+  },
+  "engines": {
+    "node": "22.x"
   },
   "repository": {
     "type": "git",

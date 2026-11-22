@@ -61,7 +61,7 @@ export function mapDbWine(row: Record<string, unknown>): Wine {
 }
 
 export async function callClaude({ messages, system = '', maxTokens = 1800, imageData = null }: ClaudeParams): Promise<string> {
-  const res = await fetch('/.netlify/functions/claude', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, system, maxTokens, imageData }),

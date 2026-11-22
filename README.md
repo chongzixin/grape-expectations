@@ -43,6 +43,12 @@ The application lands on a page that shows cellar analytics and list of wines in
 - Recommend up to 3 bottles from cellar ideally with different varietals, 2 best recommendations based on grape varietals that may not be in cellar.
 - For each recommendation, explain any interesting history behind the winery or winemaker, and why the bottle will pair well with the food based on WSET standards
 
+## Hosting
+
+The app is a Vite SPA plus one serverless proxy, `POST /api/claude`. Vercel is the target host (`vercel.json`). Netlify still builds the same site until cutover: `netlify.toml` rewrites `/api/*` to the Netlify function.
+
+Full-stack local dev is `npm start` (`vercel dev`). `npm run dev` is the frontend only, so AI calls fail. See `CLAUDE.md` for environment variable names and the function limits.
+
 ## Features to consider
 
 ## History of Pivoting Points for the app
