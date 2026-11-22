@@ -86,7 +86,7 @@ _TODO: fill in — e.g. positioning, key differentiators, what competitors do th
 | Layer | Technology |
 |---|---|
 | Frontend | React 18.3.1 + TypeScript, Vite 5.4.2 |
-| Backend | Netlify Functions (serverless) |
+| Backend | Vercel Functions (serverless). Netlify Functions still deploy the same proxy until hosting cutover. |
 | Database | Supabase (PostgreSQL) |
 | Auth | Supabase Auth (Google OAuth + Magic Link) |
 | AI | Anthropic Claude Sonnet 4.6 (`claude-sonnet-4-6`) |
@@ -110,9 +110,13 @@ grape-expectations/
 │   └── main.tsx               # React entry point
 ├── css/
 │   └── styles.css             # All styles; CSS variables; ge-* class prefix
+├── api/
+│   └── claude.ts              # Vercel Function: proxy to Anthropic API
+├── server/
+│   └── claudeProxy.js         # Shared proxy logic (Vercel + Netlify)
 ├── netlify/
 │   └── functions/
-│       └── claude.js          # Serverless proxy to Anthropic API
+│       └── claude.js          # Netlify adapter over server/claudeProxy.js
 ├── supabase/
 │   ├── schema.sql             # Full DB schema with RLS policies
 │   └── migrations/            # Incremental SQL migrations
@@ -122,7 +126,8 @@ grape-expectations/
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
-└── netlify.toml               # Build config; Node 18; functions dir
+├── vercel.json                # Vite build, function timeout, legacy function rewrite
+└── netlify.toml               # Netlify build; rewrites /api/* until cutover
 ```
 
 ---
@@ -142,21 +147,28 @@ ANTHROPIC_API_KEY=...         # Anthropic API key (used server-side only)
 
 | Command | What it does |
 |---|---|
-| `npm start` | **Use this for full-stack dev.** Runs `netlify dev` — serves the Vite frontend AND the serverless functions together. AI features require this. |
+| `npm start` | **Use this for full-stack dev.** Runs `vercel dev` — serves the Vite frontend AND the `/api` functions together. AI features require this. |
+| `npm run start:netlify` | Same full-stack loop on Netlify (`netlify dev`) until hosting cutover. |
 | `npm run dev` | Vite only. Frontend works but all Claude API calls fail (no functions). |
 | `npm run build` | Production build to `dist/`. |
-| `npm run preview` | Preview the production build locally. |
+| `npm run preview` | Preview the production build locally (static only; no functions). |
+| `npm run check:functions` | Runs the Claude proxy against mocked requests. No API key, no network. |
 
-> **Always use `npm start`** if you're working on anything that touches the AI or serverless functions.
+> **Always use `npm start`** if you're working on anything that touches the AI or serverless functions. `vercel dev` reads the same root `.env` as Vite.
 
 ---
 
 ## Deployment & CI/CD
 
-- **Production**: Netlify, auto-deploys on push to `main`.
-- **PR previews**: Netlify creates a branch deploy automatically for every PR — use these to test before merging.
-- **DB migrations**: `.github/workflows/migrate.yml` auto-applies any new SQL files in `supabase/migrations/` on push to `main`. GitHub secrets required: `SUPABASE_PROJECT_REF`, `SUPABASE_ACCESS_TOKEN`.
-- `ANTHROPIC_API_KEY` is set in the Netlify dashboard (not in GitHub secrets).
+- **Target host**: Vercel. Connect the GitHub repo; production tracks `main`, and every PR gets a preview. `vercel.json` sets the Vite build (`npm run build` → `dist`).
+- **Still on Netlify until cutover**: `netlify.toml` is unchanged in spirit (publish `dist`, functions in `netlify/functions`). `/api/*` is rewritten to `/.netlify/functions/:splat`, so the same frontend build works on both hosts. Remove the Netlify site after the domain points at Vercel.
+- **Node**: Vercel uses Node 22 (`package.json` `engines`, `.nvmrc`). Netlify stays on Node 18 via `NODE_VERSION` so the live site's runtime does not change before cutover. Node 18 is not offered on Vercel.
+- **DB migrations**: `.github/workflows/migrate.yml` auto-applies any new SQL files in `supabase/migrations/` on push to `main`. GitHub secrets required: `SUPABASE_PROJECT_REF`, `SUPABASE_ACCESS_TOKEN`. This workflow does not deploy the site.
+- **Environment variables** (set on Vercel for Production and Preview; names only):
+  - `VITE_SUPABASE_URL` — build-time, inlined into the client
+  - `VITE_SUPABASE_ANON_KEY` — build-time, inlined into the client
+  - `ANTHROPIC_API_KEY` — runtime, read only by the Claude function. Never prefix it with `VITE_`.
+- There is no Google Sheets function anymore. Cellar data lives in Supabase. Do not re-add `GOOGLE_SERVICE_ACCOUNT_KEY`.
 
 ---
 
@@ -209,25 +221,29 @@ Drinking window status (`getDrinkingStatus()`): `prime` | `approaching_end` | `p
 
 ## AI Integration
 
-All Claude calls go through a serverless proxy at `/.netlify/functions/claude` (`netlify/functions/claude.js`). The frontend never calls the Anthropic API directly.
+All Claude calls go through a serverless proxy at `/api/claude` (`api/claude.ts` on Vercel, `netlify/functions/claude.js` on Netlify). Both adapters call `server/claudeProxy.js`. The frontend never calls the Anthropic API directly. `vercel.json` rewrites the old `/.netlify/functions/:name` path to `/api/:name` so existing clients keep working after the move.
 
 **Proxy interface:**
 ```typescript
-// POST /.netlify/functions/claude
+// POST /api/claude
 {
   messages: { role: 'user' | 'assistant', content: string }[],
   system: string,
   maxTokens?: number,     // default: 1800
-  imageData?: { base64: string, mediaType: string }
+  imageData?: { data: string, mimeType: string } | null
 }
 // Response: { content: string }
+// Errors:   { error: string } with status 500
 ```
 
+`imageData.data` is raw base64 (no `data:` prefix). `imageData.mimeType` is sent to Anthropic as `media_type`. When `imageData` is set, the proxy replaces `messages` with a single user turn containing that image plus the text of the last incoming message.
+
 **Use cases:**
-- **Label OCR**: User photographs a wine label/invoice → image compressed client-side (canvas, max 1600px, 0.85 JPEG quality) → sent to Claude vision → returns structured wine JSON
+- **Label OCR**: User photographs a wine label/invoice → image compressed client-side (canvas, 2400px on the scan path, 0.85 JPEG quality) → sent to Claude vision → returns structured wine JSON
 - **Sommelier chat**: Full cellar inventory + Singapore cuisine knowledge (`localCuisine.ts`) injected into system prompt
 - **Cellar analytics**: AI generates a 150–180 word cellar health summary
 - **Model**: `claude-sonnet-4-6`
+- **Function env**: `ANTHROPIC_API_KEY` only. The handler reads no other environment variable.
 
 **WINES_JSON block (sommelier responses only):**
 Every recommendation response includes a hidden comment block appended after the Verdict:
@@ -253,8 +269,10 @@ This is parsed by `parseRecommendedWines()` in `App.tsx` to extract per-wine met
 
 ## Gotchas & Things to Avoid
 
-- **`npm run dev` alone breaks AI features.** Always use `npm start` for local development.
-- **No test suite.** Validate changes manually; use PR branch deploys on Netlify to smoke-test before merging.
+- **`npm run dev` alone breaks AI features.** Always use `npm start` (`vercel dev`) for local development.
+- **No UI test suite.** `npm run check:functions` covers the Claude proxy with mocked requests. Smoke-test the app on the host's PR preview before merging.
+- **Vercel function limits differ from Netlify.** `/api/claude` is capped at 120 seconds (`vercel.json`). Request bodies, including a base64 label photo, must stay under Vercel's 4.5 MB platform limit. Netlify's synchronous limit is shorter (about 10s on Free, 26s on Pro) and its payload limit is 6 MB.
+- **`package.json` has `"type": "module"`.** Vercel compiles `api/claude.ts` to `api/claude.js` and loads that file as ESM. A CommonJS package makes that `import` throw `Cannot use import statement outside a module`. New Node scripts use `import`, or `.cjs` if they need `require`.
 - **RLS is enforced at the DB level.** Don't bypass it client-side — queries automatically filter by the authenticated user.
 - **App.tsx is very large.** Until the refactor happens, add new UI/logic there and follow existing patterns. Don't split prematurely without a plan.
 - **`recommendation_messages.id` is generated client-side** via `crypto.randomUUID()` before the Supabase insert, and passed explicitly as the `id` field. This ensures `msg.messageId` is always set so per-wine feedback thumbs always render, even if the DB insert fails. Do not change this back to reading the ID from the insert response.

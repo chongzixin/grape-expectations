@@ -8,18 +8,19 @@ context: |
   web app. See CLAUDE.md at the repo root for the full picture — this is a
   condensed pointer, not a substitute for reading it.
 
-  Tech stack: React 18 + TypeScript (Vite), Netlify Functions (serverless),
-  Supabase (Postgres + Auth), Anthropic Claude (model: claude-sonnet-4-6, via
-  the /.netlify/functions/claude proxy only — the frontend never calls
-  Anthropic directly). Plain CSS with ge-* class prefix, no Tailwind. Plain
-  React hooks only (no Redux/Context/Zustand).
+  Tech stack: React 18 + TypeScript (Vite), Vercel Functions (serverless; the
+  same proxy still deploys on Netlify until hosting cutover), Supabase
+  (Postgres + Auth), Anthropic Claude (model: claude-sonnet-4-6, via the
+  /api/claude proxy only — the frontend never calls Anthropic directly).
+  Plain CSS with ge-* class prefix, no Tailwind. Plain React hooks only
+  (no Redux/Context/Zustand).
 
   Conventions: snake_case DB columns <-> camelCase TS fields via mapDbWine()
   in js/utils.ts. handle* for event handlers, compute* for calculations,
   get* for getters. All tables have Row Level Security scoping rows to
   auth.uid() - never bypass RLS client-side. No test suite or linter;
   TypeScript strict mode is the only automated safety net - validate
-  manually and use Netlify PR branch deploys to smoke-test.
+  manually and use the host's PR preview deploys to smoke-test.
 
   Existing capabilities already captured as baseline specs: cellar-inventory,
   sommelier-chat, cellar-analytics, auth. New features should add to or

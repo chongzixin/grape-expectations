@@ -2,4 +2,6 @@ node_modules/
 .env
 # Local Netlify folder
 .netlify
+# Local Vercel link (created by `vercel dev` / `vercel link`)
+.vercel
 dist/

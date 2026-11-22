@@ -3,8 +3,20 @@
   command = "npm run build"
 
 [build.environment]
+  # Kept on 18 so the current Netlify deploy does not change runtime.
+  # .nvmrc / package.json engines are 22, which is what Vercel uses
+  # (Node 18 is no longer offered there).
   NODE_VERSION = "18"
 
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+# Frontend calls /api/claude. Keep that path working on Netlify until cutover
+# by rewriting it to the existing function. `vercel.json` does the reverse for
+# the old /.netlify/functions/* path.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
